@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Nexus | Minimalist Robotics</title>
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
+            display: ['Syncopate', 'Inter', 'sans-serif'], // Adds a futuristic feel
+          },
+          colors: {
+            brand: {
+              light: '#2563eb', // Vibrant blue
+              dark: '#3b82f6',  // Bright blue for dark mode
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <!-- Three.js -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Syncopate:wght@400;700&display=swap');
+
+    /* Smooth theme transitions */
+    body {
+      transition: background-color 0.7s ease, color 0.7s ease;
+    }
+
+    /* Custom Scrollbar for minimal look */
+    ::-webkit-scrollbar {
+      width: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(59, 130, 246, 0.5);
+      border-radius: 10px;
+    }
+
+    /* Staggered text reveal animations */
+    .reveal-text {
+      clip-path: polygon(0 0, 100% 0, 100% 100%, 0% 100%);
+    }
+    .reveal-text > * {
+      display: inline-block;
+      transform: translateY(110%);
+      opacity: 0;
+      animation: reveal 1s cubic-bezier(0.77, 0, 0.175, 1) forwards;
+    }
+    
+    @keyframes reveal {
+      0% { transform: translateY(110%); opacity: 0; }
+      100% { transform: translateY(0); opacity: 1; }
+    }
+
+    .delay-100 { animation-delay: 0.1s; }
+    .delay-200 { animation-delay: 0.2s; }
+    .delay-300 { animation-delay: 0.3s; }
+    .delay-400 { animation-delay: 0.4s; }
+    .delay-500 { animation-delay: 0.5s; }
+
+    /* Float Animation */
+    @keyframes slowFloat {
+      0%, 100% { transform: translateY(0) rotate(0deg); }
+      50% { transform: translateY(-10px) rotate(1deg); }
+    }
+    .animate-float-slow {
+      animation: slowFloat 8s ease-in-out infinite;
+    }
+
+    /* Glowing accent line */
+    .glow-line {
+      position: relative;
+    }
+    .glow-line::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, #3b82f6, transparent);
+      opacity: 0.5;
+    }
+  </style>
+</head>
+<body class="min-h-screen bg-slate-50 text-slate-900 dark:bg-[#030712] dark:text-white antialiased overflow-x-hidden selection:bg-brand-light selection:text-white">
+
+  <!-- Interactive 3D Background -->
+  <div id="canvas-container" class="fixed inset-0 z-0 pointer-events-none opacity-40 dark:opacity-60 transition-opacity duration-700"></div>
+
+  <!-- Radial Gradient Overlay for Depth -->
+  <div class="fixed inset-0 z-0 pointer-events-none bg-[radial-gradient(circle_at_center,transparent_0%,rgba(248,250,252,0.8)_100%)] dark:bg-[radial-gradient(circle_at_center,transparent_0%,rgba(3,7,18,0.9)_100%)] transition-colors duration-700"></div>
+
+  <!-- Minimalist Navbar -->
+  <nav class="fixed w-full top-0 z-50 mix-blend-difference text-white">
+    <div class="max-w-screen-2xl mx-auto px-6 md:px-12 h-24 flex items-center justify-between">
+      
+      <!-- Logo -->
+      <div class="flex items-center gap-2 reveal-text">
+        <div class="delay-100 font-display font-bold text-xl tracking-widest uppercase flex items-center gap-2">
+          <div class="w-2 h-2 rounded-full bg-brand-light animate-pulse"></div>
+          NEXUS
+        </div>
+      </div>
+
+      <!-- Controls -->
+      <div class="flex items-center gap-8 reveal-text">
+        <button id="themeToggle" class="delay-200 hover:opacity-70 transition-opacity flex items-center justify-center" aria-label="Toggle Theme">
+          <i id="themeIcon" data-lucide="sun" class="w-5 h-5"></i>
+        </button>
+        <div class="delay-300 hidden md:block w-8 h-[1px] bg-white/30"></div>
+        <button class="delay-400 font-medium text-sm tracking-widest uppercase hover:text-brand-light transition-colors">
+          Menu
+        </button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Main Content -->
+  <main class="relative z-10 flex flex-col items-center justify-center min-h-screen px-6 md:px-12 pt-20">
+    
+    <!-- Minimalist Hero -->
+    <div class="max-w-screen-2xl w-full flex flex-col justify-center min-h-[70vh]">
+      
+      <div class="reveal-text mb-6">
+        <span class="delay-100 block text-brand-light dark:text-brand-dark font-mono text-sm tracking-[0.3em] uppercase">
+          01 // Autonomy Redefined
+        </span>
+      </div>
+
+      <h1 class="reveal-text text-5xl md:text-8xl lg:text-[10rem] font-display font-bold leading-[0.85] tracking-tighter uppercase ml-[-5px]">
+        <span class="delay-200 block">Art of</span>
+        <span class="delay-300 block text-transparent [-webkit-text-stroke:1px_#0f172a] dark:[-webkit-text-stroke:1px_#ffffff] hover:[-webkit-text-stroke:1px_#2563eb] transition-all duration-500 cursor-default">
+          Motion
+        </span>
+      </h1>
+
+      <div class="mt-12 md:mt-24 grid grid-cols-1 md:grid-cols-12 gap-8 items-end reveal-text w-full">
+        <div class="md:col-span-4 delay-400">
+          <p class="text-lg md:text-xl font-light text-slate-600 dark:text-slate-400 leading-relaxed max-w-sm">
+            We engineer minimalist robotics. Erasing the line between mechanical precision and living intelligence.
+          </p>
+        </div>
+        
+        <div class="md:col-span-4 md:col-start-9 flex justify-start md:justify-end delay-500">
+          <a href="#explore" class="group relative inline-flex items-center gap-4 overflow-hidden rounded-full border border-slate-300 dark:border-white/20 px-8 py-4 text-sm tracking-widest uppercase transition-all hover:bg-brand-light hover:border-brand-light hover:text-white dark:hover:bg-brand-dark dark:hover:border-brand-dark">
+            <span>Initiate</span>
+            <i data-lucide="arrow-down-right" class="w-4 h-4 group-hover:rotate-45 transition-transform duration-300"></i>
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Scroll Indicator -->
+    <div class="absolute bottom-12 left-6 md:left-12 flex flex-col items-center gap-4 reveal-text mix-blend-difference text-white">
+      <span class="delay-500 writing-vertical-rl text-xs tracking-widest uppercase origin-bottom -rotate-180 opacity-50">Scroll</span>
+      <div class="delay-500 w-[1px] h-12 bg-white/30 overflow-hidden relative">
+        <div class="absolute top-0 left-0 w-full h-full bg-white animate-[moveDown_1.5s_infinite_ease-in-out]"></div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Details Section (Minimalist) -->
+  <section id="explore" class="relative z-10 w-full max-w-screen-2xl mx-auto px-6 md:px-12 py-32 border-t border-slate-200 dark:border-white/10 glow-line">
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-16 lg:gap-32">
+      
+      <!-- Kinetic Stat -->
+      <div class="flex flex-col justify-center">
+        <div class="text-brand-light dark:text-brand-dark font-mono text-xs tracking-[0.2em] mb-4 uppercase">System Efficiency</div>
+        <div class="text-6xl md:text-8xl font-display font-bold tracking-tighter">99.9<span class="text-3xl text-slate-400">%</span></div>
+        <div class="h-[1px] w-full bg-slate-200 dark:bg-white/10 mt-8 mb-6"></div>
+        <p class="text-slate-600 dark:text-slate-400 font-light">Ultra-low latency frameworks paired with adaptive neural nodes. Built not just to react, but to anticipate.</p>
+      </div>
+
+      <!-- Detail list -->
+      <div class="flex flex-col gap-12 justify-center">
+        
+        <div class="group cursor-default">
+          <h3 class="text-xl md:text-2xl font-display uppercase tracking-wider mb-2 flex items-center justify-between transition-colors group-hover:text-brand-light">
+            Quantum Actuation
+            <i data-lucide="plus" class="w-5 h-5 opacity-50 group-hover:opacity-100 group-hover:rotate-90 transition-all duration-300"></i>
+          </h3>
+          <p class="text-slate-500 text-sm font-light leading-relaxed max-w-md opacity-0 max-h-0 overflow-hidden group-hover:opacity-100 group-hover:max-h-24 transition-all duration-500">Sub-millisecond response times delivered via next-generation magnetic frictionless motors.</p>
+        </div>
+
+        <div class="w-full h-[1px] bg-slate-200 dark:bg-white/5"></div>
+
+        <div class="group cursor-default">
+          <h3 class="text-xl md:text-2xl font-display uppercase tracking-wider mb-2 flex items-center justify-between transition-colors group-hover:text-brand-light">
+            Titanium Silence
+            <i data-lucide="plus" class="w-5 h-5 opacity-50 group-hover:opacity-100 group-hover:rotate-90 transition-all duration-300"></i>
+          </h3>
+          <p class="text-slate-500 text-sm font-light leading-relaxed max-w-md opacity-0 max-h-0 overflow-hidden group-hover:opacity-100 group-hover:max-h-24 transition-all duration-500">Aerospace-grade unibody chassis engineered for near-zero acoustic output during high-torque operations.</p>
+        </div>
+
+        <div class="w-full h-[1px] bg-slate-200 dark:bg-white/5"></div>
+
+        <div class="group cursor-default">
+          <h3 class="text-xl md:text-2xl font-display uppercase tracking-wider mb-2 flex items-center justify-between transition-colors group-hover:text-brand-light">
+            Neural Core
+            <i data-lucide="plus" class="w-5 h-5 opacity-50 group-hover:opacity-100 group-hover:rotate-90 transition-all duration-300"></i>
+          </h3>
+          <p class="text-slate-500 text-sm font-light leading-relaxed max-w-md opacity-0 max-h-0 overflow-hidden group-hover:opacity-100 group-hover:max-h-24 transition-all duration-500">Locally hosted LLM frameworks allowing the system to learn directly from its immediate physical environment.</p>
+        </div>
+
+      </div>
+
+    </div>
+  </section>
+
+  <!-- Minimal Footer -->
+  <footer class="relative z-10 w-full max-w-screen-2xl mx-auto px-6 md:px-12 py-12 flex flex-col md:flex-row items-center justify-between text-xs tracking-widest uppercase font-mono text-slate-500 dark:text-slate-400">
+    <div id="copyright-year">© 2024 Nexus</div>
+    <div class="flex gap-8 mt-4 md:mt-0">
+      <a href="#" class="hover:text-brand-light transition-colors">Twitter</a>
+      <a href="#" class="hover:text-brand-light transition-colors">GitHub</a>
+      <a href="#" class="hover:text-brand-light transition-colors">Contact</a>
+    </div>
+  </footer>
+
+  <style>
+    /* Utility animation for scroll line */
+    @keyframes moveDown {
+      0% { top: -100%; }
+      100% { top: 100%; }
+    }
+    
+    /* Vertical text writing mode */
+    .writing-vertical-rl {
+      writing-mode: vertical-rl;
+    }
+  </style>
+
+  <!-- Scripts -->
+  <script>
+    // Update year dynamically
+    document.getElementById('copyright-year').innerHTML = `© ${new Date().getFullYear()} Nexus`;
+
+    // Initialize Icons
+    lucide.createIcons();
+
+    // -------------------------------------------------------------
+    // Theme Toggle Logic
+    // -------------------------------------------------------------
+    const html = document.documentElement;
+    const themeToggleBtn = document.getElementById('themeToggle');
+    const themeIcon = document.getElementById('themeIcon');
+    let isDark = true;
+
+    themeToggleBtn.addEventListener('click', () => {
+      isDark = !isDark;
+      if (isDark) {
+        html.classList.add('dark');
+        themeIcon.setAttribute('data-lucide', 'sun');
+      } else {
+        html.classList.remove('dark');
+        themeIcon.setAttribute('data-lucide', 'moon');
+      }
+      lucide.createIcons();
+      updateThreeColors(isDark);
+    });
+
+    // -------------------------------------------------------------
+    // Three.js Interactive Minimalist Background
+    // -------------------------------------------------------------
+    let mainMaterial, particlesMaterial;
+
+    window.addEventListener('DOMContentLoaded', () => {
+      const container = document.getElementById('canvas-container');
+      
+      const scene = new THREE.Scene();
+      
+      const camera = new THREE.PerspectiveCamera(
+        60, 
+        window.innerWidth / window.innerHeight, 
+        0.1, 
+        1000
+      );
+      // Move camera back to see the large object
+      camera.position.z = 50;
+
+      const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); // optimize performance
+      container.appendChild(renderer.domElement);
+
+      const group = new THREE.Group();
+
+      // Abstract Geometric Shape (TorusKnot provides a highly engineered look)
+      const geometry = new THREE.TorusKnotGeometry( 18, 4, 150, 20 );
+      
+      // Wireframe material for the minimalist, blueprint aesthetic
+      mainMaterial = new THREE.MeshBasicMaterial({
+        color: isDark ? 0x3b82f6 : 0x2563eb,
+        wireframe: true,
+        transparent: true,
+        opacity: 0.15
+      });
+      
+      const mesh = new THREE.Mesh(geometry, mainMaterial);
+      group.add(mesh);
+
+      // Add floating particles around the geometry
+      const particlesGeo = new THREE.BufferGeometry();
+      const particlesCount = 700;
+      const posArray = new Float32Array(particlesCount * 3);
+
+      for(let i = 0; i < particlesCount * 3; i++) {
+        // Spread particles in a wide area
+        posArray[i] = (Math.random() - 0.5) * 120;
+      }
+      
+      particlesGeo.setAttribute('position', new THREE.BufferAttribute(posArray, 3));
+      particlesMaterial = new THREE.PointsMaterial({
+        size: 0.2,
+        color: isDark ? 0xffffff : 0x0f172a,
+        transparent: true,
+        opacity: 0.4
+      });
+
+      const particlesMesh = new THREE.Points(particlesGeo, particlesMaterial);
+      scene.add(particlesMesh);
+      scene.add(group);
+
+      // Mouse interaction variables
+      let mouseX = 0;
+      let mouseY = 0;
+      let targetX = 0;
+      let targetY = 0;
+
+      const windowHalfX = window.innerWidth / 2;
+      const windowHalfY = window.innerHeight / 2;
+
+      document.addEventListener('mousemove', (event) => {
+        mouseX = (event.clientX - windowHalfX);
+        mouseY = (event.clientY - windowHalfY);
+      });
+
+      // Animation Loop
+      const clock = new THREE.Clock();
+
+      const animate = () => {
+        requestAnimationFrame(animate);
+        const elapsedTime = clock.getElapsedTime();
+        
+        // Smooth cursor tracking
+        targetX = mouseX * 0.001;
+        targetY = mouseY * 0.001;
+        
+        group.rotation.y += 0.05 * (targetX - group.rotation.y);
+        group.rotation.x += 0.05 * (targetY - group.rotation.x);
+        
+        // Constant slow rotation
+        mesh.rotation.z += 0.001;
+        mesh.rotation.x += 0.001;
+
+        // Animate particles slowly upwards
+        particlesMesh.position.y = Math.sin(elapsedTime * 0.2) * 2;
+        particlesMesh.rotation.y = elapsedTime * 0.05;
+
+        renderer.render(scene, camera);
+      };
+      
+      animate();
+
+      // Handle Resize
+      window.addEventListener('resize', () => {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+      });
+    });
+
+    // Helper to update colors based on theme
+    function updateThreeColors(isDarkMode) {
+      if (mainMaterial && particlesMaterial) {
+        mainMaterial.color.setHex(isDarkMode ? 0x3b82f6 : 0x2563eb);
+        particlesMaterial.color.setHex(isDarkMode ? 0xffffff : 0x0f172a);
+      }
+    }
+  </script>
+</body>
+</html>

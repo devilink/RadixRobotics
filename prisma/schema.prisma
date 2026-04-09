@@ -1,0 +1,15 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model CurriculumUser {
+  id        String   @id @default(cuid())
+  username  String   @unique
+  password  String   
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}

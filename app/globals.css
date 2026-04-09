@@ -1,0 +1,53 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --color-accent-green: #34d399;
+
+  --animate-marquee: marquee 20s linear infinite;
+
+  @keyframes marquee {
+    from {
+      transform: translateX(0);
+    }
+    to {
+      transform: translateX(-100%);
+    }
+  }
+}
+
+@layer base {
+
+  body {
+    @apply bg-neutral-50 text-neutral-900 transition-colors duration-300;
+  }
+  
+  .dark body {
+    @apply bg-zinc-950 text-zinc-50;
+  }
+
+  .cursor {
+    width: 8px;
+    height: 8px;
+    background: #34d399;
+    border-radius: 50%;
+    position: fixed;
+    pointer-events: none;
+    z-index: 9999;
+    transform: translate(-50%, -50%);
+    transition: width 0.3s, height 0.3s;
+  }
+
+  .cursor-ring {
+    width: 40px;
+    height: 40px;
+    border: 1px solid rgba(52, 211, 153, 0.4);
+    border-radius: 50%;
+    position: fixed;
+    pointer-events: none;
+    z-index: 9998;
+    transform: translate(-50%, -50%);
+    transition: width 0.3s, height 0.3s;
+  }
+}

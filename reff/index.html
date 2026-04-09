@@ -1,0 +1,2754 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>RADIX Robotics — Composite Labs for Schools</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link
+    href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=Orbitron:wght@500;600;700;800;900&family=DM+Sans:wght@300;400;500&display=swap"
+    rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <style>
+    /* ==============================
+   DESIGN TOKENS
+============================== */
+    :root {
+      --white: #ffffff;
+      --off: #f8fafc;
+      --off2: #eff6ff;
+      --bg-page: #f1f5f9;
+      --surface: #dbeafe;
+      --blue-xl: #93c5fd;
+      --blue-l: #60a5fa;
+      --blue: #0538a7;
+      --blue-d: #1e3a8a;
+      --blue-xd: #0f172a;
+      --ink: #0f172a;
+      --ink2: #1e293b;
+      --muted: #64748b;
+      --border: rgba(37, 99, 235, 0.14);
+      --border2: rgba(37, 99, 235, 0.07);
+      --shadow: rgba(15, 23, 42, 0.09);
+      /* Bento pastels */
+      --c-pink: #fbcfe8;
+      --c-blue: #bfdbfe;
+      --c-green: #bbf7d0;
+      --c-yellow: #fef08a;
+      --c-purple: #e9d5ff;
+      --c-orange: #fed7aa;
+      --c-cyan: #a5f3fc;
+      --c-dark: #1e293b;
+      --radius: 28px;
+      --gap: 20px;
+      --coral: #FF6B6B;
+      --mint: #4ECDC4;
+      --gyellow: #FFE66D;
+      --gpurple: #6B5B95;
+      --lblue: #45B7D1;
+      --bg-main: #f8fbff;
+      /* Very soft blue/white */
+      --bg-sec: #ffffff;
+
+      --text-main: #1e293b;
+      /* Slate 800 */
+      --text-muted: #64748b;
+      /* Slate 500 */
+
+
+      /* Playful styling */
+      --radius-sm: 16px;
+      --radius-md: 24px;
+      --radius-lg: 40px;
+      --shadow: 0 10px 30px rgba(30, 41, 59, 0.05);
+      --shadow-hover: 0 20px 40px rgba(30, 41, 59, 0.1);
+    }
+
+    *,
+    *::before,
+    *::after {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+      overflow-x: hidden;
+    }
+
+    body {
+      background: var(--white);
+      color: var(--ink);
+      font-family: 'DM Sans', sans-serif;
+      overflow-x: hidden;
+      overflow-x: clip;
+      -webkit-overflow-scrolling: touch;
+      width: 100%;
+      max-width: 100vw;
+    }
+
+    /* Global page wrapper — prevents any child from expanding the viewport on iOS */
+    .page-wrapper {
+      width: 100%;
+      max-width: 100%;
+      overflow-x: clip;
+      position: relative;
+    }
+
+
+    /* ==============================
+   NAV — V1 style (floating pill on scroll, full bar default)
+============================== */
+    nav {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 1000;
+      padding: 1.1rem 4rem;
+      padding-left: max(4rem, env(safe-area-inset-left));
+      padding-right: max(4rem, env(safe-area-inset-right));
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: rgba(255, 255, 255, 0.82);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border);
+      transition: all 0.4s ease;
+    }
+
+    nav.scrolled {
+      background: rgba(255, 255, 255, 0.97);
+      box-shadow: 0 2px 24px var(--shadow);
+    }
+
+    .logo {
+      font-family: 'Orbitron', monospace;
+      font-size: 1.35rem;
+      font-weight: 900;
+      letter-spacing: 0.08em;
+      color: var(--ink);
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 0.7rem;
+    }
+
+    .logo-hex {
+      width: 34px;
+      height: 34px;
+      background: var(--blue);
+      clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-size: .9rem;
+    }
+
+    .logo em {
+      color: var(--blue);
+      font-style: normal;
+    }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 2.5rem;
+      list-style: none;
+    }
+
+    .nav-links a {
+      font-family: 'Syne', sans-serif;
+      font-size: 0.8rem;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--muted);
+      text-decoration: none;
+      transition: color 0.25s;
+      position: relative;
+    }
+
+    .nav-links a::after {
+      content: '';
+      position: absolute;
+      bottom: -4px;
+      left: 0;
+      width: 0;
+      height: 2px;
+      background: var(--blue);
+      transition: width 0.3s ease;
+    }
+
+    .nav-links a:hover {
+      color: var(--ink);
+    }
+
+    .nav-links a:hover::after {
+      width: 100%;
+    }
+
+    .nav-cta {
+      background: var(--blue) !important;
+      border: none !important;
+      color: #fff !important;
+      padding: 0.55rem 1.5rem;
+      border-radius: 6px;
+      font-family: 'Syne', sans-serif !important;
+      font-size: 0.78rem !important;
+      font-weight: 700 !important;
+      letter-spacing: 0.12em !important;
+      transition: all 0.3s !important;
+      box-shadow: 0 2px 12px rgba(37, 99, 235, 0.3);
+    }
+
+    .nav-cta:hover {
+      background: var(--blue-d) !important;
+      box-shadow: 0 4px 20px rgba(37, 99, 235, 0.4) !important;
+      transform: translateY(-1px);
+    }
+
+    .nav-cta::after {
+      display: none !important;
+    }
+
+    /* MOBILE NAVIGATION */
+    .mobile-toggle {
+      display: none;
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 0.5rem;
+      z-index: 1001;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .mobile-toggle span {
+      display: block;
+      width: 25px;
+      height: 2px;
+      background: var(--ink);
+      transition: 0.3s;
+      border-radius: 2px;
+    }
+
+    .nav-mobile-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.95);
+      backdrop-filter: blur(10px);
+      z-index: 2000;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.4s ease;
+      transition-delay: 0.1s;
+    }
+
+    .nav-mobile-overlay.active {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .nav-mobile-links {
+      list-style: none;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      gap: 2rem;
+    }
+
+    .nav-mobile-links a {
+      font-family: 'Syne', sans-serif;
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: #fff;
+      text-decoration: none;
+      text-transform: uppercase;
+      transition: color 0.3s;
+    }
+
+    .nav-mobile-links a:hover {
+      color: var(--blue-l);
+    }
+
+    .mobile-close {
+      position: absolute;
+      top: 2rem;
+      right: 2rem;
+      background: none;
+      border: none;
+      color: #fff;
+      font-size: 2.5rem;
+      cursor: pointer;
+    }
+
+    /* ==============================
+   HERO — V1 style with V2 3D robot
+============================== */
+    #hero {
+      min-height: 100vh;
+      min-height: -webkit-fill-available;
+      background: var(--off);
+      display: flex;
+      align-items: center;
+      position: relative;
+      overflow: hidden;
+      overflow: clip;
+    }
+
+    #hero-canvas {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 0;
+    }
+
+    .hero-arc {
+      position: absolute;
+      border-radius: 50%;
+      border: 1px solid rgba(37, 99, 235, 0.1);
+      pointer-events: none;
+    }
+
+    .arc-1 {
+      width: 600px;
+      height: 600px;
+      right: -100px;
+      top: -100px;
+    }
+
+    .arc-2 {
+      width: 950px;
+      height: 950px;
+      right: -260px;
+      top: -260px;
+    }
+
+    .arc-3 {
+      width: 1300px;
+      height: 1300px;
+      right: -420px;
+      top: -420px;
+    }
+
+    .hero-dots {
+      position: absolute;
+      inset: 0;
+      z-index: 1;
+      background-image: radial-gradient(circle, rgba(37, 99, 235, 0.16) 1.2px, transparent 1.2px);
+      background-size: 38px 38px;
+      mask-image: radial-gradient(ellipse 65% 70% at 25% 50%, black 30%, transparent);
+      pointer-events: none;
+    }
+
+    .hero-content {
+      position: relative;
+      z-index: 2;
+      padding: 0 4rem;
+      padding-top: 6rem;
+      max-width: 860px;
+    }
+
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.6rem;
+      background: rgba(37, 99, 235, 0.09);
+      border: 1px solid rgba(37, 99, 235, 0.22);
+      padding: 0.4rem 1rem;
+      border-radius: 100px;
+      margin-bottom: 2.5rem;
+      opacity: 0;
+    }
+
+    .badge-dot {
+      width: 7px;
+      height: 7px;
+      background: var(--blue);
+      border-radius: 50%;
+      animation: pls 2s infinite;
+    }
+
+    @keyframes pls {
+
+      0%,
+      100% {
+        opacity: 1;
+        transform: scale(1);
+      }
+
+      50% {
+        opacity: .5;
+        transform: scale(1.4);
+      }
+    }
+
+    .hero-badge span {
+      font-family: 'Syne', sans-serif;
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--blue-d);
+    }
+
+    .hero-title {
+      font-family: 'Syne', sans-serif;
+      font-size: clamp(3.2rem, 7vw, 7rem);
+      font-weight: 800;
+      line-height: 0.94;
+      letter-spacing: -0.03em;
+      color: var(--ink);
+      margin-bottom: 1.8rem;
+      opacity: 0;
+    }
+
+    .hero-title .line {
+      display: block;
+    }
+
+    .hero-title .g {
+      color: var(--blue);
+      position: relative;
+    }
+
+    .hero-title .g::after {
+      content: '';
+      position: absolute;
+      bottom: 4px;
+      left: 0;
+      right: 0;
+      height: 7px;
+      background: rgba(37, 99, 235, 0.12);
+      z-index: -1;
+      border-radius: 2px;
+    }
+
+    .hero-title .sk {
+      -webkit-text-stroke: 2.5px var(--blue-xl);
+      color: transparent;
+    }
+
+    .hero-sub {
+      font-size: 1.1rem;
+      font-weight: 400;
+      color: var(--muted);
+      max-width: 520px;
+      line-height: 1.75;
+      margin-bottom: 3rem;
+      opacity: 0;
+    }
+
+    .hero-actions {
+      display: flex;
+      gap: 1rem;
+      align-items: center;
+      opacity: 0;
+    }
+
+    .btn-primary {
+      background: var(--blue);
+      color: #fff;
+      border: none;
+      padding: 1rem 2.5rem;
+      font-family: 'Syne', sans-serif;
+      font-size: 0.82rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      border-radius: 8px;
+      position: relative;
+      overflow: hidden;
+      transition: all 0.3s;
+      text-decoration: none;
+      display: inline-block;
+      box-shadow: 0 4px 20px rgba(37, 99, 235, 0.3);
+    }
+
+    .btn-primary::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, rgba(255, 255, 255, .2), transparent);
+      transform: translateX(-100%);
+      transition: transform 0.4s;
+    }
+
+    .btn-primary:hover::before {
+      transform: translateX(100%);
+    }
+
+    .btn-primary:hover {
+      background: var(--blue-d);
+      box-shadow: 0 8px 30px rgba(37, 99, 235, 0.4);
+      transform: translateY(-2px);
+    }
+
+    .btn-ghost {
+      background: #fff;
+      border: 1.5px solid var(--border);
+      color: var(--ink);
+      padding: 1rem 2.5rem;
+      font-family: 'Syne', sans-serif;
+      font-size: 0.82rem;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      border-radius: 8px;
+      transition: all 0.3s;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: .6rem;
+      box-shadow: 0 2px 8px var(--shadow);
+    }
+
+    .btn-ghost:hover {
+      border-color: var(--blue);
+      color: var(--blue-d);
+    }
+
+    .hero-canvas-wrap {
+      position: absolute;
+      right: 0;
+      top: 0;
+      width: 50%;
+      height: 100%;
+      z-index: 1;
+      pointer-events: auto;
+      cursor: grab;
+      opacity: 0;
+    }
+
+    .hero-canvas-wrap:active {
+      cursor: grabbing;
+    }
+
+    #hero-3d-element {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      display: block;
+      outline: none;
+    }
+
+    .hero-stats {
+      position: absolute;
+      bottom: 2.5rem;
+      left: 4rem;
+      right: 4rem;
+      z-index: 2;
+      display: flex;
+      gap: 0;
+      opacity: 0;
+    }
+
+    .stat-item {
+      flex: 1;
+      padding: 1.2rem 2rem;
+      background: #fff;
+      border: 1px solid var(--border);
+      transition: background 0.3s;
+    }
+
+    .stat-item:first-child {
+      border-radius: 10px 0 0 10px;
+    }
+
+    .stat-item:last-child {
+      border-radius: 0 10px 10px 0;
+    }
+
+    .stat-item+.stat-item {
+      border-left: none;
+    }
+
+    .stat-item:hover {
+      background: var(--off2);
+    }
+
+    .stat-num {
+      font-family: 'Syne', sans-serif;
+      font-size: 2.1rem;
+      font-weight: 800;
+      color: var(--blue);
+      line-height: 1;
+    }
+
+    .stat-label {
+      font-size: 0.73rem;
+      color: var(--muted);
+      margin-top: .3rem;
+      font-weight: 500;
+    }
+
+    /* ==============================
+   MARQUEE — V1 blue bar
+============================== */
+    .mq-section {
+        margin: 3.5rem 0;
+      padding: 1.15rem 0;
+      background: var(--blue);
+      overflow: hidden;
+      overflow: clip;
+    }
+
+    .mq-track {
+      display: flex;
+      gap: 3rem;
+      width: max-content;
+      animation: mq 28s linear infinite;
+    }
+
+    .mq-item {
+      font-family: 'Syne', sans-serif;
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: rgba(255, 255, 255, 0.8);
+      white-space: nowrap;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .mq-dot {
+      width: 4px;
+      height: 4px;
+      background: rgba(255, 255, 255, 0.45);
+      border-radius: 50%;
+    }
+
+    @keyframes mq {
+      from {
+        transform: translateX(0);
+      }
+
+      to {
+        transform: translateX(-50%);
+      }
+    }
+
+    /* ==============================
+   SHARED UTILITIES
+============================== */
+    .container {
+      max-width: 1360px;
+      margin: 0 auto;
+      padding: 0 4rem;
+      padding-left: max(4rem, env(safe-area-inset-left));
+      padding-right: max(4rem, env(safe-area-inset-right));
+    }
+
+    .section-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: .7rem;
+      font-family: 'Syne', sans-serif;
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.3em;
+      text-transform: uppercase;
+      color: var(--blue);
+      margin-bottom: 1rem;
+    }
+
+    .section-tag::before {
+      content: '';
+      width: 22px;
+      height: 2.5px;
+      background: var(--blue);
+      border-radius: 2px;
+    }
+
+    .section-title {
+      font-family: 'Syne', sans-serif;
+      font-size: clamp(2rem, 4vw, 3.4rem);
+      font-weight: 800;
+      line-height: 1.05;
+      letter-spacing: -0.025em;
+      color: var(--ink);
+      margin-bottom: 1.2rem;
+    }
+
+    .section-desc {
+      font-size: 1.03rem;
+      color: var(--muted);
+      line-height: 1.75;
+      max-width: 560px;
+    }
+
+    .reveal {
+      opacity: 0;
+      transform: translateY(28px);
+    }
+
+    /* ==============================
+   PROGRAMS — V2 Bento Pastel Cards
+============================== */
+    #programs {
+      padding: 8rem 0;
+      background: var(--bg-page);
+      overflow: hidden;
+    }
+
+    .programs-header {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 4rem;
+      align-items: end;
+      margin-bottom: 4rem;
+    }
+
+    .bento-programs {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: var(--gap);
+    }
+
+    .prog-card {
+      border-radius: var(--radius);
+      padding: 2.5rem;
+      position: relative;
+      overflow: hidden;
+      transition: transform 0.3s, box-shadow 0.3s;
+    }
+
+    .prog-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.08);
+    }
+
+    .prog-card.p1 {
+      background: var(--c-pink);
+    }
+
+    .prog-card.p2 {
+      background: var(--c-blue);
+    }
+
+    .prog-card.p3 {
+      background: var(--c-orange);
+    }
+
+    .prog-card.p4 {
+      background: var(--c-yellow);
+    }
+
+    .prog-card.p5 {
+      background: var(--c-purple);
+    }
+
+    .prog-card.p6 {
+      background: var(--c-green);
+    }
+
+    .card-num {
+      font-family: 'Orbitron', monospace;
+      font-size: 0.62rem;
+      font-weight: 700;
+      opacity: 0.5;
+      margin-bottom: 1.8rem;
+      display: block;
+      letter-spacing: 0.1em;
+    }
+
+    .card-icon {
+      font-size: 2rem;
+      margin-bottom: 1.2rem;
+      display: block;
+    }
+
+    .card-title {
+      font-family: 'Syne', sans-serif;
+      font-size: 1.1rem;
+      font-weight: 800;
+      color: var(--ink);
+      margin-bottom: .8rem;
+      line-height: 1.2;
+    }
+
+    .card-desc {
+      font-size: 0.88rem;
+      color: rgba(0, 0, 0, 0.65);
+      line-height: 1.7;
+      margin-bottom: 1.5rem;
+    }
+
+    .prog-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: .4rem;
+    }
+
+    .prog-tag {
+      font-size: 0.72rem;
+      font-weight: 700;
+      padding: .28rem .8rem;
+      border-radius: 100px;
+      background: rgba(0, 0, 0, 0.08);
+      color: var(--ink2);
+    }
+
+    /* ==============================
+   HOW IT WORKS — V1 style
+============================== */
+    #how {
+      padding: 8rem 0;
+      background: var(--off);
+      overflow: hidden;
+    }
+
+    .how-inner {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 7rem;
+      align-items: center;
+    }
+
+    .canvas-wrapper {
+      position: relative;
+    }
+
+    #lab-image {
+      width: 100%;
+      aspect-ratio: 0.5;
+      border-radius: 20px;
+      border: 1.5px solid var(--border);
+      box-shadow: 0 20px 60px var(--shadow);
+      display: block;
+      object-fit: cover;
+    }
+
+    .canvas-badge {
+      position: absolute;
+      bottom: -1.5rem;
+      right: -1.5rem;
+      background: var(--white);
+      border: 1.5px solid var(--border);
+      padding: 1rem 1.5rem;
+      border-radius: 12px;
+      box-shadow: 0 8px 24px var(--shadow);
+    }
+
+    .canvas-badge-title {
+      font-family: 'Syne', sans-serif;
+      font-size: 0.62rem;
+      font-weight: 700;
+      letter-spacing: .2em;
+      text-transform: uppercase;
+      color: var(--blue);
+      margin-bottom: .2rem;
+    }
+
+    .canvas-badge-val {
+      font-family: 'Syne', sans-serif;
+      font-size: 1.5rem;
+      font-weight: 800;
+      color: var(--ink);
+    }
+
+    .steps {
+      margin-top: 2.5rem;
+    }
+
+    .step {
+      display: flex;
+      gap: 1.5rem;
+      padding: 1.5rem 0;
+      border-bottom: 1px solid var(--border2);
+      transition: all 0.3s;
+    }
+
+    .step:hover {
+      padding-left: .5rem;
+    }
+
+    .step-num {
+      font-family: 'Orbitron', monospace;
+      font-size: 0.7rem;
+      font-weight: 700;
+      color: var(--blue-l);
+      flex-shrink: 0;
+      padding-top: .2rem;
+    }
+
+    .step-title {
+      font-family: 'Syne', sans-serif;
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--ink);
+      margin-bottom: .3rem;
+      transition: color 0.2s;
+    }
+
+    .step:hover .step-title {
+      color: var(--blue);
+    }
+
+    .step-desc {
+      font-size: 0.86rem;
+      color: var(--muted);
+      line-height: 1.65;
+    }
+
+    /* ==============================
+   IMPACT — V2 Bento style with V1 branding
+============================== */
+    #features {
+      padding: 8rem 0;
+      background: var(--bg-page);
+      overflow: hidden;
+    }
+
+    .features-header {
+      text-align: center;
+      margin-bottom: 4.5rem;
+    }
+
+    .features-header .section-tag {
+      justify-content: center;
+      display: flex;
+    }
+
+    .features-header .section-desc {
+      margin: 0 auto;
+    }
+
+    .bento-impact {
+      display: grid;
+      grid-template-columns: repeat(12, 1fr);
+      gap: var(--gap);
+    }
+
+    .bi-cell {
+      border-radius: var(--radius);
+      padding: 2.5rem;
+      position: relative;
+      overflow: hidden;
+      transition: transform 0.3s;
+    }
+
+    .bi-cell:hover {
+      transform: translateY(-3px);
+    }
+
+    .bi-c1 {
+      grid-column: span 5;
+      background: var(--c-cyan);
+      min-height: 340px;
+    }
+
+    .bi-c2 {
+      grid-column: span 4;
+      background: var(--c-dark);
+      color: #fff;
+    }
+
+    .bi-c3 {
+      grid-column: span 3;
+      background: var(--c-yellow);
+    }
+
+    .bi-c4 {
+      grid-column: span 4;
+      background: var(--c-green);
+    }
+
+    .bi-c5 {
+      grid-column: span 3;
+      background: var(--c-orange);
+    }
+
+    .bi-c6 {
+      grid-column: span 5;
+      background: var(--c-pink);
+    }
+
+    .bi-c7 {
+      grid-column: span 7;
+      background: var(--white);
+      border: 1.5px solid var(--border);
+    }
+
+    .bento-num {
+      font-family: 'Syne', sans-serif;
+      font-size: 3.8rem;
+      font-weight: 800;
+      color: var(--blue);
+      line-height: 1;
+      margin-bottom: .4rem;
+    }
+
+    .bento-title {
+      font-family: 'Syne', sans-serif;
+      font-size: 1rem;
+      font-weight: 800;
+      color: var(--ink);
+      margin-bottom: .6rem;
+    }
+
+    .bento-desc {
+      font-size: 0.86rem;
+      color: rgba(0, 0, 0, 0.6);
+      line-height: 1.65;
+    }
+
+    .bi-c2 .bento-title {
+      color: #fff;
+    }
+
+    .bi-c2 .bento-desc {
+      color: rgba(255, 255, 255, 0.6);
+    }
+
+    .bi-c7-inner {
+      display: flex;
+      gap: 3rem;
+      height: 100%;
+      align-items: center;
+    }
+
+    .bi-c7-inner>div {
+      flex: 1;
+    }
+
+    .abs-canvas {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    .cell-content {
+      position: relative;
+      z-index: 1;
+    }
+
+    /* ==============================
+   TESTIMONIALS — V1 structured + V2 colors
+============================== */
+    #testimonials {
+      padding: 8rem 0;
+      background: var(--off);
+      overflow: hidden;
+    }
+
+    .testimonials-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: var(--gap);
+      margin-top: 3.5rem;
+    }
+
+    .testimonial-card {
+      background: var(--white);
+      border-radius: var(--radius);
+      padding: 2.5rem;
+      transition: transform 0.3s;
+      border: 1.5px solid var(--border);
+    }
+
+    .testimonial-card:hover {
+      transform: translateY(-4px);
+    }
+
+    .testimonial-card.t1 {
+      background: var(--c-blue);
+    }
+
+    .testimonial-card.t2 {
+      background: var(--c-purple);
+    }
+
+    .testimonial-card.t3 {
+      background: var(--c-yellow);
+    }
+
+    .quote-mark {
+      font-family: 'Syne', sans-serif;
+      font-size: 3.2rem;
+      color: var(--blue);
+      opacity: .25;
+      line-height: 1;
+      margin-bottom: .8rem;
+    }
+
+    .testimonial-text {
+      font-size: 0.94rem;
+      line-height: 1.75;
+      color: var(--ink2);
+      margin-bottom: 1.8rem;
+      font-style: italic;
+    }
+
+    .testimonial-author {
+      display: flex;
+      align-items: center;
+      gap: .9rem;
+    }
+
+    .author-avatar {
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--blue-l), var(--blue-d));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Syne', sans-serif;
+      font-size: 0.68rem;
+      font-weight: 800;
+      color: #fff;
+      flex-shrink: 0;
+    }
+
+    .author-name {
+      font-family: 'Syne', sans-serif;
+      font-size: 0.87rem;
+      font-weight: 700;
+      color: var(--ink);
+    }
+
+    .author-role {
+      font-size: 0.73rem;
+      color: var(--muted);
+      margin-top: .1rem;
+    }
+
+    /* ==============================
+   CTA — V1 dark + V2 spiral canvas
+============================== */
+    #cta {
+      padding: 9rem 0;
+      background: var(--blue-xd);
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    #cta-canvas {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 0;
+    }
+
+    .cta-content {
+      position: relative;
+      z-index: 1;
+    }
+
+    .cta-eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: .6rem;
+      background: rgba(255, 255, 255, .07);
+      border: 1px solid rgba(255, 255, 255, .18);
+      padding: .4rem 1.1rem;
+      border-radius: 100px;
+      margin-bottom: 2.5rem;
+      font-family: 'Syne', sans-serif;
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: .2em;
+      text-transform: uppercase;
+      color: rgba(255, 255, 255, .65);
+    }
+
+    .cta-title {
+      font-family: 'Syne', sans-serif;
+      font-size: clamp(2.5rem, 5vw, 5rem);
+      font-weight: 800;
+      line-height: 1.05;
+      letter-spacing: -0.025em;
+      color: #fff;
+      margin-bottom: 1.5rem;
+    }
+
+    .cta-title span {
+      color: var(--c-cyan);
+    }
+
+    .cta-desc {
+      font-size: 1.08rem;
+      color: rgba(255, 255, 255, .5);
+      max-width: 500px;
+      margin: 0 auto 3rem;
+      line-height: 1.75;
+    }
+
+    .cta-actions {
+      display: flex;
+      gap: 1rem;
+      justify-content: center;
+    }
+
+    .btn-white {
+      background: #fff;
+      color: var(--blue-d);
+      border: none;
+      padding: 1rem 2.5rem;
+      font-family: 'Syne', sans-serif;
+      font-size: 0.82rem;
+      font-weight: 700;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      border-radius: 8px;
+      transition: all 0.3s;
+      text-decoration: none;
+      display: inline-block;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, .25);
+    }
+
+    .btn-white:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 30px rgba(0, 0, 0, .35);
+    }
+
+    .btn-outline-w {
+      background: transparent;
+      border: 1.5px solid rgba(255, 255, 255, .28);
+      color: rgba(255, 255, 255, .8);
+      padding: 1rem 2.5rem;
+      font-family: 'Syne', sans-serif;
+      font-size: 0.82rem;
+      font-weight: 600;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      border-radius: 8px;
+      transition: all 0.3s;
+      text-decoration: none;
+      display: inline-block;
+    }
+
+    .btn-outline-w:hover {
+      border-color: rgba(255, 255, 255, .6);
+      background: rgba(255, 255, 255, .06);
+    }
+
+    /* PLAYFUL MARQUEE */
+    .marquee-wrap {
+      padding: 3rem 0;
+      transform: rotate(-2deg) scale(1.05);
+      margin: 4rem 0;
+      background: var(--mint);
+      box-shadow: 0 10px 20px rgba(78, 205, 196, 0.2);
+      overflow: hidden;
+      overflow: clip;
+      max-width: 100vw;
+    }
+
+    .marquee {
+      white-space: nowrap;
+      overflow: hidden;
+    }
+
+    .mq-track {
+      display: flex;
+      gap: 3rem;
+      animation: mq 20s linear infinite;
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 1.5rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      color: #ffffff;
+    }
+
+    .mq-track span {
+      display: flex;
+      align-items: center;
+      gap: 3rem;
+    }
+
+    .mq-track span::after {
+      content: '•';
+      font-size: 1.5rem;
+      opacity: 0.6;
+    }
+
+    @keyframes mq {
+      from {
+        transform: translateX(0);
+      }
+
+      to {
+        transform: translateX(-50%);
+      }
+    }
+
+    /* HOW IT WORKS / LABS */
+    .labs-wrapper {
+      display: flex;
+      gap: 4rem;
+      align-items: center;
+      background: var(--bg-sec);
+      border-radius: var(--radius-lg);
+      padding: 4rem;
+      box-shadow: var(--shadow);
+    }
+
+    .labs-content {
+      flex: 1;
+    }
+
+    .labs-canvas-wrap {
+      flex: 1;
+      height: 500px;
+      position: relative;
+      background: #f5f3fa;
+      border-radius: var(--radius-md);
+      overflow: hidden;
+      box-shadow: inset 0 0 30px rgba(0, 0, 0, 0.02);
+    }
+
+    #lab-core-canvas {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      display: block;
+      outline: none;
+    }
+
+    .step {
+      display: flex;
+      gap: 1.5rem;
+      margin-bottom: 3rem;
+      align-items: flex-start;
+    }
+
+    .step:last-child {
+      margin-bottom: 0;
+    }
+
+    .step-num {
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Syne', sans-serif;
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: white;
+      background: var(--gpurple);
+      flex-shrink: 0;
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.15);
+    }
+
+    .sn-1 {
+      background: var(--coral);
+      color: white;
+    }
+
+    .sn-2 {
+      background: var(--gyellow);
+      color: #6a5300;
+    }
+
+    .sn-3 {
+      background: var(--lblue);
+      color: white;
+    }
+
+    .step h3,
+    .step-title {
+      font-size: 1.5rem;
+      margin-bottom: 0.5rem;
+      color: var(--gpurple);
+      font-weight: 700;
+    }
+
+    .step p,
+    .step-desc {
+      color: var(--text-muted);
+      font-size: 1.1rem;
+      line-height: 1.6;
+      font-weight: 500;
+    }
+
+    /* CTA */
+    .cta-section {
+      text-align: center;
+      padding: 8rem 2rem;
+      margin: 6rem 2rem;
+      border-radius: var(--radius-lg);
+      background: linear-gradient(135deg, var(--gpurple) 0%, #8b79b8 100%);
+      color: white;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 20px 50px rgba(163, 138, 226, 0.3);
+    }
+
+    .cta-content {
+      position: relative;
+      z-index: 1;
+      max-width: 800px;
+      margin: 0 auto;
+    }
+
+    .cta-content h2 {
+      font-size: clamp(3rem, 6vw, 4.5rem);
+      margin-bottom: 1.5rem;
+      color: white;
+    }
+
+    .cta-content p {
+      font-size: 1.3rem;
+      color: rgba(255, 255, 255, 0.9);
+      margin-bottom: 3rem;
+      line-height: 1.6;
+      font-weight: 500;
+    }
+
+    .cta-btn {
+      background: var(--gyellow);
+      color: #8a6d00;
+      font-size: 1.1rem;
+      padding: 1.2rem 3rem;
+    }
+
+    .cta-btn:hover {
+      background: #fff;
+      color: var(--gpurple);
+    }
+
+    .blob {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(40px);
+      z-index: 0;
+      opacity: 0.6;
+    }
+
+    .blob-1 {
+      width: 300px;
+      height: 300px;
+      background: var(--coral);
+      top: -100px;
+      left: -100px;
+    }
+
+    .blob-2 {
+      width: 400px;
+      height: 400px;
+      background: var(--mint);
+      bottom: -150px;
+      right: -100px;
+    }
+
+    /* FOOTER */
+    footer {
+      padding: 6rem 2rem 3rem;
+      background: var(--bg-sec);
+      overflow: hidden;
+    }
+
+    .footer-grid {
+      display: grid;
+      grid-template-columns: 2fr 1fr 1fr;
+      gap: 4rem;
+      margin-bottom: 5rem;
+    }
+
+    .f-desc {
+      color: var(--text-muted);
+      line-height: 1.6;
+      margin-top: 1.5rem;
+      max-width: 320px;
+      font-size: 1.1rem;
+      font-weight: 500;
+    }
+
+    .f-title {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 1.2rem;
+      margin-bottom: 2rem;
+      color: var(--text-main);
+      font-weight: 700;
+    }
+
+    .f-links {
+      list-style: none;
+    }
+
+    .f-links li {
+      margin-bottom: 1rem;
+    }
+
+    .f-links a {
+      color: var(--text-muted);
+      text-decoration: none;
+      font-size: 1.05rem;
+      transition: color 0.2s;
+      font-weight: 600;
+    }
+
+    .f-links a:hover {
+      color: var(--coral);
+      padding-left: 5px;
+    }
+
+    .f-bottom {
+      display: flex;
+      justify-content: space-between;
+      border-top: 2px solid #f1f5f9;
+      padding-top: 2rem;
+      color: var(--text-muted);
+    }
+
+    /* ==============================
+   RESPONSIVE
+============================== */
+    @media(max-width:1100px) {
+      .hero-canvas-wrap {
+        width: 100%;
+        z-index: 0;
+        opacity: 0.12 !important;
+        right: -20%;
+        pointer-events: none;
+      }
+
+      .hero-content {
+        max-width: 700px;
+      }
+
+      .bento-programs {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .how-inner {
+        grid-template-columns: 1fr;
+      }
+
+      .bi-c1,
+      .bi-c2,
+      .bi-c3,
+      .bi-c4,
+      .bi-c5,
+      .bi-c6,
+      .bi-c7 {
+        grid-column: span 6;
+      }
+
+      .footer-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .testimonials-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+
+    @media(max-width:768px) {
+      nav {
+        padding: 1rem 1.5rem;
+        padding-left: max(1.5rem, env(safe-area-inset-left));
+        padding-right: max(1.5rem, env(safe-area-inset-right));
+      }
+
+      .nav-links {
+        display: none;
+      }
+
+      .mobile-toggle {
+        display: flex;
+      }
+
+      .hero-canvas-wrap {
+        width: 100% !important;
+        height: 100% !important;
+        right: 0 !important;
+        top: 0 !important;
+        left: 0 !important;
+        opacity: 0.2 !important;
+        z-index: 0;
+        pointer-events: none;
+      }
+
+      .hero-content {
+        padding: 6rem 1.5rem 2rem;
+        position: relative;
+        z-index: 2;
+      }
+
+      .hero-stats {
+        display: none;
+      }
+
+      .hero-stats .stat-item+.stat-item {
+        border-left: 1px solid var(--border) !important;
+      }
+
+      .container {
+        padding: 0 1.5rem;
+        padding-left: max(1.5rem, env(safe-area-inset-left));
+        padding-right: max(1.5rem, env(safe-area-inset-right));
+      }
+
+      .programs-header {
+        grid-template-columns: 1fr;
+      }
+
+      .bento-programs {
+        grid-template-columns: 1fr;
+      }
+
+      .bi-c1,
+      .bi-c2,
+      .bi-c3,
+      .bi-c4,
+      .bi-c5,
+      .bi-c6,
+      .bi-c7 {
+        grid-column: span 12;
+      }
+
+      .testimonials-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .footer-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .footer-bottom {
+        flex-direction: column;
+        gap: 1rem;
+      }
+
+      .cta-actions {
+        flex-direction: column;
+        align-items: center;
+      }
+
+      .bi-c7-inner {
+        flex-direction: column;
+        gap: 1.5rem;
+      }
+
+      .labs-wrapper {
+        flex-direction: column;
+        padding: 2rem 1.5rem;
+        gap: 2.5rem;
+      }
+
+      .labs-canvas-wrap {
+        height: 320px;
+        width: 100%;
+      }
+
+      .bi-cell {
+        padding: 1.5rem;
+      }
+
+      .prog-card {
+        padding: 1.5rem;
+      }
+
+      #login-modal>div {
+        width: 95% !important;
+        padding: 2rem 1.5rem !important;
+      }
+
+      .hero-actions {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.6rem;
+      }
+
+      .hero-actions .btn-primary,
+      .hero-actions .btn-ghost {
+        width: 100%;
+        text-align: center;
+        justify-content: center;
+      }
+
+      /* ===== SMALLER FONTS & BUTTONS ON MOBILE ===== */
+
+      /* Hero */
+      .hero-title {
+        font-size: clamp(2.2rem, 8vw, 3.2rem);
+        margin-bottom: 1.2rem;
+      }
+
+      .hero-sub {
+        font-size: 0.88rem;
+        line-height: 1.6;
+        margin-bottom: 2rem;
+      }
+
+      .hero-badge span {
+        font-size: 0.6rem;
+        letter-spacing: 0.15em;
+      }
+
+      /* Buttons */
+      .btn-primary,
+      .btn-ghost {
+        padding: 0.7rem 1.6rem;
+        font-size: 0.7rem;
+        letter-spacing: 0.08em;
+      }
+
+      .btn-white,
+      .btn-outline-w {
+        padding: 0.7rem 1.6rem;
+        font-size: 0.7rem;
+      }
+
+      .nav-cta {
+        padding: 0.45rem 1.1rem !important;
+        font-size: 0.68rem !important;
+      }
+
+      /* Section headers */
+      .section-title {
+        font-size: clamp(1.6rem, 5vw, 2.2rem);
+      }
+
+      .section-tag {
+        font-size: 0.58rem;
+        letter-spacing: 0.2em;
+      }
+
+      .section-desc {
+        font-size: 0.88rem;
+        line-height: 1.6;
+      }
+
+      /* Program cards */
+      .card-title {
+        font-size: 0.95rem;
+      }
+
+      .card-desc {
+        font-size: 0.8rem;
+        line-height: 1.6;
+        margin-bottom: 1rem;
+      }
+
+      .card-num {
+        font-size: 0.55rem;
+        margin-bottom: 1.2rem;
+      }
+
+      .card-icon {
+        font-size: 1.6rem;
+        margin-bottom: 0.8rem;
+      }
+
+      .prog-tag {
+        font-size: 0.65rem;
+        padding: 0.22rem 0.65rem;
+      }
+
+      /* Bento / Impact */
+      .bento-num {
+        font-size: 2.8rem;
+      }
+
+      .bento-title {
+        font-size: 0.88rem;
+      }
+
+      .bento-desc {
+        font-size: 0.78rem;
+        line-height: 1.55;
+      }
+
+      /* Steps / How it works */
+      .step-num {
+        width: 40px;
+        height: 40px;
+        font-size: 1.2rem;
+      }
+
+      .step h3,
+      .step-title {
+        font-size: 1.15rem;
+      }
+
+      .step p,
+      .step-desc {
+        font-size: 0.9rem;
+      }
+
+      /* Testimonials */
+      .testimonial-text {
+        font-size: 0.84rem;
+        line-height: 1.65;
+      }
+
+      .quote-mark {
+        font-size: 2.4rem;
+      }
+
+      .author-name {
+        font-size: 0.8rem;
+      }
+
+      .author-role {
+        font-size: 0.66rem;
+      }
+
+      .author-avatar {
+        width: 36px;
+        height: 36px;
+        font-size: 0.6rem;
+      }
+
+      /* CTA */
+      .cta-title {
+        font-size: clamp(1.8rem, 6vw, 2.8rem);
+      }
+
+      .cta-desc {
+        font-size: 0.88rem;
+        line-height: 1.6;
+        margin-bottom: 2rem;
+      }
+
+      .cta-eyebrow {
+        font-size: 0.58rem;
+        padding: 0.3rem 0.8rem;
+      }
+
+      .cta-section {
+        padding: 5rem 1.5rem;
+        margin: 3rem 1rem;
+      }
+
+      .cta-content h2 {
+        font-size: clamp(2rem, 6vw, 3rem);
+      }
+
+      .cta-content p {
+        font-size: 1rem;
+      }
+
+      .cta-btn {
+        font-size: 0.9rem;
+        padding: 0.9rem 2rem;
+      }
+
+      /* Marquee */
+      .mq-item {
+        font-size: 0.6rem;
+        letter-spacing: 0.15em;
+      }
+
+      .mq-track {
+        font-size: 1.1rem;
+      }
+
+      /* Footer */
+      .f-desc {
+        font-size: 0.9rem;
+      }
+
+      .f-title {
+        font-size: 1rem;
+        margin-bottom: 1.2rem;
+      }
+
+      .f-links a {
+        font-size: 0.88rem;
+      }
+
+      .f-bottom {
+        font-size: 0.8rem;
+      }
+
+      /* Sections padding */
+      #programs,
+      #how,
+      #features,
+      #testimonials {
+        padding: 4.5rem 0;
+      }
+
+      #cta {
+        padding: 5rem 0;
+      }
+    }
+
+    /* iOS Safari specific overflow fix */
+    @supports (-webkit-touch-callout: none) {
+      html, body {
+        overflow-x: clip;
+      }
+
+      #hero {
+        overflow: clip;
+      }
+
+      .mq-section {
+        overflow: clip;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="cursor" id="cursor"></div>
+  <div class="cursor-ring" id="cr"></div>
+
+  <!-- LOGIN MODAL -->
+  <div id="login-modal"
+    style="display:flex;position:fixed;inset:0;z-index:99999;background:rgba(15,23,42,0.85);backdrop-filter:blur(10px);align-items:center;justify-content:center;opacity:0;visibility:hidden;pointer-events:none;transition:all 0.4s cubic-bezier(0.16, 1, 0.3, 1);">
+    <div
+      style="background:#fff;border-radius:24px;padding:3rem;width:90%;max-width:420px;box-shadow:0 30px 80px rgba(15,23,42,0.2);transform:translateY(20px);transition:transform 0.3s;position:relative;">
+      <button onclick="closeCurriculumLogin()"
+        style="position:absolute;top:1.2rem;right:1.2rem;background:none;border:none;font-size:1.5rem;cursor:pointer;color:#94a3b8;line-height:1;">&times;</button>
+      <div
+        style="width:50px;height:50px;background:var(--blue);clip-path:polygon(50% 0%,100% 25%,100% 75%,50% 100%,0% 75%,0% 25%);display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.1rem;margin-bottom:1.5rem;">
+        ⬡</div>
+      <h3 style="font-family:'Syne',sans-serif;font-size:1.6rem;font-weight:800;color:var(--ink);margin-bottom:0.4rem;">
+        Curriculum Access</h3>
+      <p style="color:var(--muted);font-size:0.9rem;margin-bottom:2rem;">This area is restricted to RADIX partners and
+        staff.</p>
+      <div id="login-error"
+        style="display:none;background:#fff0f0;color:#dc2626;border-radius:10px;padding:0.8rem 1rem;font-size:0.85rem;margin-bottom:1.2rem;font-weight:600;">
+        Incorrect username or password.</div>
+      <div style="margin-bottom:1.2rem;">
+        <label
+          style="font-family:'Syne',sans-serif;font-size:0.75rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:0.5rem;">Username</label>
+        <input id="modal-user" type="text" placeholder="Enter username" autocomplete="username"
+          style="width:100%;padding:0.9rem 1.1rem;border:1.5px solid var(--border);border-radius:10px;font-family:'DM Sans',sans-serif;font-size:0.95rem;color:var(--ink);outline:none;transition:border-color 0.2s;"
+          onfocus="this.style.borderColor='var(--blue)'" onblur="this.style.borderColor='var(--border)'" />
+      </div>
+      <div style="margin-bottom:1.8rem;">
+        <label
+          style="font-family:'Syne',sans-serif;font-size:0.75rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:0.5rem;">Password</label>
+        <input id="modal-pass" type="password" placeholder="Enter password" autocomplete="current-password"
+          style="width:100%;padding:0.9rem 1.1rem;border:1.5px solid var(--border);border-radius:10px;font-family:'DM Sans',sans-serif;font-size:0.95rem;color:var(--ink);outline:none;transition:border-color 0.2s;"
+          onfocus="this.style.borderColor='var(--blue)'" onblur="this.style.borderColor='var(--border)'"
+          onkeydown="if(event.key==='Enter')verifyCurriculumLogin()" />
+      </div>
+      <button onclick="verifyCurriculumLogin()"
+        style="width:100%;padding:1rem;background:var(--blue);color:#fff;border:none;border-radius:10px;font-family:'Syne',sans-serif;font-size:0.9rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;cursor:pointer;transition:background 0.2s,transform 0.2s;"
+        onmouseover="this.style.background='var(--blue-d)'" onmouseout="this.style.background='var(--blue)'">Access
+        Curriculum &rarr;</button>
+    </div>
+  </div>
+
+  <!-- NAV -->
+  <nav id="nav">
+    <a href="#" class="logo">
+      <img src="logo.jpeg" alt="RADIX Robotics Logo" style="height: 40px; width: auto; object-fit: contain;">
+    </a>
+    <ul class="nav-links">
+      <li><a href="#programs">Programs</a></li>
+      <li><a href="#how">Labs</a></li>
+      <li><a href="#features">Impact</a></li>
+      <li><a href="#" id="curriculum-link">Curriculum</a></li>
+      <li><a href="https://wa.me/916001979712" target="_blank" class="nav-cta">Partner With Us</a></li>
+    </ul>
+    <button class="mobile-toggle" id="mobile-toggle" aria-label="Toggle Menu">
+      <span></span>
+      <span></span>
+      <span></span>
+    </button>
+  </nav>
+
+  <!-- MOBILE OVERLAY -->
+  <div class="nav-mobile-overlay" id="nav-mobile-overlay">
+    <button class="mobile-close" id="mobile-close">&times;</button>
+    <ul class="nav-mobile-links">
+      <li><a href="#programs" onclick="toggleMobileMenu()">Programs</a></li>
+      <li><a href="#how" onclick="toggleMobileMenu()">Labs</a></li>
+      <li><a href="#features" onclick="toggleMobileMenu()">Impact</a></li>
+      <li><a href="#" onclick="toggleMobileMenu(); openCurriculumLogin(event)">Curriculum</a></li>
+      <li><a href="https://wa.me/916001979712" target="_blank" style="color:var(--blue-l)">Partner With Us</a></li>
+    </ul>
+  </div>
+
+  <!-- PAGE WRAPPER — clips all overflow on iOS Safari -->
+  <div class="page-wrapper">
+  <section id="hero">
+    <canvas id="hero-canvas"></canvas>
+    <div class="hero-arc arc-1"></div>
+    <div class="hero-arc arc-2"></div>
+    <div class="hero-arc arc-3"></div>
+    <div class="hero-dots"></div>
+    <div class="hero-content">
+      <div class="hero-badge">
+        <span class="badge-dot"></span>
+        <span>Composite Skill Labs for Schools Across India</span>
+      </div>
+      <h1 class="hero-title">
+        <span class="line">Building</span>
+        <span class="line g">Tomorrow's</span>
+        <span class="line sk">Innovators</span>
+      </h1>
+      <p class="hero-sub">RADIX Robotics installs world-class composite skill laboratories inside schools — empowering
+        students with robotics, AI, and advanced tech education from day one.</p>
+      <div class="hero-actions">
+        <a href="#programs" class="btn-primary">Explore Programs</a>
+        <a href="#how" class="btn-ghost">▶ See Our Labs</a>
+      </div>
+    </div>
+    <div class="hero-canvas-wrap">
+      <canvas id="hero-3d-element"></canvas>
+    </div>
+  </section>
+
+  <!-- MARQUEE -->
+  <div class="mq-section">
+    <div class="mq-track">
+      <div class="mq-item"><span class="mq-do"></span>Arduino & Raspberry Pi</div>
+      <div class="mq-item"><span class="mq-do"></span>AI & Machine Learning</div>
+      <div class="mq-item"><span class="mq-do"></span>Drone Technology</div>
+      <div class="mq-item"><span class="mq-do"></span>3D Printing & CAD</div>
+      <div class="mq-item"><span class="mq-do"></span>IoT Systems</div>
+      <div class="mq-item"><span class="mq-do"></span>Python & C++ Programming</div>
+      <div class="mq-item"><span class="mq-do"></span>Sensor Integration</div>
+      <div class="mq-item"><span class="mq-do"></span>Autonomous Vehicles</div>
+      <div class="mq-item"><span class="mq-do"></span>Circuit Design</div>
+      <div class="mq-item"><span class="mq-do"></span>Competitive Robotics</div>
+      <div class="mq-item"><span class="mq-do"></span>Arduino & Raspberry Pi</div>
+      <div class="mq-item"><span class="mq-do"></span>AI & Machine Learning</div>
+      <div class="mq-item"><span class="mq-do"></span>Drone Technology</div>
+      <div class="mq-item"><span class="mq-do"></span>3D Printing & CAD</div>
+      <div class="mq-item"><span class="mq-do"></span>IoT Systems</div>
+      <div class="mq-item"><span class="mq-do"></span>Python & C++ Programming</div>
+      <div class="mq-item"><span class="mq-do"></span>Sensor Integration</div>
+      <div class="mq-item"><span class="mq-do"></span>Autonomous Vehicles</div>
+      <div class="mq-item"><span class="mq-do"></span>Circuit Design</div>
+      <div class="mq-item"><span class="mq-do"></span>Competitive Robotics</div>
+    </div>
+  </div>
+
+  <!-- ============================== PROGRAMS ============================== -->
+  <section id="programs">
+    <div class="container">
+      <div class="programs-header">
+        <div>
+          <div class="section-tag reveal">What We Offer</div>
+          <h2 class="section-title reveal">Curriculum Built<br>for the Future</h2>
+        </div>
+        <p class="section-desc reveal">Multi-tiered programs scale from elementary exploration to advanced engineering
+          pipelines — structured around real-world industry standards.</p>
+      </div>
+      <div class="bento-programs">
+        <div class="prog-card p1 reveal">
+          <span class="card-num">01 / FOUNDATION</span>
+          <span class="card-icon">🤖</span>
+          <div class="card-title">Intro to Robotics & Coding</div>
+          <div class="card-desc">Block-based and Python programming with hands-on robot assembly. Perfect entry point
+            for grades 4–7.</div>
+          <div class="prog-tags"><span class="prog-tag">Scratch</span><span class="prog-tag">Python</span><span
+              class="prog-tag">Lego NXT</span></div>
+        </div>
+        <div class="prog-card p2 reveal">
+          <span class="card-num">02 / INTERMEDIATE</span>
+          <span class="card-icon">⚙️</span>
+          <div class="card-title">Advanced Mechatronics</div>
+          <div class="card-desc">Servo systems, sensor integration, and autonomous navigation. Deep-dive for grades
+            8–10.</div>
+          <div class="prog-tags"><span class="prog-tag">Arduino</span><span class="prog-tag">C++</span><span
+              class="prog-tag">Sensors</span></div>
+        </div>
+        <div class="prog-card p3 reveal">
+          <span class="card-num">03 / ELITE</span>
+          <span class="card-icon">🧠</span>
+          <div class="card-title">AI & Machine Learning</div>
+          <div class="card-desc">Computer vision, neural networks, and TensorFlow Lite on embedded systems for grades
+            10–12.</div>
+          <div class="prog-tags"><span class="prog-tag">TensorFlow</span><span class="prog-tag">OpenCV</span><span
+              class="prog-tag">RPi</span></div>
+        </div>
+        <div class="prog-card p4 reveal">
+          <span class="card-num">04 / FABRICATION</span>
+          <span class="card-icon">🖨️</span>
+          <div class="card-title">3D Design & Prototyping</div>
+          <div class="card-desc">CAD modeling with Fusion 360 and FDM printing to bring robot chassis concepts to life.
+          </div>
+          <div class="prog-tags"><span class="prog-tag">Fusion 360</span><span class="prog-tag">FDM</span><span
+              class="prog-tag">CAD</span></div>
+        </div>
+        <div class="prog-card p5 reveal">
+          <span class="card-num">05 / CONNECTED</span>
+          <span class="card-icon">📡</span>
+          <div class="card-title">IoT & Smart Systems</div>
+          <div class="card-desc">Build networked sensor arrays and real-time monitoring dashboards using MQTT and cloud
+            APIs.</div>
+          <div class="prog-tags"><span class="prog-tag">ESP32</span><span class="prog-tag">MQTT</span><span
+              class="prog-tag">Cloud</span></div>
+        </div>
+        <div class="prog-card p6 reveal">
+          <span class="card-num">06 / COMPETITIVE</span>
+          <span class="card-icon">🏆</span>
+          <div class="card-title">Robotics Olympiad Prep</div>
+          <div class="card-desc">Structured training for WRO, FRC, and national robotics competitions with mentored
+            sprints.</div>
+          <div class="prog-tags"><span class="prog-tag">WRO</span><span class="prog-tag">FRC</span><span
+              class="prog-tag">Strategy</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================== HOW IT WORKS ============================== -->
+  <section id="how">
+    <div class="container">
+      <div class="how-inner">
+        <div class="canvas-wrapper reveal">
+          <img id="lab-image" src="robotics_labs.png" alt="Composite Robotics Lab" />
+          <div class="canvas-badge">
+            <div class="canvas-badge-title">Lab Uptime</div>
+            <div class="canvas-badge-val">99.7%</div>
+          </div>
+        </div>
+        <div>
+          <div class="section-tag reveal">How It Works</div>
+          <h2 class="section-title reveal">From Empty Room<br>to Composite Skill Lab</h2>
+          <p class="section-desc reveal">We handle everything. RADIX assesses, designs, installs, and trains — turning
+            any unused classroom into a world-class robotics facility.</p>
+          <div class="steps">
+            <div class="step reveal">
+              <div class="step-num">01</div>
+              <div>
+                <div class="step-title">Site Assessment & Design</div>
+                <div class="step-desc">Our engineers survey available space and design a custom lab layout optimized for
+                  learning flow and safety compliance.</div>
+              </div>
+            </div>
+            <div class="step reveal">
+              <div class="step-num">02</div>
+              <div>
+                <div class="step-title">Equipment Installation</div>
+                <div class="step-desc">We supply and install all hardware — workstations, robotics kits, 3D printers,
+                  soldering stations, and network infrastructure.</div>
+              </div>
+            </div>
+            <div class="step reveal">
+              <div class="step-num">03</div>
+              <div>
+                <div class="step-title">Teacher Certification</div>
+                <div class="step-desc">School staff undergo a 40-hour RADIX certification program covering curriculum
+                  delivery and lab management protocols.</div>
+              </div>
+            </div>
+            <div class="step reveal">
+              <div class="step-num">04</div>
+              <div>
+                <div class="step-title">Live Program Delivery</div>
+                <div class="step-desc">Ongoing weekly sessions with RADIX-certified educators, supplemented by our
+                  digital learning platform and progress tracking.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================== IMPACT BENTO ============================== -->
+  <section id="features">
+    <div class="container">
+      <div class="features-header">
+        <div class="section-tag reveal">Why RADIX</div>
+        <h2 class="section-title reveal">Measurable Impact<br>at Every Level</h2>
+        <p class="section-desc reveal">Data-driven, mentorship-heavy, and built to produce engineers — not just students
+          who've seen a robot.</p>
+      </div>
+      <div class="bento-impact">
+        <div class="bi-cell bi-c1 reveal">
+          <canvas id="mini-canvas" class="abs-canvas"></canvas>
+          <div class="cell-content" style="margin-top:auto;position:absolute;bottom:2.5rem;left:2.5rem;right:2.5rem;">
+            <div class="bento-num">340%</div>
+            <div class="bento-title">Increase in STEM Enrollment</div>
+            <div class="bento-desc">Schools with RADIX labs see a dramatic rise in students choosing STEM paths within 2
+              years.</div>
+          </div>
+        </div>
+        <div class="bi-cell bi-c2 reveal">
+          <div style="font-size:1.8rem;margin-bottom:1rem;">🛡️</div>
+          <div class="bento-title">Safety-First Lab Design</div>
+          <div class="bento-desc">Every lab meets OSHA and IS standards with built-in emergency stops and grounded
+            workstations.</div>
+        </div>
+        <div class="bi-cell bi-c3 reveal">
+          <div style="font-size:1.8rem;margin-bottom:1rem;">📊</div>
+          <div class="bento-title">Real-Time Analytics</div>
+          <div class="bento-desc">Track every student's progress through our cloud dashboard with skill maps and
+            milestones.</div>
+        </div>
+        <div class="bi-cell bi-c4 reveal">
+          <div style="font-size:1.8rem;margin-bottom:1rem;">🎓</div>
+          <div class="bento-title">Certified Curriculum</div>
+          <div class="bento-desc">Aligned with NEP 2020 and internationally benchmarked STEM education frameworks.</div>
+        </div>
+        <div class="bi-cell bi-c5 reveal">
+          <div style="font-size:1.8rem;margin-bottom:1rem;">🔄</div>
+          <div class="bento-title">Annual Hardware Refresh</div>
+          <div class="bento-desc">Equipment upgrades included in every partnership — always cutting-edge, always
+            current.</div>
+        </div>
+        <div class="bi-cell bi-c6 reveal">
+          <div style="font-size:1.8rem;margin-bottom:1rem;">🌐</div>
+          <div class="bento-title">National Robotics Network</div>
+          <div class="bento-desc">RADIX schools form an interconnected network — sharing discoveries, competing in
+            inter-school challenges, and collaborating on projects that span cities.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ============================== CTA ============================== -->
+  <section id="cta">
+    <canvas id="cta-canvas"></canvas>
+    <div class="container cta-content">
+      <div class="cta-eyebrow reveal">● Applications Open — 2026 Cohort</div>
+      <h2 class="cta-title reveal">Let's Build the<br><span>Lab of Tomorrow</span></h2>
+      <p class="cta-desc reveal">Join 120+ schools across India that have already partnered with RADIX Robotics. Next
+        cohort spots are filling fast.</p>
+    </div>
+  </section>
+
+  <div class="marquee-wrap">
+    <div class="marquee">
+      <div class="mq-track">
+        <span>Tinkering</span>
+        <span>Creativity</span>
+        <span>Problem Solving</span>
+        <span>Coding</span>
+        <span>Innovation</span>
+        <span>Tinkering</span>
+        <span>Creativity</span>
+        <span>Problem Solving</span>
+        <span>Coding</span>
+        <span>Innovation</span>
+      </div>
+    </div>
+  </div>
+
+  <section id="labs" class="section-pad container">
+    <div class="section-header reveal">
+      <h2>The Ultimate Playground</h2>
+      <p>We turn boring classrooms into vibrant composite labs equipped with the best tools for young inventors.</p>
+    </div>
+
+    <div class="labs-wrapper reveal">
+      <div class="labs-content">
+        <div class="step">
+          <div class="step-num sn-1">1</div>
+          <div>
+            <h3>Design & Setup</h3>
+            <p>We craft a bright, safe, and collaborative space and pack it with awesome hardware and 3D printers.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num sn-2">2</div>
+          <div>
+            <h3>Empower Teachers</h3>
+            <p>Our fun, hands-on bootcamps turn your teachers into confident tech-wizards ready to guide the kids.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num sn-3">3</div>
+          <div>
+            <h3>Continuous Fun</h3>
+            <p>With ongoing mentorship and fresh equipment every year, the excitement never stops!</p>
+          </div>
+        </div>
+      </div>
+      <div class="labs-canvas-wrap">
+        <img src="Firefly.png" alt="RADIX Ultimate Playground"
+          style="width: 100%; height: 100%; object-fit: cover; display: block;" />
+      </div>
+    </div>
+  </section>
+
+  <section class="cta-section reveal">
+    <div class="blob blob-1"></div>
+    <div class="blob blob-2"></div>
+    <div class="cta-content">
+      <h2>Ready to ignite their Imagination?</h2>
+      <p>Join the coolest network of 120+ schools making learning an absolute blast. Let's set up a RADIX lab at your
+        campus!</p>
+      <a href="https://wa.me/916001979712" target="_blank" class="btn btn-primary cta-btn">Apply for Lab</a>
+    </div>
+  </section>
+
+  <footer>
+    <div class="container">
+      <div class="footer-grid">
+        <div>
+          <a href="#" class="logo" style="margin-bottom: 1.5rem;">
+            <span class="logo-icon"></span>
+            RADIX
+          </a>
+          <p class="f-desc">Making robotics and coding the most fun part of the school day.</p>
+        </div>
+        <div>
+          <h4 class="f-title">Quick Links</h4>
+          <ul class="f-links">
+            <li><a href="#">Our Awesome Labs</a></li>
+            <li><a href="#">The Curriculum</a></li>
+            <li><a href="#">Teacher Training</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4 class="f-title">Say Hello!</h4>
+          <ul class="f-links">
+            <li><a href="#">About RADIX</a></li>
+            <li><a href="#">Join the Team</a></li>
+            <li><a href="#">Contact Us</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="f-bottom">
+        <p>RADIX Robotics Pvt. Ltd. © 2026</p>
+        <p>Built with ❤️ for Future Innovators</p>
+      </div>
+    </div>
+  </footer>
+</div><!-- end .page-wrapper -->
+  <!-- ============================== SCRIPTS ============================== -->
+  <script>
+    /* CURRICULUM LOGIN LOGIC */
+    function openCurriculumLogin(e) {
+      if (e) e.preventDefault();
+      const modal = document.getElementById('login-modal');
+      if (!modal) return;
+      modal.style.visibility = 'visible';
+      modal.style.opacity = '1';
+      modal.style.pointerEvents = 'auto';
+      const inner = modal.querySelector('div');
+      if (inner) inner.style.transform = 'translateY(0)';
+    }
+
+    function closeCurriculumLogin() {
+      const modal = document.getElementById('login-modal');
+      if (!modal) return;
+      modal.style.opacity = '0';
+      modal.style.pointerEvents = 'none';
+      const inner = modal.querySelector('div');
+      if (inner) inner.style.transform = 'translateY(20px)';
+      setTimeout(() => { modal.style.visibility = 'hidden'; }, 400);
+      const error = document.getElementById('login-error');
+      if (error) error.style.display = 'none';
+    }
+
+    function verifyCurriculumLogin() {
+      const user = document.getElementById('modal-user').value.trim();
+      const pass = document.getElementById('modal-pass').value.trim();
+      const error = document.getElementById('login-error');
+
+      // Credentials: admin / radix99
+      if (user === 'SarlaBirlaGyanJyoti' && pass === 'radixrobotics-SBGJ') {
+        window.location.href = 'https://radixrobotics.in/main.html';
+      } else {
+        if (error) error.style.display = 'block';
+        const modalBox = document.querySelector('#login-modal > div');
+        if (typeof gsap !== 'undefined' && modalBox) {
+          gsap.fromTo(modalBox, { x: -10 }, { x: 10, duration: 0.1, repeat: 5, yoyo: true, onComplete: () => gsap.set(modalBox, { x: 0 }) });
+        } else {
+          alert('Incorrect username or password');
+        }
+      }
+
+      if (user === 'DPSJorhat' && pass === 'radixrobotics-DPSJ') {
+        window.location.href = 'https://radixrobotics.in/main2.html';
+      } else {
+        if (error) error.style.display = 'block';
+        const modalBox = document.querySelector('#login-modal > div');
+        if (typeof gsap !== 'undefined' && modalBox) {
+          gsap.fromTo(modalBox, { x: -10 }, { x: 10, duration: 0.1, repeat: 5, yoyo: true, onComplete: () => gsap.set(modalBox, { x: 0 }) });
+        } else {
+          alert('Incorrect username or password');
+        }
+      }
+    }
+
+    // Attach listener after DOM loads
+    document.addEventListener('DOMContentLoaded', () => {
+      const link = document.getElementById('curriculum-link');
+      if (link) link.addEventListener('click', openCurriculumLogin);
+
+      // Mobile Menu Toggle
+      const toggle = document.getElementById('mobile-toggle');
+      const close = document.getElementById('mobile-close');
+      const overlay = document.getElementById('nav-mobile-overlay');
+
+      window.toggleMobileMenu = () => {
+        overlay.classList.toggle('active');
+        document.body.style.overflow = overlay.classList.contains('active') ? 'hidden' : '';
+      };
+
+      if (toggle) toggle.addEventListener('click', toggleMobileMenu);
+      if (close) close.addEventListener('click', toggleMobileMenu);
+    });
+
+
+    gsap.registerPlugin(ScrollTrigger);
+
+    (function initHero3D() {
+      const canvas = document.getElementById('hero-3d-element');
+      if (!canvas) return;
+      const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
+      const scene = new THREE.Scene();
+      const camera = new THREE.PerspectiveCamera(45, canvas.parentElement.clientWidth / canvas.parentElement.clientHeight, 0.1, 1000);
+      camera.position.z = 20;
+
+      function resize() {
+        const width = canvas.parentElement.clientWidth;
+        const height = canvas.parentElement.clientHeight;
+        renderer.setSize(width, height);
+        camera.aspect = width / height;
+        camera.updateProjectionMatrix();
+      }
+      resize(); window.addEventListener('resize', resize);
+
+      // Lighting optimized for Light Theme
+      const ambLight = new THREE.AmbientLight(0xffffff, 0.9);
+      scene.add(ambLight);
+
+      const dirLight = new THREE.DirectionalLight(0xffffff, 0.6);
+      dirLight.position.set(10, 15, 10);
+      scene.add(dirLight);
+
+      const cyanLight = new THREE.PointLight(0x0ea5e9, 2.5, 30);
+      cyanLight.position.set(-5, 5, 5);
+      scene.add(cyanLight);
+
+      const indigoLight = new THREE.PointLight(0x4f46e5, 3, 30);
+      indigoLight.position.set(5, -5, 5);
+      scene.add(indigoLight);
+
+      const group = new THREE.Group();
+      scene.add(group);
+
+      // 1. Central Ceramic Tech Gem
+      const gemGeo = new THREE.IcosahedronGeometry(2.5, 0);
+      const gemMat = new THREE.MeshPhysicalMaterial({
+        color: 0xffffff,
+        metalness: 0.1,
+        roughness: 0.2,
+        clearcoat: 1.0,
+        clearcoatRoughness: 0.1,
+        flatShading: true
+      });
+      const gem = new THREE.Mesh(gemGeo, gemMat);
+      group.add(gem);
+
+      // 2. Outer Wireframe Shell
+      const wireGeo = new THREE.IcosahedronGeometry(2.8, 1);
+      const wireMat = new THREE.MeshBasicMaterial({
+        color: 0x4f46e5, // Indigo
+        wireframe: true,
+        transparent: true,
+        opacity: 0.15
+      });
+      const wire = new THREE.Mesh(wireGeo, wireMat);
+      group.add(wire);
+
+      // 3. Gyroscopic Rings
+      const ringMatDark = new THREE.MeshPhysicalMaterial({ color: 0x0f172a, metalness: 0.7, roughness: 0.2 });
+      const ringMatCyan = new THREE.MeshBasicMaterial({ color: 0x0ea5e9, transparent: true, opacity: 0.8 });
+
+      const ring1 = new THREE.Mesh(new THREE.TorusGeometry(4.5, 0.06, 16, 100), ringMatDark);
+      const ring2 = new THREE.Mesh(new THREE.TorusGeometry(5.2, 0.03, 16, 100), ringMatCyan);
+      const ring3 = new THREE.Mesh(new THREE.TorusGeometry(6.0, 0.1, 16, 100), ringMatDark);
+
+      ring1.rotation.x = Math.PI / 2;
+      ring2.rotation.y = Math.PI / 3;
+      ring3.rotation.x = Math.PI / 4;
+      ring3.rotation.y = Math.PI / 4;
+
+      group.add(ring1); group.add(ring2); group.add(ring3);
+
+      // 4. Floating Data Cubes
+      const particleCount = 45;
+      const particles = new THREE.Group();
+      const pGeo = new THREE.BoxGeometry(0.25, 0.25, 0.25);
+      const pMat = new THREE.MeshPhysicalMaterial({ color: 0x0ea5e9, metalness: 0.3, roughness: 0.2 });
+
+      for (let i = 0; i < particleCount; i++) {
+        const p = new THREE.Mesh(pGeo, pMat);
+        const theta = Math.random() * Math.PI * 2;
+        const phi = Math.acos((Math.random() * 2) - 1);
+        const r = 7 + Math.random() * 4;
+        p.position.set(
+          r * Math.sin(phi) * Math.cos(theta),
+          r * Math.sin(phi) * Math.sin(theta),
+          r * Math.cos(phi)
+        );
+        p.rotation.set(Math.random() * Math.PI, Math.random() * Math.PI, Math.random() * Math.PI);
+        p.userData = {
+          rx: (Math.random() - 0.5) * 0.05,
+          ry: (Math.random() - 0.5) * 0.05,
+          rz: (Math.random() - 0.5) * 0.05
+        };
+        particles.add(p);
+      }
+      group.add(particles);
+
+      // Mouse Interaction
+      let targetRotX = 0, targetRotY = 0;
+      document.addEventListener('mousemove', (e) => {
+        targetRotY = (e.clientX / window.innerWidth - 0.5) * 0.6;
+        targetRotX = (e.clientY / window.innerHeight - 0.5) * 0.6;
+      });
+
+      let t = 0;
+      function animate() {
+        requestAnimationFrame(animate);
+        t += 0.01;
+
+        // Smooth group rotation to mouse
+        group.rotation.y += (targetRotY - group.rotation.y) * 0.05;
+        group.rotation.x += (targetRotX - group.rotation.x) * 0.05;
+
+        // Gentle floating effect
+        group.position.y = Math.sin(t * 2) * 0.4;
+
+        // Internal component rotation
+        gem.rotation.y += 0.003;
+        gem.rotation.x += 0.002;
+        wire.rotation.y -= 0.002;
+        wire.rotation.z += 0.001;
+
+        ring1.rotation.x += 0.008;
+        ring2.rotation.y -= 0.012;
+        ring3.rotation.z += 0.005;
+
+        particles.rotation.y += 0.003;
+        particles.rotation.z -= 0.001;
+
+        // Individual cube rotations
+        particles.children.forEach(p => {
+          p.rotation.x += p.userData.rx;
+          p.rotation.y += p.userData.ry;
+          p.rotation.z += p.userData.rz;
+        });
+
+        renderer.render(scene, camera);
+      }
+      animate();
+    })();
+
+
+    /* NAV SCROLL */
+    window.addEventListener('scroll', () => document.getElementById('nav').classList.toggle('scrolled', scrollY > 40));
+
+    /* HERO ENTRANCE */
+    const htl = gsap.timeline({ defaults: { ease: 'power3.out' } });
+    htl.to('.hero-badge', { opacity: 1, y: 0, duration: .9, delay: .2 })
+      .to('.hero-title', { opacity: 1, y: 0, duration: 1 }, '-=.5')
+      .to('.hero-sub', { opacity: 1, y: 0, duration: .8 }, '-=.55')
+      .to('.hero-actions', { opacity: 1, y: 0, duration: .7 }, '-=.5')
+      .to('.hero-stats', { opacity: 1, y: 0, duration: .7 }, '-=.4')
+      .to('.hero-canvas-wrap', { opacity: 1, x: 0, duration: .9 }, '-=.7');
+
+    /* COUNTERS */
+    ScrollTrigger.create({
+      trigger: '.hero-stats', start: 'top 90%', once: true, onEnter: () => {
+        document.querySelectorAll('.stat-num').forEach(el => {
+          const t = parseInt(el.dataset.target), s = t === 98 ? '%' : '+';
+          gsap.to({ v: 0 }, { v: t, duration: 2.5, ease: 'power2.out', onUpdate: function () { el.textContent = Math.round(this.targets()[0].v).toLocaleString() + s; } });
+        });
+      }
+    });
+
+    /* REVEALS */
+    gsap.utils.toArray('.reveal').forEach(el => {
+      gsap.fromTo(el, { opacity: 0, y: 35 }, { opacity: 1, y: 0, duration: .85, ease: 'power3.out', scrollTrigger: { trigger: el, start: 'top 89%', once: true } });
+    });
+
+    /* PROG CARD STAGGER */
+    gsap.utils.toArray('.prog-card').forEach((c, i) => {
+      ScrollTrigger.create({ trigger: c, start: 'top 90%', once: true, onEnter: () => gsap.fromTo(c, { opacity: 0, y: 50, scale: .97 }, { opacity: 1, y: 0, scale: 1, duration: .7, delay: (i % 3) * .1, ease: 'power3.out' }) });
+    });
+
+    /* ── THREE.JS HERO BACKGROUND (particle + wireframe robot) ── */
+    (function () {
+      const cv = document.getElementById('hero-canvas');
+      const rdr = new THREE.WebGLRenderer({ canvas: cv, antialias: true, alpha: true });
+      const sc = new THREE.Scene(), cam = new THREE.PerspectiveCamera(60, 1, .1, 1000);
+      cam.position.z = 28;
+      function rsz() { rdr.setSize(cv.clientWidth, cv.clientHeight); cam.aspect = cv.clientWidth / cv.clientHeight; cam.updateProjectionMatrix(); }
+      rsz(); window.addEventListener('resize', rsz);
+      const N = 260, pos = new Float32Array(N * 3), vel = [];
+      for (let i = 0; i < N; i++) { pos[i * 3] = (Math.random() - .5) * 80; pos[i * 3 + 1] = (Math.random() - .5) * 50; pos[i * 3 + 2] = (Math.random() - .5) * 28; vel.push({ x: (Math.random() - .5) * .014, y: (Math.random() - .5) * .014 }); }
+      const pg = new THREE.BufferGeometry(); pg.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+      sc.add(new THREE.Points(pg, new THREE.PointsMaterial({ color: 0x2563eb, size: .2, transparent: true, opacity: .5 })));
+      const lm = new THREE.LineBasicMaterial({ color: 0x60a5fa, transparent: true, opacity: .05 });
+      for (let i = -12; i <= 12; i += 3) {
+        sc.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(-40, i, -8), new THREE.Vector3(40, i, -8)]), lm));
+        sc.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(i * 3, -25, -8), new THREE.Vector3(i * 3, 25, -8)]), lm));
+      }
+      const wm = new THREE.MeshBasicMaterial({ color: 0x2563eb, wireframe: true, transparent: true, opacity: .1 });
+      const rg = new THREE.Group();
+      rg.add(Object.assign(new THREE.Mesh(new THREE.BoxGeometry(4, 5, 2), wm), { position: { x: 0, y: .5, z: 0 } }));
+      const hd = new THREE.Mesh(new THREE.BoxGeometry(3, 3, 2), wm); hd.position.y = 4.2; rg.add(hd);
+      const aL = new THREE.Mesh(new THREE.BoxGeometry(1, 4, 1), wm); aL.position.set(-2.8, .5, 0); rg.add(aL);
+      const aR = aL.clone(); aR.position.x = 2.8; rg.add(aR);
+      const lL = new THREE.Mesh(new THREE.BoxGeometry(1.5, 4, 1.5), wm); lL.position.set(-1.2, -4.5, 0); rg.add(lL);
+      const lR = lL.clone(); lR.position.x = 1.2; rg.add(lR);
+      const em = new THREE.MeshBasicMaterial({ color: 0x2563eb, transparent: true, opacity: .85 });
+      const eL = new THREE.Mesh(new THREE.SphereGeometry(.22, 8, 8), em); eL.position.set(-.55, 4.2, 1.1); rg.add(eL);
+      const eR = eL.clone(); eR.position.x = .55; rg.add(eR);
+      rg.position.set(14, -1, 0); sc.add(rg);
+      const r1 = new THREE.Mesh(new THREE.TorusGeometry(7, .04, 8, 80), new THREE.MeshBasicMaterial({ color: 0x60a5fa, transparent: true, opacity: .18 }));
+      r1.rotation.x = Math.PI / 2; r1.position.set(14, -1, 0); sc.add(r1);
+      const r2 = new THREE.Mesh(new THREE.TorusGeometry(9.5, .03, 8, 80), new THREE.MeshBasicMaterial({ color: 0x2563eb, transparent: true, opacity: .1 }));
+      r2.rotation.x = Math.PI / 3; r2.rotation.z = Math.PI / 4; r2.position.set(14, -1, 0); sc.add(r2);
+      let mRX = 0, mRY = 0;
+      document.addEventListener('mousemove', e => { mRX = (e.clientY / innerHeight - .5) * .25; mRY = (e.clientX / innerWidth - .5) * .4; });
+      let t = 0; (function an() {
+        requestAnimationFrame(an); t += .005;
+        const a = pg.attributes.position.array;
+        for (let i = 0; i < N; i++) { a[i * 3] += vel[i].x; a[i * 3 + 1] += vel[i].y; if (Math.abs(a[i * 3]) > 40) vel[i].x *= -1; if (Math.abs(a[i * 3 + 1]) > 25) vel[i].y *= -1; }
+        pg.attributes.position.needsUpdate = true;
+        rg.rotation.y = Math.sin(t * .5) * .3 + mRY; rg.rotation.x = mRX; rg.position.y = -1 + Math.sin(t) * .5;
+        r1.rotation.z += .003; r2.rotation.y += .004;
+        rdr.render(sc, cam);
+      })();
+    })();
+
+    /* ── THREE.JS HERO 3D GEM (right panel) ── */
+    (function () {
+      const canvas = document.getElementById('hero-3d-element');
+      if (!canvas) return;
+      const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
+      const scene = new THREE.Scene();
+      const camera = new THREE.PerspectiveCamera(45, canvas.parentElement.clientWidth / canvas.parentElement.clientHeight, .1, 1000);
+      camera.position.z = 20;
+      function resize() { const w = canvas.parentElement.clientWidth, h = canvas.parentElement.clientHeight; renderer.setSize(w, h); camera.aspect = w / h; camera.updateProjectionMatrix(); }
+      resize(); window.addEventListener('resize', resize);
+      scene.add(new THREE.AmbientLight(0xffffff, .9));
+      const dir = new THREE.DirectionalLight(0xffffff, .6); dir.position.set(10, 15, 10); scene.add(dir);
+      const cyan = new THREE.PointLight(0x0ea5e9, 2.5, 30); cyan.position.set(-5, 5, 5); scene.add(cyan);
+      const ind = new THREE.PointLight(0x4f46e5, 3, 30); ind.position.set(5, -5, 5); scene.add(ind);
+      const group = new THREE.Group(); scene.add(group);
+      const gem = new THREE.Mesh(new THREE.IcosahedronGeometry(2.5, 0), new THREE.MeshPhysicalMaterial({ color: 0xffffff, metalness: .1, roughness: .2, clearcoat: 1, clearcoatRoughness: .1, flatShading: true }));
+      group.add(gem);
+      const wire = new THREE.Mesh(new THREE.IcosahedronGeometry(2.8, 1), new THREE.MeshBasicMaterial({ color: 0x4f46e5, wireframe: true, transparent: true, opacity: .15 }));
+      group.add(wire);
+      const rDark = new THREE.MeshPhysicalMaterial({ color: 0x0f172a, metalness: .7, roughness: .2 });
+      const rCyan = new THREE.MeshBasicMaterial({ color: 0x0ea5e9, transparent: true, opacity: .8 });
+      const ring1 = new THREE.Mesh(new THREE.TorusGeometry(4.5, .06, 16, 100), rDark); ring1.rotation.x = Math.PI / 2; group.add(ring1);
+      const ring2 = new THREE.Mesh(new THREE.TorusGeometry(5.2, .03, 16, 100), rCyan); ring2.rotation.y = Math.PI / 3; group.add(ring2);
+      const ring3 = new THREE.Mesh(new THREE.TorusGeometry(6, .1, 16, 100), rDark); ring3.rotation.x = Math.PI / 4; ring3.rotation.y = Math.PI / 4; group.add(ring3);
+      const particles = new THREE.Group();
+      const pGeo = new THREE.BoxGeometry(.25, .25, .25);
+      const pMat = new THREE.MeshPhysicalMaterial({ color: 0x0ea5e9, metalness: .3, roughness: .2 });
+      for (let i = 0; i < 45; i++) {
+        const p = new THREE.Mesh(pGeo, pMat);
+        const theta = Math.random() * Math.PI * 2, phi = Math.acos(Math.random() * 2 - 1), r = 7 + Math.random() * 4;
+        p.position.set(r * Math.sin(phi) * Math.cos(theta), r * Math.sin(phi) * Math.sin(theta), r * Math.cos(phi));
+        p.rotation.set(Math.random() * Math.PI, Math.random() * Math.PI, Math.random() * Math.PI);
+        p.userData = { rx: (Math.random() - .5) * .05, ry: (Math.random() - .5) * .05, rz: (Math.random() - .5) * .05 };
+        particles.add(p);
+      }
+      group.add(particles);
+      let tRX = 0, tRY = 0;
+      document.addEventListener('mousemove', e => { tRY = (e.clientX / innerWidth - .5) * .6; tRX = (e.clientY / innerHeight - .5) * .6; });
+      let t = 0; (function an() {
+        requestAnimationFrame(an); t += .01;
+        group.rotation.y += (tRY - group.rotation.y) * .05; group.rotation.x += (tRX - group.rotation.x) * .05;
+        group.position.y = Math.sin(t * 2) * .4;
+        gem.rotation.y += .003; gem.rotation.x += .002;
+        wire.rotation.y -= .002; wire.rotation.z += .001;
+        ring1.rotation.x += .008; ring2.rotation.y -= .012; ring3.rotation.z += .005;
+        particles.rotation.y += .003; particles.rotation.z -= .001;
+        particles.children.forEach(p => { p.rotation.x += p.userData.rx; p.rotation.y += p.userData.ry; p.rotation.z += p.userData.rz; });
+        renderer.render(scene, camera);
+      })();
+    })();
+
+    /* ── THREE.JS LAB CANVAS ── */
+    (function () {
+      const cv = document.getElementById('lab-canvas');
+      if (!cv) return;
+      const rdr = new THREE.WebGLRenderer({ canvas: cv, antialias: true, alpha: true });
+      const sc = new THREE.Scene(), cam = new THREE.PerspectiveCamera(50, 1, .1, 100);
+      cam.position.set(0, 0, 10);
+      function rsz() { const w = cv.clientWidth; rdr.setSize(w, w); }
+      rsz(); window.addEventListener('resize', rsz);
+      const g = new THREE.Group(); sc.add(g);
+      g.add(new THREE.Mesh(new THREE.BoxGeometry(7, 7, .15), new THREE.MeshBasicMaterial({ color: 0xf8fafc, transparent: true, opacity: .95 })));
+      const tm = new THREE.LineBasicMaterial({ color: 0x2563eb, transparent: true, opacity: .3 });
+      [[[-3, 3, .1], [3, 3, .1]], [[-3, 1, .1], [3, 1, .1]], [[-3, -1, .1], [3, -1, .1]], [[-3, -3, .1], [3, -3, .1]], [[-3, 3, .1], [-3, -3, .1]], [[0, 3, .1], [0, -3, .1]], [[3, 3, .1], [3, -3, .1]], [[1.5, 3, .1], [1.5, -3, .1]]].forEach(pts => {
+        g.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts.map(p => new THREE.Vector3(...p))), tm));
+      });
+      const chipColors = [0xfbcfe8, 0xbfdbfe, 0xbbf7d0, 0xfef08a, 0xa5f3fc];
+      [[0, 0, .1], [1.5, 1.5, .1], [-1.5, -1.5, .1], [1.5, -1.5, .1], [-1.5, 1.5, .1]].forEach(([x, y, z], i) => {
+        const cm = new THREE.Mesh(new THREE.BoxGeometry(.8, .6, .08), new THREE.MeshBasicMaterial({ color: chipColors[i] })); cm.position.set(x, y, z); g.add(cm);
+        const co = new THREE.Mesh(new THREE.BoxGeometry(.8, .6, .08), new THREE.MeshBasicMaterial({ color: 0x2563eb, wireframe: true, transparent: true, opacity: .5 })); co.position.set(x, y, z + .05); g.add(co);
+      });
+      const sm = new THREE.MeshBasicMaterial({ color: 0x60a5fa });
+      for (let i = 0; i < 22; i++) { const s = new THREE.Mesh(new THREE.SphereGeometry(.055, 6, 6), sm); s.position.set((Math.random() - .5) * 6, (Math.random() - .5) * 6, .18); g.add(s); }
+      const h = new THREE.Mesh(new THREE.TorusGeometry(4, .04, 8, 60), new THREE.MeshBasicMaterial({ color: 0x2563eb, transparent: true, opacity: .22 })); h.position.z = .1; g.add(h);
+      let t = 0; (function an() { requestAnimationFrame(an); t += .007; g.rotation.y = Math.sin(t * .5) * .7; g.rotation.x = Math.sin(t * .3) * .3; h.rotation.z += .008; rdr.render(sc, cam); })();
+    })();
+
+    /* ── THREE.JS MINI BENTO CHART ── */
+    (function () {
+      const cv = document.getElementById('mini-canvas');
+      if (!cv) return;
+      function getH() { return cv.parentElement.clientHeight || 340; }
+      const rdr = new THREE.WebGLRenderer({ canvas: cv, antialias: true, alpha: true });
+      const sc = new THREE.Scene(), cam = new THREE.PerspectiveCamera(60, 1, .1, 100);
+      cam.position.set(0, 0, 6);
+      function rsz() { const w = cv.clientWidth, h = getH(); rdr.setSize(w, h); cam.aspect = w / h; cam.updateProjectionMatrix(); }
+      rsz(); window.addEventListener('resize', rsz);
+      const colors = [0xfbcfe8, 0xbfdbfe, 0xbbf7d0, 0xfef08a, 0xe9d5ff, 0xfed7aa, 0x1e3a8a, 0xa5f3fc];
+      [.35, .6, .48, .82, .6, .78, .95, .68].forEach((h, i) => {
+        const mat = new THREE.MeshBasicMaterial({ color: colors[i] });
+        const b = new THREE.Mesh(new THREE.BoxGeometry(.28, h * 2.8, .1), mat); b.position.set(-1.8 + i * .52, h * 1.4 - 1.4, 0); sc.add(b);
+      });
+      sc.add(Object.assign(new THREE.Mesh(new THREE.BoxGeometry(5, .02, .1), new THREE.MeshBasicMaterial({ color: 0xe2e8f0 })), { position: { x: 0, y: -1.4, z: 0 } }));
+      (function an() { requestAnimationFrame(an); rdr.render(sc, cam); })();
+    })();
+
+    /* ── THREE.JS CTA SPIRAL ── */
+    (function () {
+      const cv = document.getElementById('cta-canvas');
+      const rdr = new THREE.WebGLRenderer({ canvas: cv, antialias: true, alpha: true });
+      const sc = new THREE.Scene(), cam = new THREE.PerspectiveCamera(70, cv.clientWidth / cv.clientHeight, .1, 1000);
+      cam.position.z = 22;
+      function rsz() { rdr.setSize(cv.clientWidth, cv.clientHeight); cam.aspect = cv.clientWidth / cv.clientHeight; cam.updateProjectionMatrix(); }
+      rsz(); window.addEventListener('resize', rsz);
+      const N = 600, p = new Float32Array(N * 3);
+      for (let i = 0; i < N; i++) { const a = (i / N) * Math.PI * 22, r = (i / N) * 16; p[i * 3] = Math.cos(a) * r; p[i * 3 + 1] = Math.sin(a) * r; p[i * 3 + 2] = (Math.random() - .5) * 3; }
+      const sg = new THREE.BufferGeometry(); sg.setAttribute('position', new THREE.BufferAttribute(p, 3));
+      const sp = new THREE.Points(sg, new THREE.PointsMaterial({ color: 0x60a5fa, size: .14, transparent: true, opacity: .4 })); sc.add(sp);
+      const N2 = 200, p2 = new Float32Array(N2 * 3);
+      for (let i = 0; i < N2; i++) { const a = (i / N2) * Math.PI * 8, r = 5 + (i / N2) * 4; p2[i * 3] = Math.cos(a) * r; p2[i * 3 + 1] = Math.sin(a) * r; p2[i * 3 + 2] = (Math.random() - .5) * 1.5; }
+      const sg2 = new THREE.BufferGeometry(); sg2.setAttribute('position', new THREE.BufferAttribute(p2, 3));
+      sc.add(new THREE.Points(sg2, new THREE.PointsMaterial({ color: 0x93c5fd, size: .1, transparent: true, opacity: .28 })));
+      let t = 0; (function an() { requestAnimationFrame(an); t += .003; sp.rotation.z += .004; sp.rotation.x = Math.sin(t) * .15; rdr.render(sc, cam); })();
+    })();
+
+
+
+  </script>
+</body>
+
+</html>

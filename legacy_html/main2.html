@@ -1,0 +1,820 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Robotics & AI Curriculum — K-10 | 250 Session Topics</title>
+<meta name="description" content="A comprehensive Robotics & AI education curriculum for Classes 1 through 10, featuring 250 hands-on sessions covering electronics, programming, sensors, AI, and competition robotics.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg-body: #0a0a0f;
+  --bg-card: #12121a;
+  --bg-card-hover: #1a1a28;
+  --bg-surface: #16162240;
+  --border-subtle: rgba(255,255,255,0.06);
+  --border-medium: rgba(255,255,255,0.1);
+  --text-primary: #eeeef0;
+  --text-secondary: #9898a6;
+  --text-tertiary: #5a5a6e;
+  --accent-purple: #7c6aff;
+  --accent-purple-glow: rgba(124,106,255,0.25);
+  --accent-green: #34d399;
+  --accent-green-glow: rgba(52,211,153,0.2);
+  --accent-amber: #f59e0b;
+  --accent-amber-glow: rgba(245,158,11,0.2);
+  --accent-cyan: #22d3ee;
+  --radius-sm: 8px;
+  --radius-md: 14px;
+  --radius-lg: 20px;
+  --radius-xl: 28px;
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+}
+
+*,*::before,*::after { box-sizing:border-box; margin:0; padding:0; }
+
+html { scroll-behavior: smooth; overflow-x: hidden; }
+
+body {
+  font-family: var(--font-sans);
+  background: var(--bg-body);
+  color: var(--text-primary);
+  min-height: 100vh;
+  min-height: -webkit-fill-available;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* ============ AMBIENT BACKGROUND ============ */
+.ambient-bg {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+.ambient-bg .orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(120px);
+  opacity: 0.35;
+  animation: orbFloat 18s ease-in-out infinite;
+}
+.ambient-bg .orb:nth-child(1) {
+  width: 500px; height: 500px;
+  background: radial-gradient(circle, var(--accent-purple), transparent 70%);
+  top: -10%; left: -8%;
+  animation-delay: 0s;
+}
+.ambient-bg .orb:nth-child(2) {
+  width: 400px; height: 400px;
+  background: radial-gradient(circle, var(--accent-green), transparent 70%);
+  top: 40%; right: -10%;
+  animation-delay: -6s;
+}
+.ambient-bg .orb:nth-child(3) {
+  width: 350px; height: 350px;
+  background: radial-gradient(circle, var(--accent-amber), transparent 70%);
+  bottom: -5%; left: 30%;
+  animation-delay: -12s;
+}
+@keyframes orbFloat {
+  0%,100% { transform: translate(0,0) scale(1); }
+  33% { transform: translate(40px,-30px) scale(1.08); }
+  66% { transform: translate(-25px,20px) scale(0.95); }
+}
+
+/* ============ GRID OVERLAY ============ */
+.grid-overlay {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  z-index: 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(rgba(255,255,255,0.015) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.015) 1px, transparent 1px);
+  background-size: 80px 80px;
+}
+
+/* ============ MAIN CONTAINER ============ */
+.main-container {
+  position: relative;
+  z-index: 1;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 0 24px;
+  padding-left: max(24px, env(safe-area-inset-left));
+  padding-right: max(24px, env(safe-area-inset-right));
+}
+
+/* ============ HEADER / HERO ============ */
+.hero {
+  padding: 80px 0 48px;
+  text-align: center;
+  position: relative;
+}
+.hero-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 18px;
+  border-radius: 100px;
+  background: rgba(124,106,255,0.1);
+  border: 1px solid rgba(124,106,255,0.2);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--accent-purple);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  margin-bottom: 24px;
+  animation: fadeInUp 0.6s ease both;
+}
+.hero-badge .dot {
+  width: 6px; height: 6px;
+  background: var(--accent-purple);
+  border-radius: 50%;
+  animation: pulse 2s ease infinite;
+}
+@keyframes pulse {
+  0%,100% { opacity:1; transform:scale(1); }
+  50% { opacity:0.4; transform:scale(0.7); }
+}
+.hero h1 {
+  font-size: clamp(32px, 5vw, 56px);
+  font-weight: 800;
+  line-height: 1.1;
+  letter-spacing: -0.03em;
+  margin-bottom: 16px;
+  animation: fadeInUp 0.6s ease 0.1s both;
+}
+.hero h1 .gradient-text {
+  background: linear-gradient(135deg, var(--accent-purple), var(--accent-cyan), var(--accent-green));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.hero .subtitle {
+  font-size: clamp(15px, 2vw, 18px);
+  color: var(--text-secondary);
+  font-weight: 400;
+  line-height: 1.6;
+  max-width: 600px;
+  margin: 0 auto 36px;
+  animation: fadeInUp 0.6s ease 0.2s both;
+}
+@keyframes fadeInUp {
+  from { opacity:0; transform:translateY(16px); }
+  to { opacity:1; transform:translateY(0); }
+}
+
+/* ============ STATS BAR ============ */
+.stats-bar {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 40px;
+  animation: fadeInUp 0.6s ease 0.3s both;
+}
+.stat-chip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  border-radius: var(--radius-md);
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  font-size: 14px;
+  color: var(--text-secondary);
+  backdrop-filter: blur(20px);
+  transition: border-color 0.3s, transform 0.2s;
+}
+.stat-chip:hover {
+  border-color: var(--border-medium);
+  transform: translateY(-1px);
+}
+.stat-chip .value {
+  font-weight: 700;
+  font-size: 18px;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+.stat-chip .label {
+  font-size: 13px;
+}
+
+/* ============ FILTER PILLS ============ */
+.filters {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 48px;
+  animation: fadeInUp 0.6s ease 0.4s both;
+}
+.pill {
+  font-size: 13px;
+  font-weight: 500;
+  padding: 8px 20px;
+  border-radius: 100px;
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-card);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.25s ease;
+  user-select: none;
+}
+.pill:hover {
+  border-color: var(--border-medium);
+  transform: translateY(-1px);
+}
+.pill.active {
+  border-color: transparent;
+  color: #fff;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+}
+.pill[data-f="all"].active { background: linear-gradient(135deg, #7c6aff, #22d3ee); }
+.pill[data-f="p"].active { background: linear-gradient(135deg, #7c6aff, #9b8aff); box-shadow: 0 4px 20px var(--accent-purple-glow); }
+.pill[data-f="i"].active { background: linear-gradient(135deg, #0f9b71, #34d399); box-shadow: 0 4px 20px var(--accent-green-glow); }
+.pill[data-f="a"].active { background: linear-gradient(135deg, #d97706, #f59e0b); box-shadow: 0 4px 20px var(--accent-amber-glow); }
+
+/* ============ SEARCH ============ */
+.search-wrap {
+  max-width: 480px;
+  margin: 0 auto 40px;
+  position: relative;
+  animation: fadeInUp 0.6s ease 0.45s both;
+}
+.search-wrap svg {
+  position: absolute;
+  left: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 18px; height: 18px;
+  color: var(--text-tertiary);
+}
+.search-input {
+  width: 100%;
+  padding: 12px 16px 12px 44px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-card);
+  color: var(--text-primary);
+  font-size: 14px;
+  font-family: var(--font-sans);
+  outline: none;
+  transition: border-color 0.25s, box-shadow 0.25s;
+}
+.search-input::placeholder { color: var(--text-tertiary); }
+.search-input:focus {
+  border-color: var(--accent-purple);
+  box-shadow: 0 0 0 3px var(--accent-purple-glow);
+}
+.search-count {
+  text-align: center;
+  font-size: 12px;
+  color: var(--text-tertiary);
+  margin-top: 8px;
+  min-height: 18px;
+}
+
+/* ============ SECTIONS ============ */
+.section {
+  margin-bottom: 20px;
+  animation: fadeInUp 0.4s ease both;
+}
+.class-card {
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-card);
+  overflow: hidden;
+  transition: border-color 0.3s;
+  backdrop-filter: blur(20px);
+}
+.class-card:hover {
+  border-color: var(--border-medium);
+}
+.class-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 18px 24px;
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.2s;
+}
+.class-header:hover { background: var(--bg-card-hover); }
+.class-badge {
+  font-size: 13px;
+  font-weight: 600;
+  padding: 5px 16px;
+  border-radius: 100px;
+  min-width: 80px;
+  text-align: center;
+  letter-spacing: 0.02em;
+}
+.badge-primary { background: linear-gradient(135deg, #534ab7, #7c6aff); color: #eeedfe; }
+.badge-intermediate { background: linear-gradient(135deg, #0f6e56, #34d399); color: #e1f5ee; }
+.badge-advanced { background: linear-gradient(135deg, #ba7517, #f59e0b); color: #faeeda; }
+
+.class-header .class-title {
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+.class-header .session-count {
+  margin-left: auto;
+  font-size: 12px;
+  color: var(--text-tertiary);
+  font-weight: 500;
+  padding-right: 4px;
+  font-variant-numeric: tabular-nums;
+}
+.class-header .chevron {
+  width: 18px; height: 18px;
+  color: var(--text-tertiary);
+  transition: transform 0.3s ease;
+  flex-shrink: 0;
+}
+.class-header .chevron.open { transform: rotate(90deg); }
+
+.class-body {
+  padding: 0 24px 20px;
+  transition: all 0.3s ease;
+}
+
+.part-block { margin-bottom: 20px; }
+.part-block:last-child { margin-bottom: 0; }
+.part-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+  margin-bottom: 10px;
+  padding-left: 2px;
+}
+
+.topics-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 6px;
+}
+.topic-item {
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text-primary);
+  padding: 9px 14px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-surface);
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  transition: border-color 0.2s, background 0.2s, transform 0.15s;
+}
+.topic-item:hover {
+  border-color: var(--border-medium);
+  background: var(--bg-card-hover);
+  transform: translateX(2px);
+}
+.topic-num {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-tertiary);
+  min-width: 22px;
+  padding-top: 2px;
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+.topic-text { flex: 1; }
+mark {
+  background: rgba(124,106,255,0.3);
+  color: var(--text-primary);
+  border-radius: 2px;
+  padding: 0 2px;
+}
+
+/* ============ FOOTER ============ */
+.footer {
+  text-align: center;
+  padding: 60px 0 40px;
+  border-top: 1px solid var(--border-subtle);
+  margin-top: 40px;
+}
+.footer p {
+  font-size: 13px;
+  color: var(--text-tertiary);
+}
+.footer .footer-brand {
+  font-weight: 600;
+  background: linear-gradient(135deg, var(--accent-purple), var(--accent-cyan));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ============ SCROLL-TO-TOP ============ */
+.scroll-top {
+  position: fixed;
+  bottom: 28px;
+  right: 28px;
+  width: 44px; height: 44px;
+  border-radius: 50%;
+  background: var(--accent-purple);
+  border: none;
+  color: #fff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  opacity: 0;
+  transform: translateY(12px);
+  transition: opacity 0.3s, transform 0.3s;
+  box-shadow: 0 4px 24px var(--accent-purple-glow);
+}
+.scroll-top.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+.scroll-top:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 30px rgba(124,106,255,0.4);
+}
+
+/* ============ NO RESULTS ============ */
+.no-results {
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--text-tertiary);
+  font-size: 15px;
+}
+.no-results .emoji { font-size: 40px; margin-bottom: 12px; }
+
+/* ============ RESPONSIVE ============ */
+/* ============ NAVBAR ============ */
+.navbar {
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  background: rgba(10, 10, 15, 0.8);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border-subtle);
+  padding: 12px 0;
+}
+.navbar-inner {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 0 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.navbar-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-decoration: none;
+  color: var(--text-primary);
+  font-weight: 700;
+  font-size: 18px;
+}
+.navbar-brand img {
+  height: 32px;
+  width: auto;
+  border-radius: 4px;
+}
+
+@media (max-width: 640px) {
+  .hero { padding: 50px 0 32px; }
+  .stats-bar { gap: 8px; }
+  .stat-chip { padding: 8px 14px; font-size: 13px; }
+  .stat-chip .value { font-size: 16px; }
+  .class-header { padding: 14px 16px; gap: 10px; }
+  .class-body { padding: 0 16px 16px; }
+  .topics-grid { grid-template-columns: 1fr; }
+  .scroll-top { bottom: 18px; right: 18px; width: 40px; height: 40px; }
+  .main-container {
+    padding: 0 16px;
+    padding-left: max(16px, env(safe-area-inset-left));
+    padding-right: max(16px, env(safe-area-inset-right));
+  }
+}
+
+/* iOS Safari specific overflow fix */
+@supports (-webkit-touch-callout: none) {
+  html, body {
+    overflow-x: clip;
+  }
+}
+</style>
+</head>
+<body>
+
+<!-- Ambient Background -->
+<div class="ambient-bg">
+  <div class="orb"></div>
+  <div class="orb"></div>
+  <div class="orb"></div>
+</div>
+<div class="grid-overlay"></div>
+
+<nav class="navbar">
+  <div class="navbar-inner">
+    <a href="index.html" class="navbar-brand">
+      <img src="logo1.jpeg" alt="Radix Logo">
+      <span>Curriculum</span>
+    </a>
+  </div>
+</nav>
+
+<div class="main-container">
+  <!-- Hero Section -->
+  <section class="hero">
+    <div class="hero-badge">
+      <span class="dot"></span>
+      NEP 2020 Aligned Curriculum
+    </div>
+    <h1>
+      <span class="gradient-text">Robotics & AI Curriculum</span>
+       <br> for <br> Delhi Public School, Jorhat
+    </h1>
+    <p class="subtitle">
+      A comprehensive K-10 learning path with <strong>250 hands-on sessions</strong> — from basic machines to competition-ready autonomous robots and AI systems.
+    </p>
+  </section>
+
+  <!-- Stats Bar -->
+  <div class="stats-bar">
+    <div class="stat-chip">
+      <span class="value">250</span>
+      <span class="label">Total Sessions</span>
+    </div>
+    <div class="stat-chip">
+      <span class="value">10</span>
+      <span class="label">Classes</span>
+    </div>
+    <div class="stat-chip">
+      <span class="value">150</span>
+      <span class="label">Primary (1–5)</span>
+    </div>
+    <div class="stat-chip">
+      <span class="value">100</span>
+      <span class="label">Secondary (6–10)</span>
+    </div>
+  </div>
+
+  <!-- Filter Pills -->
+  <div class="filters" id="filters">
+    <span class="pill active" data-f="all">All Classes</span>
+    <span class="pill" data-f="p">Class 1–5 · Primary</span>
+    <span class="pill" data-f="i">Class 6–9 · Intermediate</span>
+    <span class="pill" data-f="a">Class 10 · Advanced</span>
+  </div>
+
+  <!-- Search -->
+  <div class="search-wrap">
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+      <path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z"/>
+    </svg>
+    <input type="text" class="search-input" id="searchInput" placeholder="Search topics... e.g. 'sensor', 'Arduino', 'AI'">
+    <div class="search-count" id="searchCount"></div>
+  </div>
+
+  <!-- Content -->
+  <div id="content"></div>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <p>Built with ❤️ for <span class="footer-brand">Robotics Education</span></p>
+  </footer>
+</div>
+
+<!-- Scroll to top -->
+<button class="scroll-top" id="scrollTop" title="Scroll to top">
+  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
+    <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 15.75l7.5-7.5 7.5 7.5"/>
+  </svg>
+</button>
+
+<script>
+// ============ CURRICULUM DATA ============
+const data=[
+{cls:1,level:'p',parts:[
+{label:'Part 1 — Foundation & Curiosity (Sessions 1–10)',topics:['What is a machine?','Things that move and things that don\'t','Push and pull forces','Wheels and rollers','Levers and seesaws','Ramps and slopes','Parts of a machine','Machines at home','Machines in my village','My favourite machine']},
+{label:'Part 2 — Logic & Basic Systems (Sessions 11–20)',topics:['What is a sequence?','First, then, last','My morning routine algorithm','Directions: forward, backward, left, right','Patterns with shapes','Patterns with colours','Sorting and grouping','If this, then that','Robot walk game (unplugged)','Repeating instructions (loops)']},
+{label:'Part 3 — Mini Robotics Applications (Sessions 21–30)',topics:['Parts make a whole','Wind-up toys and stored energy','Paper robot assembly','Cause and effect in machines','Robots that help people','A robot for my village','My dream robot drawing','Robot story: the rice field helper','Build and share challenge','Class robot book creation']}
+]},
+{cls:2,level:'p',parts:[
+{label:'Part 1 — Foundation & Curiosity (Sessions 1–10)',topics:['Forces that move things','Friction: rough vs. smooth','Gravity pulls things down','Magnets: attract and repel','Sorting with magnets','Electric motors: spin and move','What is energy?','Batteries store energy','How a fan works','Human-machine comparison']},
+{label:'Part 2 — Logic & Basic Systems (Sessions 11–20)',topics:['Electricity flows in a path','Parts of a circuit','Building my first circuit','Open and closed circuits','Switch: on and off','Conductors and insulators','My homemade switch','Circuit troubleshooting','Drawing a circuit diagram','Multi-bulb circuit challenge']},
+{label:'Part 3 — Mini Robotics Applications (Sessions 21–30)',topics:['Motor connected to battery','Cardboard motor bot build','Watching my bot move','Controlling direction manually','Obstacle path challenge','Energy to motion: the full story','Two motors vs. one motor','Design your helper robot','Village problem: what can a robot do?','Present my robot idea']}
+]},
+{cls:3,level:'p',parts:[
+{label:'Part 1 — Foundation & Curiosity (Sessions 1–10)',topics:['What is an algorithm?','Precision in instructions','Debugging: finding mistakes','Loops: repeat this step','Conditions: if–then','Input and output thinking','Floor robot navigation game','Debugging a wrong path','Writing instructions for a friend','Algorithm relay challenge']},
+{label:'Part 2 — Logic & Basic Systems (Sessions 11–20)',topics:['Introduction to Scratch Jr.','Sprites and backgrounds','Move and turn blocks','Say and change colour blocks','When-clicked event','Repeat loop in Scratch','Animate my name','The dancing robot sprite','My village story animation','Share and feedback session']},
+{label:'Part 3 — Mini Robotics Applications (Sessions 21–30)',topics:['What is a programmable robot?','mBot introduction and parts','Connecting code to movement','Move forward and backward','Turn left and turn right','Speed and distance basics','mBot wakeup challenge','Robot maze navigator','Blinky: the signal bot','Reflection: code meets machine']}
+]},
+{cls:4,level:'p',parts:[
+{label:'Part 1 — Foundation & Curiosity (Sessions 1–10)',topics:['What is a sensor?','Human senses vs. robot sensors','Sensor types overview','Input–process–output model','Automatic doors and streetlights','Clap switch demonstration','Designing a sensor robot','Sensors in agriculture','Sense map challenge','Local problem sensor brainstorm']},
+{label:'Part 2 — Logic & Basic Systems (Sessions 11–20)',topics:['If–then–else in Scratch','Variables: storing information','Events and triggers','Smart traffic light program','Flood alert simulator','Nested conditions','Score tracking with variables','Broadcasting between sprites','Quiz bot project','Test and debug session']},
+{label:'Part 3 — Mini Robotics Applications (Sessions 21–30)',topics:['Ultrasonic sensor introduction','Measuring distance with code','Obstacle stopper bot','Light sensor and threshold','Night light bot program','If object detected → turn','Line follower concept','Sensor calibration practice','Automatic streetlight project','Sensor integration challenge']}
+]},
+{cls:5,level:'p',parts:[
+{label:'Part 1 — Foundation & Curiosity (Sessions 1–10)',topics:['Engineering design process: overview','Empathise: understanding user needs','Define: writing a problem statement','Ideate: brainstorming solutions','Sketch and prototype','Problem hunt walk','Design sprint: school bag bot','Empathy interview with a farmer','Team roles in engineering','Feedback and redesign']},
+{label:'Part 2 — Logic & Basic Systems (Sessions 11–20)',topics:['Multiple scenes in Scratch','Lists and multiple variables','Score and game logic','Broadcasting events','Simulation: modelling a real system','Flood warning system simulation','Smart farming dashboard','Interactive quiz game','Debugging complex programs','Peer code review session']},
+{label:'Part 3 — Mini Robotics Applications (Sessions 21–30)',topics:['Capstone project introduction','Planning: materials and roles','Smart plant watering system build','Flood alert rover build','Sensor + code integration','Testing and iteration','Refinement session','Preparing the presentation','Mini science fair demo day','Reflection and learning review']}
+]},
+{cls:6,level:'i',parts:[
+{label:'Part 1 — Core Robotics & Electronics (Sessions 1–10)',topics:['Introduction to Arduino Uno','Components: resistor, LED, buzzer','Breadboard layout and prototyping','Digital I/O: HIGH and LOW','pinMode and digitalWrite','Blinking an LED: hello world','Delay and timing','Traffic light controller build','Push button input reading','Smart doorbell project']},
+{label:'Part 2 — Applied Robotics Systems (Sessions 11–20)',topics:['Analog vs. digital signals','analogRead and analogWrite','LDR light sensor','Threshold-based automation','Automatic night lamp project','HC-SR04 ultrasonic sensor','Measuring and displaying distance','Distance alert buzzer system','Water level indicator build','Multi-sensor integration challenge']}
+]},
+{cls:7,level:'i',parts:[
+{label:'Part 1 — Core Robotics & Electronics (Sessions 1–10)',topics:['DC motor: speed and direction','PWM: controlling motor speed','L298N motor driver module','Assembling a 2WD chassis','First wheeled robot build','Forward, backward, left, right code','Speed controller with serial input','SG90 servo motor control','Pan-tilt mechanism build','Joystick-controlled servo demo']},
+{label:'Part 2 — Applied Robotics Systems (Sessions 11–20)',topics:['Autonomous vs. remote robots','Obstacle avoidance algorithm','Mounting ultrasonic on servo','Scan left, scan right, decide','Obstacle avoiding robot build','IR sensor: line detection','Two IR sensor line following','Line follower build and calibrate','State machine for robot behaviour','Flood patrol bot final project']}
+]},
+{cls:8,level:'i',parts:[
+{label:'Part 1 — Core Robotics & Electronics (Sessions 1–10)',topics:['Serial communication basics','HC-05 Bluetooth module setup','Bluetooth terminal app control','Bluetooth controlled robot build','IR remote decoding','IR remote robot control','MIT App Inventor introduction','Custom app button layout','Bluetooth app controlled robot','WiFi module ESP8266 intro']},
+{label:'Part 2 — Applied Robotics Systems (Sessions 11–20)',topics:['DHT11: temperature and humidity','I2C LCD display interface','Reading and displaying sensor data','Soil moisture sensor','IoT platform: ThingSpeak setup','Uploading data to the cloud','Blynk app: live dashboard','Smart flood monitor station build','Tea garden climate monitor build','Color sensor object sorting bot']}
+]},
+{cls:9,level:'i',parts:[
+{label:'Part 1 — Core Robotics & Electronics (Sessions 1–10)',topics:['What is artificial intelligence?','Types of AI: narrow, ML, deep learning','Supervised learning concept','Training a model with labeled data','Google Teachable Machine: image classifier','Training gesture recognition model','Gesture controlled robot build','Plant disease detector prototype','Web Speech API voice commands','Voice command robot integration']},
+{label:'Part 2 — Applied Robotics Systems (Sessions 11–20)',topics:['OpenCV introduction: capturing frames','Colour detection in video stream','Color tracking with camera','Camera + robot chassis integration','Color tracking robot build','Object detection for sorting','Servo gripper design and control','Automated sorting arm project','Sensor data + ML for prediction','AI flood risk mapper dashboard']}
+]},
+{cls:10,level:'a',parts:[
+{label:'Phase 1 — Advanced Systems (Sessions 1–5)',topics:['PID control: theory and tuning','Advanced motor control with encoders','Multi-axis robotic arm build','Computer vision: object detection','Power management for competition bots']},
+{label:'Phase 2 — Competition Preparation (Sessions 6–10)',topics:['PID line follower: competition tuning','Obstacle avoider: strategy and speed','Sumo bot: chassis and power design','Maze solver: wall-following algorithm','Firefighter bot: detection and response']},
+{label:'Phase 3 — Problem-Solving Challenges (Sessions 11–15)',topics:['Challenge 1: flood rescue mission bot','Challenge 2: smart agriculture field node','Challenge 3: disaster supply drop simulation','Challenge 4: AI-powered intruder alert system','Challenge 5: wearable assistive glove controller']},
+{label:'Phase 4 — Mini Capstone Project (Sessions 16–20)',topics:['Capstone team formation and problem selection','Design sprint: prototype planning','Build session: hardware and code integration','Testing, iteration, and refinement','Innovation day: demo and presentation']}
+]}
+];
+
+const levelMeta = {
+  p: { label: 'Primary Robotics',  badgeClass: 'badge-primary' },
+  i: { label: 'Intermediate Robotics', badgeClass: 'badge-intermediate' },
+  a: { label: 'Advanced Robotics', badgeClass: 'badge-advanced' }
+};
+
+let currentFilter = 'all';
+let searchQuery = '';
+let openSections = new Set();
+
+// Init all sections as open
+data.forEach(d => openSections.add(d.cls));
+
+// ============ HIGHLIGHT ============
+function highlightText(text, query) {
+  if (!query) return text;
+  const escaped = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const regex = new RegExp(`(${escaped})`, 'gi');
+  return text.replace(regex, '<mark>$1</mark>');
+}
+
+// ============ RENDER ============
+function render() {
+  const container = document.getElementById('content');
+  container.innerHTML = '';
+  const filtered = currentFilter === 'all' ? data : data.filter(d => d.level === currentFilter);
+  let totalMatchedTopics = 0;
+  let hasResults = false;
+
+  filtered.forEach((d, idx) => {
+    const meta = levelMeta[d.level];
+    const isOpen = openSections.has(d.cls);
+
+    // Filter topics by search
+    let filteredParts = d.parts.map(p => {
+      const matchedTopics = searchQuery
+        ? p.topics.filter(t => t.toLowerCase().includes(searchQuery.toLowerCase()))
+        : p.topics;
+      return { ...p, topics: matchedTopics };
+    }).filter(p => p.topics.length > 0);
+
+    if (searchQuery && filteredParts.length === 0) return;
+
+    const totalSessions = filteredParts.reduce((s, p) => s + p.topics.length, 0);
+    totalMatchedTopics += totalSessions;
+    hasResults = true;
+
+    const sec = document.createElement('div');
+    sec.className = 'section';
+    sec.style.animationDelay = `${idx * 0.05}s`;
+
+    const card = document.createElement('div');
+    card.className = 'class-card';
+
+    // Header
+    const hdr = document.createElement('div');
+    hdr.className = 'class-header';
+    hdr.innerHTML = `
+      <span class="class-badge ${meta.badgeClass}">Class ${d.cls}</span>
+      <span class="class-title">${meta.label}</span>
+      <span class="session-count">${totalSessions} sessions</span>
+      <svg class="chevron ${isOpen ? 'open' : ''}" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5"/>
+      </svg>
+    `;
+
+    // Body
+    const body = document.createElement('div');
+    body.className = 'class-body';
+    body.style.display = isOpen ? '' : 'none';
+
+    filteredParts.forEach(p => {
+      const pb = document.createElement('div');
+      pb.className = 'part-block';
+      pb.innerHTML = `<div class="part-label">${p.label}</div>`;
+
+      const grid = document.createElement('div');
+      grid.className = 'topics-grid';
+
+      p.topics.forEach((t, i) => {
+        const div = document.createElement('div');
+        div.className = 'topic-item';
+        div.innerHTML = `
+          <span class="topic-num">${String(i + 1).padStart(2, '0')}</span>
+          <span class="topic-text">${highlightText(t, searchQuery)}</span>
+        `;
+        grid.appendChild(div);
+      });
+
+      pb.appendChild(grid);
+      body.appendChild(pb);
+    });
+
+    hdr.addEventListener('click', () => {
+      if (openSections.has(d.cls)) {
+        openSections.delete(d.cls);
+      } else {
+        openSections.add(d.cls);
+      }
+      render();
+    });
+
+    card.appendChild(hdr);
+    card.appendChild(body);
+    sec.appendChild(card);
+    container.appendChild(sec);
+  });
+
+  // No results message
+  if (!hasResults) {
+    container.innerHTML = `
+      <div class="no-results">
+        <div class="emoji">🔍</div>
+        No topics found for "<strong>${searchQuery}</strong>"
+      </div>
+    `;
+  }
+
+  // Search count
+  const countEl = document.getElementById('searchCount');
+  if (searchQuery) {
+    countEl.textContent = `${totalMatchedTopics} topic${totalMatchedTopics !== 1 ? 's' : ''} found`;
+  } else {
+    countEl.textContent = '';
+  }
+}
+
+// ============ FILTER PILLS ============
+document.querySelectorAll('.pill').forEach(p => {
+  p.addEventListener('click', function () {
+    document.querySelectorAll('.pill').forEach(x => x.classList.remove('active'));
+    this.classList.add('active');
+    currentFilter = this.dataset.f;
+    render();
+  });
+});
+
+// ============ SEARCH ============
+const searchInput = document.getElementById('searchInput');
+let searchTimeout;
+searchInput.addEventListener('input', function () {
+  clearTimeout(searchTimeout);
+  searchTimeout = setTimeout(() => {
+    searchQuery = this.value.trim();
+    render();
+  }, 200);
+});
+
+// ============ SCROLL-TO-TOP ============
+const scrollBtn = document.getElementById('scrollTop');
+window.addEventListener('scroll', () => {
+  scrollBtn.classList.toggle('visible', window.scrollY > 400);
+});
+scrollBtn.addEventListener('click', () => {
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+});
+
+// ============ INITIAL RENDER ============
+render();
+</script>
+</body>
+</html>
