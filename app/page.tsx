@@ -1,9 +1,10 @@
 "use client";
 import { useEffect, useRef, useState } from 'react';
 import Script from 'next/script';
+import Link from 'next/link';
+import { createClient } from '@/utils/supabase/client';
 import LoginModal from './components/LoginModal';
-import { SignInButton, UserButton, useUser } from '@clerk/nextjs';
-import { Menu, X, Moon, Sun, ArrowRight, Play, Server, Layers, Cpu, Code2, Wifi, Trophy } from 'lucide-react';
+import { Menu, X, Moon, Sun, ArrowRight, Play, Server, Layers, Cpu, Code2, Wifi, Trophy, LogOut } from 'lucide-react';
 
 export default function Page() {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -11,10 +12,20 @@ export default function Page() {
   const [isDark, setIsDark] = useState(false);
   const [isHeroActive, setIsHeroActive] = useState(true);
   const [scrolled, setScrolled] = useState(false);
-  const { isSignedIn, user } = useUser();
-  const isAdmin = isSignedIn && user?.primaryEmailAddress?.emailAddress === 'princedas000555@gmail.com';
+  const [user, setUser] = useState<any>(null);
+  const supabase = createClient();
 
   useEffect(() => {
+    // Initial user check
+    supabase.auth.getUser().then(({ data }) => {
+      setUser(data.user);
+    });
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+    });
+
     const saved = localStorage.getItem('radix-theme');
     if (saved === 'dark' || (!saved && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
       document.documentElement.classList.add('dark');
@@ -45,6 +56,26 @@ export default function Page() {
   const heroContentRef = useRef<HTMLDivElement>(null);
   const scrollCueRef = useRef<HTMLDivElement>(null);
   const diveInRef = useRef<HTMLDivElement>(null);
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    window.location.reload();
+  };
+
+  // Derive school portal URL from user's email if they are a school admin
+  const getSchoolPortalUrl = () => {
+    if (!user) return '/login';
+    const email = user.email || '';
+    // Super admin goes to super-admin dashboard
+    if (email === 'princedas000555@gmail.com') {
+      return '/super-admin';
+    }
+    if (email.endsWith('@radix.school')) {
+      const schoolId = email.replace('@radix.school', '').toUpperCase();
+      return `/curriculum/${schoolId}`;
+    }
+    return '/login';
+  };
 
   // Load animation scripts safely after mounting
   useEffect(() => {
@@ -194,9 +225,10 @@ export default function Page() {
         
         <ul className="hidden md:flex items-center gap-[2.5rem]">
           {[
-            { href: '#programs', label: 'Programs' },
-            { href: '#how', label: 'Labs' },
-            { href: '#features', label: 'Impact' }
+            { href: '/', label: 'Home' },
+            { href: '/#programs', label: 'Programs' },
+            { href: '/about', label: 'About Us' },
+            { href: '/contact', label: 'Contact' }
           ].map(link => (
             <li key={link.label}>
                <a href={link.href} className={`relative text-[0.8rem] font-semibold tracking-[0.1em] uppercase pb-[4px] transition-all border-b-2 border-transparent hover:border-emerald-500 ${isHeroActive ? 'text-white/85 hover:text-white' : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white'}`} style={{ fontFamily: "'Syne', sans-serif" }}>
@@ -205,9 +237,9 @@ export default function Page() {
             </li>
           ))}
           <li>
-             <a href="#" onClick={(e) => { e.preventDefault(); setIsModalOpen(true); }} className={`relative text-[0.8rem] font-semibold tracking-[0.1em] uppercase pb-[4px] transition-all border-b-2 border-transparent hover:border-emerald-500 ${isHeroActive ? 'text-white/85 hover:text-white' : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white'}`} style={{ fontFamily: "'Syne', sans-serif" }}>
-               Curriculum
-             </a>
+             <Link href={getSchoolPortalUrl()} className={`relative text-[0.8rem] font-semibold tracking-[0.1em] uppercase pb-[4px] transition-all border-b-2 border-transparent hover:border-emerald-500 ${isHeroActive ? 'text-white/85 hover:text-white' : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white'}`} style={{ fontFamily: "'Syne', sans-serif" }}>
+               School Portal
+             </Link>
           </li>
           
           <li>
@@ -218,15 +250,16 @@ export default function Page() {
                 </div>
               </button>
               
-              {isSignedIn ? (
-                <>
-                  {isAdmin && <a href="/admin" className="px-[1.5rem] py-[0.55rem] rounded-[6px] bg-emerald-500 text-white font-bold tracking-[0.12em] text-[0.78rem] uppercase shadow-[0_2px_12px_rgba(52,211,153,0.3)] hover:shadow-[0_4px_20px_rgba(52,211,153,0.4)] transition-all hover:-translate-y-[1px]" style={{ fontFamily: "'Syne', sans-serif" }}>Admin</a>}
-                  <UserButton />
-                </>
+              {!user ? (
+                <a href="/login" className="px-[1.5rem] py-[0.55rem] rounded-[6px] bg-white text-zinc-950 font-bold tracking-[0.12em] text-[0.78rem] uppercase shadow-[0_2px_12px_rgba(255,255,255,0.2)] hover:shadow-[0_4px_20px_rgba(255,255,255,0.4)] transition-all hover:-translate-y-[1px]" style={{ fontFamily: "'Syne', sans-serif" }}>Log In</a>
               ) : (
-                <SignInButton mode="modal">
-                  <button className="px-[1.5rem] py-[0.55rem] rounded-[6px] bg-emerald-500 text-white font-bold tracking-[0.12em] text-[0.78rem] uppercase shadow-[0_2px_12px_rgba(52,211,153,0.3)] hover:shadow-[0_4px_20px_rgba(52,211,153,0.4)] transition-all hover:-translate-y-[1px]" style={{ fontFamily: "'Syne', sans-serif" }}>Login</button>
-                </SignInButton>
+                <button onClick={handleLogout} className="px-[1.5rem] py-[0.55rem] rounded-[6px] bg-zinc-800 text-white font-bold tracking-[0.12em] text-[0.78rem] uppercase border border-white/10 hover:bg-zinc-700 transition-all flex items-center gap-2" style={{ fontFamily: "'Syne', sans-serif" }}>
+                  <LogOut className="w-3 h-3" /> Out
+                </button>
+              )}
+
+              {user?.email === 'princedas000555@gmail.com' && (
+                <Link href="/super-admin" className="px-[1.5rem] py-[0.55rem] rounded-[6px] bg-emerald-500 text-white font-bold tracking-[0.12em] text-[0.78rem] uppercase shadow-[0_2px_12px_rgba(52,211,153,0.3)] hover:shadow-[0_4px_20px_rgba(52,211,153,0.4)] transition-all hover:-translate-y-[1px]" style={{ fontFamily: "'Syne', sans-serif" }}>Admin</Link>
               )}
             </div>
           </li>
@@ -250,19 +283,21 @@ export default function Page() {
       {isMobileMenuOpen && (
         <div className="fixed inset-0 z-40 bg-white/95 dark:bg-zinc-950/95 backdrop-blur-sm pt-24 px-6">
           <ul className="flex flex-col gap-6 text-center">
-            <li><a href="#programs" onClick={() => setIsMobileMenuOpen(false)} className="text-2xl font-bold text-zinc-900 dark:text-zinc-100">Programs</a></li>
-            <li><a href="#how" onClick={() => setIsMobileMenuOpen(false)} className="text-2xl font-bold text-zinc-900 dark:text-zinc-100">Labs</a></li>
-            <li><a href="#features" onClick={() => setIsMobileMenuOpen(false)} className="text-2xl font-bold text-zinc-900 dark:text-zinc-100">Impact</a></li>
-            <li><a href="#" onClick={(e) => { e.preventDefault(); setIsMobileMenuOpen(false); setIsModalOpen(true); }} className="text-2xl font-bold text-zinc-900 dark:text-zinc-100">Curriculum</a></li>
-            <li className="pt-6 mt-6 border-t border-zinc-200 dark:border-zinc-800">
-              {isAdmin ? (
-                <a href="/admin" onClick={() => setIsMobileMenuOpen(false)} className="text-xl font-bold text-emerald-500">Admin Panel</a>
-              ) : !isSignedIn ? (
-                <SignInButton mode="modal">
-                  <button className="text-xl font-bold text-emerald-500">Login</button>
-                </SignInButton>
-              ) : <div className="flex justify-center"><UserButton /></div>}
-            </li>
+            <li><a href="/" onClick={() => setIsMobileMenuOpen(false)} className="text-2xl font-bold text-zinc-900 dark:text-zinc-100">Home</a></li>
+            <li><a href="/#programs" onClick={() => setIsMobileMenuOpen(false)} className="text-2xl font-bold text-zinc-900 dark:text-zinc-100">Programs</a></li>
+            <li><a href="/about" onClick={() => setIsMobileMenuOpen(false)} className="text-2xl font-bold text-zinc-900 dark:text-zinc-100">About Us</a></li>
+            <li><a href="/contact" onClick={() => setIsMobileMenuOpen(false)} className="text-2xl font-bold text-zinc-900 dark:text-zinc-100">Contact</a></li>
+             <li><Link href={getSchoolPortalUrl()} onClick={() => setIsMobileMenuOpen(false)} className="text-2xl font-bold text-zinc-900 dark:text-zinc-100">School Portal</Link></li>
+             
+             {!user ? (
+               <a href="/login" onClick={() => setIsMobileMenuOpen(false)} className="text-xl font-bold text-white bg-zinc-800 rounded-xl py-3 mt-4 text-center">Log In</a>
+             ) : (
+               <button onClick={handleLogout} className="text-xl font-bold text-red-500 mt-4 text-center border border-red-500/20 py-2 rounded-xl">Log Out</button>
+             )}
+
+             {user?.email === 'princedas000555@gmail.com' && (
+               <a href="/super-admin" onClick={() => setIsMobileMenuOpen(false)} className="text-xl font-bold text-emerald-500 mt-2 text-center">Admin Panel</a>
+             )}
           </ul>
         </div>
       )}
@@ -288,18 +323,26 @@ export default function Page() {
               <p className="text-lg md:text-xl text-zinc-300 max-w-xl mb-10 leading-relaxed font-medium" style={{ fontFamily: "'Syne', sans-serif" }}>
                 RADIX Robotics installs world-class composite skill laboratories inside schools — empowering students with robotics, AI, and advanced tech education.
               </p>
-              <div className="flex flex-col sm:flex-row gap-4">
-                <a href="#programs" className="inline-flex items-center justify-center gap-2 px-8 py-4 bg-emerald-500 hover:bg-emerald-400 text-black font-bold uppercase tracking-wider rounded-lg transition-colors">
-                  Explore Programs <ArrowRight className="w-4 h-4" />
+              <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
+                <a href="#programs" className="group w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-4 bg-emerald-500 hover:bg-emerald-400 text-black font-bold uppercase tracking-wider rounded-lg transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_10px_30px_-10px_rgba(16,185,129,0.5)] active:scale-95">
+                  Explore Programs <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                 </a>
-                <a href="#how" className="inline-flex items-center justify-center gap-2 px-8 py-4 bg-white/10 hover:bg-white/20 text-white font-bold uppercase tracking-wider rounded-lg backdrop-blur-md transition-colors border border-white/10">
-                  <Play className="w-4 h-4" /> See Our Labs
+                <a href="/3d-lab" target="_blank" rel="noreferrer" className="group w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-4 bg-white/10 hover:bg-white/20 text-white font-bold uppercase tracking-wider rounded-lg backdrop-blur-md transition-all duration-300 border border-white/10 hover:-translate-y-1 hover:shadow-[0_10px_30px_-10px_rgba(255,255,255,0.2)] active:scale-95">
+                  <Play className="w-4 h-4 group-hover:scale-125 transition-transform" /> View 3D Lab
                 </a>
               </div>
             </div>
 
             <div className="absolute z-30 left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-center opacity-0 transition-opacity duration-1000 pointer-events-none" ref={diveInRef}>
-              <h2 className="text-5xl md:text-8xl font-black text-white px-4">Dive in...</h2>
+              <h2 
+                className="text-3xl md:text-6xl font-medium tracking-[0.15em] text-cyan-200 px-4 uppercase" 
+                style={{ 
+                  fontFamily: "'Orbitron', sans-serif", 
+                  textShadow: '0 0 25px rgba(34, 211, 238, 0.8), 0 0 50px rgba(34, 211, 238, 0.4)' 
+                }}
+              >
+                Dive In_
+              </h2>
             </div>
 
             <div className="absolute z-30 bottom-10 left-1/2 -translate-x-1/2 flex flex-col items-center gap-4 opacity-0 transition-opacity duration-500" ref={scrollCueRef}>
@@ -351,8 +394,8 @@ export default function Page() {
                 { icon: <Wifi className="w-6 h-6 text-cyan-500" />, title: 'IoT & Smart Systems', label: 'CONNECTED', desc: 'Build networked sensor arrays and real-time monitoring dashboards using MQTT and cloud APIs.', tags: ['ESP32', 'MQTT', 'Cloud'] },
                 { icon: <Trophy className="w-6 h-6 text-amber-500" />, title: 'Robotics Olympiad Prep', label: 'COMPETITIVE', desc: 'Structured training for WRO, FRC, and national robotics competitions with mentored sprints.', tags: ['WRO', 'FRC', 'Strategy'] }
               ].map((prog, idx) => (
-                <div key={idx} className="group p-8 rounded-3xl bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 hover:border-emerald-500 dark:hover:border-emerald-500 transition-colors flex flex-col h-full">
-                  <div className="w-12 h-12 rounded-xl bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 flex items-center justify-center mb-6 shadow-sm">
+                <div key={idx} className="group p-8 rounded-3xl bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 hover:border-emerald-500 dark:hover:border-emerald-500 transition-all duration-500 hover:-translate-y-2 hover:shadow-[0_20px_40px_-15px_rgba(16,185,129,0.15)] flex flex-col h-full cursor-pointer">
+                  <div className="w-12 h-12 rounded-xl bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 flex items-center justify-center mb-6 shadow-sm group-hover:scale-110 group-hover:bg-emerald-500/10 group-hover:border-emerald-500/30 transition-all duration-500">
                     {prog.icon}
                   </div>
                   <span className="text-xs font-bold tracking-widest text-zinc-400 mb-2">{prog.label}</span>
@@ -397,13 +440,16 @@ export default function Page() {
                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                  {[
                    { val: '340%', label: 'Increase in STEM Enrollment' },
-                   { val: '120+', label: 'Schools Partnered Nationwide' },
+                   { val: '250+', label: 'Hands-on Curriculum Hours' },
                    { val: '98%', label: 'Student Satisfaction Rate' },
                    { val: '40hr', label: 'Teacher Certification Time' }
                  ].map((stat, i) => (
-                   <div key={i} className="p-8 rounded-3xl bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800">
-                     <div className="text-4xl lg:text-5xl font-black tracking-tighter text-zinc-900 dark:text-white mb-2">{stat.val}</div>
-                     <div className="text-sm font-medium text-zinc-500 dark:text-zinc-400 leading-tight">{stat.label}</div>
+                   <div key={i} className="group p-8 rounded-3xl bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 transition-all duration-500 hover:-translate-y-2 hover:shadow-2xl hover:border-emerald-500/30 cursor-default">
+                     <div className="text-4xl lg:text-5xl font-black tracking-tighter text-zinc-900 dark:text-white mb-2 group-hover:text-emerald-400 transition-colors duration-500">{stat.val}</div>
+                     <div className="text-sm font-medium text-zinc-500 dark:text-zinc-400 leading-tight flex items-center gap-2">
+                       {stat.label}
+                       <ArrowRight className="w-3 h-3 text-emerald-500 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-500" />
+                     </div>
                    </div>
                  ))}
                </div>
@@ -441,9 +487,23 @@ export default function Page() {
                </div>
                
                {/* Showcase Image */}
-               <div className="relative rounded-[2rem] overflow-hidden bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 p-2">
+               <div className="relative rounded-[2rem] overflow-hidden bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 p-2 group">
                  <div className="relative rounded-[1.5rem] overflow-hidden">
-                   <img src="robotics_lab.png" alt="Composite Robotics Lab" className="w-full h-auto object-cover aspect-video lg:aspect-[4/5]" />
+                   <img src="robotics_lab.png" alt="Composite Robotics Lab" className="w-full h-auto object-cover aspect-video lg:aspect-[4/5] group-hover:scale-105 transition-transform duration-700" />
+                   
+                   {/* 3D Lab Button Overlay */}
+                   <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex items-center justify-center">
+                     <a 
+                       href="/3d-lab" 
+                       target="_blank" 
+                       rel="noreferrer"
+                       className="bg-emerald-500 hover:bg-emerald-400 text-black font-bold py-3 px-8 rounded-full shadow-[0_0_30px_rgba(16,185,129,0.5)] transform translate-y-4 group-hover:translate-y-0 transition-all duration-500 flex items-center gap-2"
+                     >
+                       <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                       See our labs in 3D
+                     </a>
+                   </div>
+
                    <div className="absolute bottom-6 left-6 right-6 p-4 rounded-xl bg-white/90 dark:bg-zinc-950/90 backdrop-blur-md border border-zinc-200 dark:border-zinc-800 flex justify-between items-center shadow-xl">
                       <span className="font-medium text-zinc-600 dark:text-zinc-400">Standard Setup Time</span>
                       <span className="font-black text-lg text-emerald-600 dark:text-emerald-400">4-6 Weeks</span>
@@ -462,11 +522,11 @@ export default function Page() {
                Let&apos;s Build the<br/><span className="text-zinc-400">Lab of Tomorrow</span>
              </h2>
              <p className="text-xl text-zinc-600 dark:text-zinc-400 mb-12 max-w-2xl mx-auto">
-               Join <strong className="text-zinc-900 dark:text-white font-bold">120+ schools</strong> across India that have already partnered with RADIX Robotics.
+               Join the <strong className="text-zinc-900 dark:text-white font-bold">forward-thinking pioneer schools</strong> across Northeast India that have already partnered with RADIX Robotics.
              </p>
-             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-                <a href="https://wa.me/916001979712" target="_blank" rel="noreferrer" className="w-full sm:w-auto px-8 py-4 bg-zinc-900 hover:bg-zinc-800 dark:bg-white dark:hover:bg-zinc-100 text-white dark:text-zinc-900 text-lg font-bold rounded-2xl transition-colors inline-block text-center">
-                  Apply for Lab
+             <div className="flex flex-col sm:flex-row items-center justify-center gap-4 group cursor-pointer w-full sm:w-auto">
+                <a href="https://wa.me/916001979712" target="_blank" rel="noreferrer" className="w-full sm:w-auto px-10 py-5 bg-zinc-900 hover:bg-zinc-800 dark:bg-white dark:hover:bg-zinc-100 text-white dark:text-zinc-900 text-lg font-bold rounded-2xl transition-all duration-300 inline-flex items-center justify-center gap-3 hover:-translate-y-1 hover:shadow-[0_20px_40px_-15px_rgba(255,255,255,0.3)] active:scale-95">
+                  Apply for Lab <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                 </a>
              </div>
            </div>
@@ -483,10 +543,10 @@ export default function Page() {
                 Making robotics and coding the most fun part of the school day. Equipping students with the skills they need to invent the future.
               </p>
               <div className="flex gap-4">
-                 <a href="#" className="w-10 h-10 rounded-full bg-zinc-100 dark:bg-zinc-900 flex items-center justify-center text-zinc-600 dark:text-zinc-400 hover:text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 transition-colors">
+                 <a href="#" className="w-10 h-10 rounded-full bg-zinc-100 dark:bg-zinc-900 flex items-center justify-center text-zinc-600 dark:text-zinc-400 hover:text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 transition-all duration-300 hover:scale-110 active:scale-95">
                    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
                  </a>
-                 <a href="#" className="w-10 h-10 rounded-full bg-zinc-100 dark:bg-zinc-900 flex items-center justify-center text-zinc-600 dark:text-zinc-400 hover:text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 transition-colors">
+                 <a href="#" className="w-10 h-10 rounded-full bg-zinc-100 dark:bg-zinc-900 flex items-center justify-center text-zinc-600 dark:text-zinc-400 hover:text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 transition-all duration-300 hover:scale-110 active:scale-95">
                    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
                  </a>
               </div>
@@ -495,18 +555,18 @@ export default function Page() {
             <div>
               <h4 className="font-bold text-zinc-900 dark:text-zinc-100 mb-6">Quick Links</h4>
               <ul className="space-y-4">
-                <li><a href="#programs" className="text-zinc-600 dark:text-zinc-400 hover:text-emerald-500 transition-colors">Our Programs</a></li>
-                <li><a href="#" onClick={(e) => { e.preventDefault(); setIsModalOpen(true); }} className="text-zinc-600 dark:text-zinc-400 hover:text-emerald-500 transition-colors">The Curriculum</a></li>
-                <li><a href="#labs" className="text-zinc-600 dark:text-zinc-400 hover:text-emerald-500 transition-colors">Teacher Training</a></li>
+                <li><a href="#programs" className="inline-block text-zinc-600 dark:text-zinc-400 hover:text-emerald-500 hover:translate-x-1 transition-all duration-300">Our Programs</a></li>
+                <li><a href="/school-admin/students" className="inline-block text-zinc-600 dark:text-zinc-400 hover:text-emerald-500 hover:translate-x-1 transition-all duration-300">School Portal</a></li>
+                <li><a href="#labs" className="inline-block text-zinc-600 dark:text-zinc-400 hover:text-emerald-500 hover:translate-x-1 transition-all duration-300">Teacher Training</a></li>
               </ul>
             </div>
             
             <div>
               <h4 className="font-bold text-zinc-900 dark:text-zinc-100 mb-6">Get in Touch</h4>
               <ul className="space-y-4">
-                <li><a href="#" className="text-zinc-600 dark:text-zinc-400 hover:text-emerald-500 transition-colors">About RADIX</a></li>
-                <li><a href="#" className="text-zinc-600 dark:text-zinc-400 hover:text-emerald-500 transition-colors">Join the Team</a></li>
-                <li><a href="https://wa.me/916001979712" target="_blank" rel="noreferrer" className="text-zinc-600 dark:text-zinc-400 hover:text-emerald-500 transition-colors">Contact Us</a></li>
+                <li><a href="/about" className="inline-block text-zinc-600 dark:text-zinc-400 hover:text-emerald-500 hover:translate-x-1 transition-all duration-300">About RADIX</a></li>
+                <li><a href="/contact" className="inline-block text-zinc-600 dark:text-zinc-400 hover:text-emerald-500 hover:translate-x-1 transition-all duration-300">Join the Team</a></li>
+                <li><a href="https://wa.me/916001979712" target="_blank" rel="noreferrer" className="inline-block text-zinc-600 dark:text-zinc-400 hover:text-emerald-500 hover:translate-x-1 transition-all duration-300">Contact Us</a></li>
               </ul>
             </div>
           </div>

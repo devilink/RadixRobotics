@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 
-import { ClerkProvider } from '@clerk/nextjs'
+
 
 export const metadata: Metadata = {
   title: "RADIX Robotics — Composite Labs for Schools",
@@ -24,7 +24,7 @@ export default function RootLayout({
         />
       </head>
       <body suppressHydrationWarning>
-        <ClerkProvider>{children}</ClerkProvider>
+        {children}
       </body>
     </html>
   );

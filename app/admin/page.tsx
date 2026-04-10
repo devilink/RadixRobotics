@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react';
 import { getCurriculumUsers, createCurriculumUser, deleteCurriculumUser, updateCurriculumUser } from '../actions';
-import { SignOutButton, UserButton, useUser } from '@clerk/nextjs';
 
 type User = {
   id: string;
@@ -15,12 +14,7 @@ export default function AdminPage() {
   const [users, setUsers] = useState<User[]>([]);
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-  const { user, isLoaded } = useUser();
   const [loading, setLoading] = useState(true);
-
-  // Example Admin Check
-  // In a real app we would use Clerk Roles, but we use the primary email here as a simple check based on plan
-  const adminEmail = "princedas000555@gmail.com";
   
   useEffect(() => {
     loadUsers();
@@ -54,14 +48,7 @@ export default function AdminPage() {
     else loadUsers();
   }
 
-  if (!isLoaded || loading) return <div className="p-8">Loading...</div>;
-
-  const email = user?.primaryEmailAddress?.emailAddress;
-  const isAdmin = email === adminEmail;
-
-  if (!isAdmin) {
-    return <div className="p-8 text-center text-red-600">Access Denied. You are not the admin.</div>
-  }
+  if (loading) return <div className="p-8">Loading...</div>;
 
   return (
     <div className="min-h-screen bg-gray-50 p-8 pt-24 font-sans text-gray-800">
@@ -69,8 +56,7 @@ export default function AdminPage() {
         <div className="flex justify-between items-center mb-8 border-b border-gray-100 pb-4">
           <h1 className="text-2xl font-semibold text-gray-900">Curriculum User Management</h1>
           <div className="flex gap-4 items-center">
-            <span className="text-sm font-medium text-gray-500">{email}</span>
-            <UserButton />
+            <span className="text-sm font-medium text-gray-500">princedas000555@gmail.com</span>
           </div>
         </div>
 

@@ -1,7 +1,10 @@
     gsap.registerPlugin(ScrollTrigger);
 
     /* NAV SCROLL */
-    window.addEventListener('scroll', () => document.getElementById('nav').classList.toggle('scrolled', scrollY > 40));
+    window.addEventListener('scroll', () => {
+      const nav = document.getElementById('nav');
+      if (nav) nav.classList.toggle('scrolled', window.scrollY > 40);
+    });
 
     /* REVEALS */
     gsap.utils.toArray('.reveal').forEach(el => {
