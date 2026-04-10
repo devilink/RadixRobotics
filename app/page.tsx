@@ -3,11 +3,9 @@ import { useEffect, useRef, useState } from 'react';
 import Script from 'next/script';
 import Link from 'next/link';
 import { createClient } from '@/utils/supabase/client';
-import LoginModal from './components/LoginModal';
 import { Menu, X, Moon, Sun, ArrowRight, Play, Server, Layers, Cpu, Code2, Wifi, Trophy, LogOut } from 'lucide-react';
 
 export default function Page() {
-  const [isModalOpen, setIsModalOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isDark, setIsDark] = useState(false);
   const [isHeroActive, setIsHeroActive] = useState(true);
@@ -207,7 +205,6 @@ export default function Page() {
 
   return (
     <>
-      <LoginModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
       <div className="cursor hidden lg:block w-2 h-2 bg-emerald-400 rounded-full fixed pointer-events-none z-50 mix-blend-difference" id="cursor"></div>
       <div className="cursor-ring hidden lg:block w-10 h-10 border border-emerald-400/40 rounded-full fixed pointer-events-none z-50 transition-all duration-300 ease-out" id="cr"></div>
 
