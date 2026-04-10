@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RADIX Robotics | The Future of STEM</title>
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+    
+    <!-- Libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+    <!-- Smooth Scroll Library -->
+    <script src="https://cdn.jsdelivr.net/npm/@studio-freight/lenis@1.0.42/dist/lenis.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <style>
+        :root {
+            --glass: rgba(255, 255, 255, 0.15);
+            --glass-border: rgba(255, 255, 255, 0.3);
+            --accent: #3b82f6;
+            --bg-gradient: linear-gradient(180deg, #bae6fd 0%, #f8fafc 100%);
+            --text-main: #0f172a;
+            --card-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
+        }
+
+        [data-theme="dark"] {
+            --glass: rgba(15, 23, 42, 0.4);
+            --glass-border: rgba(59, 130, 246, 0.2);
+            --accent: #60a5fa;
+            --bg-gradient: radial-gradient(circle at center, #0f172a 0%, #020617 100%);
+            --text-main: #f8fafc;
+            --card-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+        }
+
+        html.lenis {
+            height: auto;
+        }
+
+        .lenis.lenis-smooth {
+            scroll-behavior: auto;
+        }
+
+        .lenis.lenis-smooth [data-lenis-prevent] {
+            overscroll-behavior: contain;
+        }
+
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background: var(--bg-gradient);
+            color: var(--text-main);
+            transition: background 1s cubic-bezier(0.4, 0, 0.2, 1);
+            overflow-x: hidden;
+        }
+
+        .syne { font-family: 'Syne', sans-serif; }
+
+        .glass-card {
+            background: var(--glass);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--glass-border);
+            border-radius: 28px;
+            box-shadow: var(--card-shadow);
+        }
+
+        .hero-layout {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            min-height: 100vh;
+            padding: 2rem;
+            position: relative;
+        }
+
+        #canvas-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100vh;
+            z-index: 1; 
+            pointer-events: none;
+        }
+
+        .theme-toggle {
+            position: fixed;
+            top: 2rem;
+            right: 2rem;
+            z-index: 100;
+        }
+
+        .nav-link {
+            transition: all 0.3s ease;
+            position: relative;
+            cursor: pointer;
+        }
+
+        .nav-link::after {
+            content: '';
+            position: absolute;
+            bottom: -4px;
+            left: 50%;
+            width: 0;
+            height: 2px;
+            background: var(--accent);
+            transition: all 0.3s ease;
+            transform: translateX(-50%);
+        }
+
+        .nav-link:hover::after {
+            width: 100%;
+        }
+
+        /* Sky Styling */
+        .sky-bg {
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(to bottom, #7dd3fc, #e0f2fe);
+            opacity: 1;
+            transition: opacity 1s ease;
+            z-index: -1;
+        }
+
+        [data-theme="dark"] .sky-bg {
+            opacity: 0;
+        }
+
+        .cloud {
+            position: absolute;
+            background: white;
+            filter: blur(60px);
+            border-radius: 50%;
+            opacity: 0.4;
+            pointer-events: none;
+        }
+
+        /* Layout Utilities */
+        .section-pad { padding: 10rem 2rem; }
+        .bento-grid {
+            display: grid;
+            grid-template-columns: repeat(12, 1fr);
+            gap: 1.5rem;
+        }
+
+        @media (max-width: 1024px) {
+            .hero-layout { grid-template-columns: 1fr; }
+            .right-actions { display: none; }
+            .bento-grid { grid-template-columns: repeat(1, 1fr); }
+            .bento-grid > div { grid-column: span 12 !important; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Theme Switcher -->
+    <div class="theme-toggle">
+        <button id="toggleBtn" class="glass-card p-3 flex items-center gap-3 hover:scale-105 transition-transform">
+            <span id="theme-icon" class="text-xl">☀️</span>
+            <span class="font-bold text-xs tracking-widest uppercase" id="theme-text">Day Mode</span>
+        </button>
+    </div>
+
+    <!-- Background 3D Viewport -->
+    <div id="canvas-container"></div>
+
+    <!-- Sky Background Layer -->
+    <div class="sky-bg">
+        <div class="cloud w-96 h-96 top-20 -left-20"></div>
+        <div class="cloud w-64 h-64 top-1/2 right-10"></div>
+    </div>
+
+    <!-- Navigation -->
+    <nav class="fixed top-8 left-1/2 -translate-x-1/2 z-[90] w-fit px-8 py-4 glass-card flex gap-10 items-center">
+        <a href="#" class="nav-link font-bold text-sm uppercase tracking-tighter">Radix</a>
+        <a href="#programs" class="nav-link text-[10px] uppercase tracking-widest opacity-70">Programs</a>
+        <a href="#how" class="nav-link text-[10px] uppercase tracking-widest opacity-70">The Labs</a>
+        <a href="#impact" class="nav-link text-[10px] uppercase tracking-widest opacity-70">Impact</a>
+    </nav>
+
+    <!-- Main Hero -->
+    <header class="relative z-10 hero-layout overflow-hidden">
+        <div class="flex flex-col justify-end pb-20 pl-8 max-w-2xl">
+            <div class="glass-card p-10 stagger-in opacity-0 translate-y-10">
+                <span class="text-blue-600 dark:text-blue-400 font-bold tracking-widest uppercase text-[10px] mb-4 block">Composite Skill Labs • NEP 2020 Aligned</span>
+                <h1 class="syne text-5xl md:text-7xl leading-[0.95] mb-8">Building <br><span class="text-blue-600 dark:text-blue-400">Tomorrow's</span> Pioneers.</h1>
+                <p class="text-lg opacity-80 mb-10 font-medium leading-relaxed">RADIX Robotics installs world-class innovation centers in schools, empowering the next generation with AI, Robotics, and IoT expertise.</p>
+                <div class="flex flex-wrap gap-5">
+                    <button class="bg-blue-600 text-white px-10 py-5 rounded-2xl font-bold hover:bg-blue-700 transition-all shadow-xl shadow-blue-500/30">Partner With Us</button>
+                    <button class="glass-card px-10 py-5 font-bold border-white/20 hover:bg-white/10 transition-colors">Explore Labs</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="flex flex-col justify-center items-end pr-8 gap-8 right-actions">
+            <div class="glass-card p-8 w-72 translate-x-12 opacity-0 hover:translate-x-0 transition-all cursor-pointer group action-card">
+                <div class="flex justify-between items-center mb-5">
+                    <span class="text-3xl">⚡</span>
+                    <span class="text-[9px] font-bold opacity-50 uppercase tracking-[0.2em]">Efficiency</span>
+                </div>
+                <h3 class="font-bold text-lg mb-2">Plug & Play</h3>
+                <p class="text-xs opacity-60 leading-relaxed">Full lab installation and technical setup completed within 14 days.</p>
+            </div>
+            <div class="glass-card p-8 w-72 translate-x-12 opacity-0 hover:translate-x-0 transition-all cursor-pointer group action-card">
+                <div class="flex justify-between items-center mb-5">
+                    <span class="text-3xl">🧠</span>
+                    <span class="text-[9px] font-bold opacity-50 uppercase tracking-[0.2em]">Mentorship</span>
+                </div>
+                <h3 class="font-bold text-lg mb-2">Expert Led</h3>
+                <p class="text-xs opacity-60 leading-relaxed">Curriculum delivered by certified robotics engineers.</p>
+            </div>
+            <div class="glass-card p-8 w-72 translate-x-12 opacity-0 hover:translate-x-0 transition-all cursor-pointer group action-card">
+                <div class="flex justify-between items-center mb-5">
+                    <span class="text-3xl">🏗️</span>
+                    <span class="text-[9px] font-bold opacity-50 uppercase tracking-[0.2em]">Standards</span>
+                </div>
+                <h3 class="font-bold text-lg mb-2">Elite Hardware</h3>
+                <p class="text-xs opacity-60 leading-relaxed">Arduino, RPi, and Industrial sensors updated annually.</p>
+            </div>
+        </div>
+    </header>
+
+    <section class="relative z-10 section-pad max-w-7xl mx-auto" id="programs">
+        <div class="mb-16">
+            <span class="text-blue-500 font-bold text-xs tracking-widest uppercase">The Curriculum</span>
+            <h2 class="syne text-5xl mt-2">Future-Ready Tracks</h2>
+        </div>
+        
+        <div class="bento-grid">
+            <div class="glass-card p-10 col-span-8 row-span-2 flex flex-col justify-end min-h-[500px] hover:border-blue-500/40 transition-all reveal">
+                <div class="mb-auto">
+                    <span class="px-4 py-2 glass-card text-[10px] font-bold uppercase tracking-widest text-blue-500">Advanced Tier</span>
+                </div>
+                <span class="text-5xl mb-6">🤖</span>
+                <h3 class="syne text-3xl mb-4">Autonomous Mechatronics</h3>
+                <p class="opacity-70 text-base max-w-lg mb-8">From obstacle avoidance to neural network integration. Students build robots that perceive, think, and act independently using Python and C++.</p>
+                <div class="flex gap-3">
+                    <span class="text-[10px] font-bold opacity-50 px-3 py-1 border border-white/10 rounded-full">LIDAR</span>
+                    <span class="text-[10px] font-bold opacity-50 px-3 py-1 border border-white/10 rounded-full">ROS</span>
+                    <span class="text-[10px] font-bold opacity-50 px-3 py-1 border border-white/10 rounded-full">Kinematics</span>
+                </div>
+            </div>
+
+            <div class="glass-card p-8 col-span-4 reveal">
+                <h3 class="syne text-xl mb-3">AI & Vision</h3>
+                <p class="opacity-60 text-sm mb-6">Object detection and facial recognition tracks for grades 9-12.</p>
+                <span class="text-blue-500 font-bold text-[10px] tracking-widest uppercase">Learn More →</span>
+            </div>
+            <div class="glass-card p-8 col-span-4 reveal">
+                <h3 class="syne text-xl mb-3">Drone Tech</h3>
+                <p class="opacity-60 text-sm mb-6">Flight dynamics, piloting, and aerial surveying fundamentals.</p>
+                <span class="text-blue-500 font-bold text-[10px] tracking-widest uppercase">Learn More →</span>
+            </div>
+
+            <div class="glass-card p-8 col-span-4 reveal">
+                <span class="text-3xl block mb-4">🖨️</span>
+                <h3 class="syne text-lg mb-2">3D Prototyping</h3>
+                <p class="opacity-60 text-xs">CAD Design to Physical Model. Mastering Fusion 360 and SLA/FDM printing.</p>
+            </div>
+            <div class="glass-card p-8 col-span-4 reveal">
+                <span class="text-3xl block mb-4">☁️</span>
+                <h3 class="syne text-lg mb-2">IoT Ecosystems</h3>
+                <p class="opacity-60 text-xs">Smart home systems and cloud-connected sensor networks for sustainability.</p>
+            </div>
+            <div class="glass-card p-8 col-span-4 reveal">
+                <span class="text-3xl block mb-4">🏆</span>
+                <h3 class="syne text-lg mb-2">Competitions</h3>
+                <p class="opacity-60 text-xs">Structured coaching for WRO, FRC, and national robotics olympiads.</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="relative z-10 section-pad bg-white/5" id="how">
+        <div class="max-w-7xl mx-auto flex flex-col md:flex-row gap-20 items-center">
+            <div class="flex-1">
+                <span class="text-blue-500 font-bold text-xs tracking-widest uppercase">The Lifecycle</span>
+                <h2 class="syne text-5xl mt-2 mb-12">How We Transform Your Campus</h2>
+                <div class="space-y-12">
+                    <div class="flex gap-8 group reveal">
+                        <div class="w-14 h-14 rounded-2xl glass-card flex items-center justify-center font-bold text-xl group-hover:bg-blue-600 group-hover:text-white transition-all shrink-0">1</div>
+                        <div>
+                            <h4 class="syne text-xl mb-2">Design & Installation</h4>
+                            <p class="opacity-60 text-sm leading-relaxed">We assess your space and install industrial workstations, safety gear, and the full hardware stack.</p>
+                        </div>
+                    </div>
+                    <div class="flex gap-8 group reveal">
+                        <div class="w-14 h-14 rounded-2xl glass-card flex items-center justify-center font-bold text-xl group-hover:bg-blue-600 group-hover:text-white transition-all shrink-0">2</div>
+                        <div>
+                            <h4 class="syne text-xl mb-2">Teacher Immersion</h4>
+                            <p class="opacity-60 text-sm leading-relaxed">Exclusive 40-hour bootcamp for school staff to master the robotics curriculum and hardware maintenance.</p>
+                        </div>
+                    </div>
+                    <div class="flex gap-8 group reveal">
+                        <div class="w-14 h-14 rounded-2xl glass-card flex items-center justify-center font-bold text-xl group-hover:bg-blue-600 group-hover:text-white transition-all shrink-0">3</div>
+                        <div>
+                            <h4 class="syne text-xl mb-2">Active Mentorship</h4>
+                            <p class="opacity-60 text-sm leading-relaxed">RADIX engineers conduct weekly sessions, ensuring students are building projects that solve real problems.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="flex-1 w-full">
+                <div class="glass-card p-4 aspect-square relative overflow-hidden flex items-center justify-center">
+                    <div class="absolute inset-0 bg-gradient-to-br from-blue-500/10 to-transparent"></div>
+                    <span class="text-[12rem] opacity-20 filter grayscale">⚙️</span>
+                    <div class="absolute bottom-10 left-10 right-10 glass-card p-6 border-blue-500/20">
+                        <p class="text-xs font-bold uppercase tracking-[0.3em] mb-2 text-blue-500">Live Metric</p>
+                        <h5 class="syne text-2xl">98% Hardware Uptime</h5>
+                        <p class="text-[10px] opacity-60">Guaranteed by our quarterly maintenance cycle.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <footer class="relative z-10 p-16 text-center border-t border-white/5">
+        <div class="mb-8 font-bold text-xl syne tracking-tighter">RADIX</div>
+        <p class="opacity-30 text-[9px] tracking-[0.4em] uppercase">RADIX Robotics Pvt Ltd &copy; 2026 | Built with Passion for STEM</p>
+    </footer>
+
+    <script>
+        // --- SMOOTH SCROLL INIT ---
+        const lenis = new Lenis({
+            duration: 1.2,
+            easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+            orientation: 'vertical',
+            gestureOrientation: 'vertical',
+            smoothWheel: true,
+            wheelMultiplier: 1,
+            smoothTouch: false,
+            touchMultiplier: 2,
+            infinite: false,
+        })
+
+        function raf(time) {
+            lenis.raf(time)
+            requestAnimationFrame(raf)
+        }
+        requestAnimationFrame(raf)
+
+        gsap.registerPlugin(ScrollTrigger);
+        lenis.on('scroll', ScrollTrigger.update);
+
+        // --- CUSTOM 3D MODEL CONFIG ---
+        const GLB_MODEL_URL = 'https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/DamagedHelmet/glTF-Binary/DamagedHelmet.glb'; 
+
+        // --- THEME STATE ---
+        let currentTheme = 'light';
+        const toggleBtn = document.getElementById('toggleBtn');
+        const themeIcon = document.getElementById('theme-icon');
+        const themeText = document.getElementById('theme-text');
+
+        // --- THREE.JS SETUP ---
+        const container = document.getElementById('canvas-container');
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        renderer.setClearColor(0x000000, 0); 
+        container.appendChild(renderer.domElement);
+
+        const ambLight = new THREE.AmbientLight(0xffffff, 0.7);
+        scene.add(ambLight);
+        const pointLight = new THREE.PointLight(0x3b82f6, 2, 50);
+        pointLight.position.set(5, 5, 5);
+        scene.add(pointLight);
+        const fillLight = new THREE.PointLight(0xffffff, 1.2, 50);
+        fillLight.position.set(-5, -5, -5);
+        scene.add(fillLight);
+
+        // Geometries & Materials
+        const sphereGeo = new THREE.IcosahedronGeometry(2.2, 64);
+        const glassMat = new THREE.MeshPhysicalMaterial({
+            thickness: 1.5, roughness: 0.1, transmission: 0.9, ior: 1.5,
+            color: 0xdbeafe, transparent: true, opacity: 1,
+            envMapIntensity: 2, reflectivity: 0.8, clearcoat: 1.0, clearcoatRoughness: 0.1
+        });
+
+        // Hierarchy to separate Scroll control from Auto-floating
+        const scrollGroup = new THREE.Group();
+        const floatOffsetGroup = new THREE.Group(); // Handles the idle animation
+        scene.add(scrollGroup);
+        scrollGroup.add(floatOffsetGroup);
+
+        // Day Mesh
+        const dayMesh = new THREE.Mesh(sphereGeo, glassMat);
+        floatOffsetGroup.add(dayMesh);
+
+        // GLB Loader
+        let nightModel = null;
+        const loader = new THREE.GLTFLoader();
+        loader.load(GLB_MODEL_URL, (gltf) => {
+            nightModel = gltf.scene;
+            nightModel.scale.set(2.5, 2.5, 2.5);
+            const box = new THREE.Box3().setFromObject(nightModel);
+            const center = box.getCenter(new THREE.Vector3());
+            nightModel.position.sub(center);
+            nightModel.visible = false; 
+            floatOffsetGroup.add(nightModel);
+        });
+
+        camera.position.z = 8;
+
+        // Space Particles
+        const particlesCount = 3000;
+        const posArray = new Float32Array(particlesCount * 3);
+        for(let i=0; i < particlesCount * 3; i++) {
+            posArray[i] = (Math.random() - 0.5) * 60;
+        }
+        const particlesGeo = new THREE.BufferGeometry();
+        particlesGeo.setAttribute('position', new THREE.BufferAttribute(posArray, 3));
+        const particlesMat = new THREE.PointsMaterial({ size: 0.015, color: 0xffffff, transparent: true, opacity: 0 });
+        const particleMesh = new THREE.Points(particlesGeo, particlesMat);
+        scene.add(particleMesh);
+
+        // --- ENHANCED SMOOTH SCROLL ---
+        // Position and rotation are now handled by ScrollGroup
+        gsap.to(scrollGroup.rotation, {
+            y: Math.PI * 4,
+            ease: "none",
+            scrollTrigger: {
+                trigger: "body",
+                start: "top top",
+                end: "bottom bottom",
+                scrub: 1.2 // Synchronized with Lenis duration
+            }
+        });
+
+        gsap.to(scrollGroup.position, {
+            x: 4,
+            z: -5,
+            ease: "power2.inOut",
+            scrollTrigger: {
+                trigger: "#programs",
+                start: "top bottom",
+                end: "top center",
+                scrub: 1.2
+            }
+        });
+
+        gsap.to(scrollGroup.position, {
+            x: -4,
+            z: -5,
+            ease: "power2.inOut",
+            scrollTrigger: {
+                trigger: "#how",
+                start: "top bottom",
+                end: "top center",
+                scrub: 1.2
+            }
+        });
+
+        // --- THEME SWITCHING ---
+        function switchTheme() {
+            currentTheme = currentTheme === 'light' ? 'dark' : 'light';
+            document.documentElement.setAttribute('data-theme', currentTheme);
+            if(currentTheme === 'dark') {
+                themeIcon.innerText = '🌙'; themeText.innerText = 'Space Mode';
+                dayMesh.visible = false;
+                if(nightModel) nightModel.visible = true;
+                gsap.to(particlesMat, { opacity: 0.6, duration: 1.5 });
+                gsap.to(pointLight, { intensity: 6, duration: 1 });
+            } else {
+                themeIcon.innerText = '☀️'; themeText.innerText = 'Day Mode';
+                dayMesh.visible = true;
+                if(nightModel) nightModel.visible = false;
+                gsap.to(particlesMat, { opacity: 0, duration: 1 });
+                gsap.to(pointLight, { intensity: 2, duration: 1 });
+            }
+        }
+        toggleBtn.addEventListener('click', switchTheme);
+
+        // --- UI REVEALS ---
+        gsap.to(".stagger-in", { opacity: 1, y: 0, duration: 1.2, ease: "power4.out", delay: 0.4 });
+        gsap.to(".action-card", { 
+            opacity: 1, x: 0, duration: 1.5, stagger: 0.2, ease: "power3.out",
+            scrollTrigger: { trigger: ".right-actions", start: "top 80%" } 
+        });
+
+        gsap.utils.toArray('.reveal').forEach(elem => {
+            gsap.from(elem, {
+                y: 50, opacity: 0, duration: 1.2, ease: "power2.out",
+                scrollTrigger: { trigger: elem, start: "top 90%", toggleActions: "play none none none" }
+            });
+        });
+
+        // Render Loop
+        function animate(time) {
+            // Internal floating uses the Offset group so it doesn't fight ScrollGroup
+            floatOffsetGroup.rotation.x += 0.002;
+            floatOffsetGroup.rotation.z += 0.001;
+            
+            if(currentTheme === 'dark') {
+                particleMesh.rotation.y += 0.0003;
+            } else {
+                floatOffsetGroup.position.y = Math.sin(time * 0.001) * 0.2;
+            }
+            renderer.render(scene, camera);
+        }
+        renderer.setAnimationLoop(animate);
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+    </script>
+</body>
+</html>
