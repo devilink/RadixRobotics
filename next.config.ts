@@ -1,7 +1,10 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  images: {
+    // All images are self-hosted static assets in /public.
+    unoptimized: true,
+  },
 };
 
 export default nextConfig;

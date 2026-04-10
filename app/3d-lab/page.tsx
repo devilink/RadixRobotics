@@ -6,10 +6,6 @@ export default function Lab3DPage() {
           title="School Lab" 
           frameBorder="0" 
           allowFullScreen 
-          // @ts-ignore
-          mozallowfullscreen="true" 
-          // @ts-ignore
-          webkitallowfullscreen="true" 
           allow="autoplay; fullscreen; xr-spatial-tracking" 
           src="https://sketchfab.com/models/a97f74bfd83644858af7216f794504b6/embed"
           className="absolute inset-0 w-full h-full border-none"
