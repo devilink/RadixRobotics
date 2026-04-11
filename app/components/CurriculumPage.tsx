@@ -202,19 +202,19 @@ export default function CurriculumPage({ schoolName, userRole, schoolId, userId 
             {userRole === 'super_admin' && (
               <Link 
                 href="/super-admin"
-                className="flex items-center gap-2 px-4 py-2 bg-purple-500/10 hover:bg-purple-500/20 text-purple-400 rounded-full text-sm font-medium transition-colors border border-purple-500/20"
+                className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-purple-500/10 hover:bg-purple-500/20 text-purple-400 rounded-full text-xs sm:text-sm font-medium transition-colors border border-purple-500/20"
               >
-                Super Admin
+                <span className="hidden sm:inline">Super </span>Admin
                 <ChevronRight className="w-4 h-4" />
               </Link>
             )}
           {userRole === 'school_admin' && (
             <Link 
               href={`/school-admin/${schoolId}`}
-              className="flex items-center gap-2 px-4 py-2 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 rounded-full text-sm font-medium transition-colors border border-emerald-500/20"
+              className="flex items-center gap-1 sm:gap-2 px-3 sm:px-4 py-2 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 rounded-full text-xs sm:text-sm font-medium transition-colors border border-emerald-500/20 whitespace-nowrap"
             >
-              School Admin Dashboard
-              <ChevronRight className="w-4 h-4" />
+              <span className="hidden sm:inline">School </span>Admin<span className="hidden md:inline"> Dashboard</span>
+              <ChevronRight className="w-3 h-3 sm:w-4 sm:h-4" />
             </Link>
           )}
         </div>
@@ -230,9 +230,15 @@ export default function CurriculumPage({ schoolName, userRole, schoolId, userId 
             NEP 2020 Aligned Curriculum
           </div>
           <h1 className="text-3xl md:text-5xl lg:text-5xl font-extrabold leading-tight tracking-tight mb-4 animate-[fadeInUp_0.6s_ease_0.1s_both]">
-            <span className={styles.gradientText}>
-              {schoolName ? `${schoolName} Robotics & AI Curriculum` : 'Robotics & AI Curriculum'}
-            </span>
+            {schoolName ? (
+              <>
+                <span className="text-white">{schoolName}</span>
+                <br />
+                <span className={styles.gradientText}>Composite Skill Lab</span>
+              </>
+            ) : (
+              <span className={styles.gradientText}>Composite Skill Lab</span>
+            )}
           </h1>
           <p className="text-base md:text-lg text-[#9898a6] max-w-2xl mx-auto leading-relaxed mb-9 animate-[fadeInUp_0.6s_ease_0.2s_both]">
             A comprehensive K-10 learning path with <strong>250 hands-on sessions</strong> — from basic machines to competition-ready autonomous robots and AI systems.

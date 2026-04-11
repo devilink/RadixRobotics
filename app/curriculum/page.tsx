@@ -41,8 +41,8 @@ export default function Page() {
       NEP 2020 Aligned Curriculum
     </div>
     <h1>
-      <span className="gradient-text">Robotics & AI Curriculum</span><br />
-       for <br /> Delhi Public School, Khanapara
+      <span className="text-white">Delhi Public School, Khanapara</span><br />
+      <span className="gradient-text">Composite Skill Lab</span>
     </h1>
     <p className="subtitle">
       A comprehensive K-10 learning path with <strong>250 hands-on sessions</strong> — from basic machines to competition-ready autonomous robots and AI systems.
