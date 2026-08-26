@@ -1,0 +1,50 @@
+{
+  "name": "my-app",
+  "version": "0.1.0",
+  "private": true,
+  "allowScripts": {
+    "@prisma/engines": true,
+    "better-sqlite3": true,
+    "prisma": true,
+    "sharp": true,
+    "unrs-resolver": true
+  },
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint"
+  },
+  "dependencies": {
+    "@gsap/react": "^2.1.2",
+    "@prisma/adapter-better-sqlite3": "^7.7.0",
+    "@prisma/client": "^7.6.0",
+    "@react-three/drei": "^10.7.7",
+    "@react-three/fiber": "^9.5.0",
+    "@studio-freight/lenis": "^1.0.42",
+    "@studio-freight/react-lenis": "^0.0.47",
+    "@supabase/ssr": "^0.10.2",
+    "@supabase/supabase-js": "^2.103.0",
+    "better-sqlite3": "^12.8.0",
+    "clsx": "^2.1.1",
+    "framer-motion": "^12.38.0",
+    "gsap": "^3.14.2",
+    "lucide-react": "^1.23.0",
+    "next": "^16.3.0",
+    "prisma": "^7.6.0",
+    "react": "19.2.4",
+    "react-dom": "19.2.4",
+    "tailwind-merge": "^3.5.0",
+    "three": "^0.183.2"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "eslint": "^9",
+    "eslint-config-next": "^16.3.0",
+    "tailwindcss": "^4",
+    "typescript": "^5"
+  }
+}
