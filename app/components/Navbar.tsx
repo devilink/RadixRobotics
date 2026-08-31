@@ -17,9 +17,7 @@ interface NavbarProps {
 
 const defaultNavLinks: NavLink[] = [
   { name: 'Services', href: '/services' },
-  { name: 'Projects', href: '/#showcase' },
-  { name: 'Impact', href: '/#impact' },
-  { name: 'Process', href: '/#how' },
+  { name: 'Projects', href: '/projects' },
   { name: 'About', href: '/about' },
   { name: 'Team', href: '/team' },
 ];

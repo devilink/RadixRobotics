@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import gsap from 'gsap';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
 
 interface ReadinessMetric {
   target: number;
@@ -21,8 +22,26 @@ const readinessMetrics: ReadinessMetric[] = [
 
 export default function TrustMetricsBar() {
   const containerRef = useRef<HTMLDivElement>(null);
+  const pinRef = useRef<HTMLDivElement>(null);
   const [hasAnimated, setHasAnimated] = useState(false);
   const [counts, setCounts] = useState<number[]>(readinessMetrics.map(() => 0));
+
+  useEffect(() => {
+    gsap.registerPlugin(ScrollTrigger);
+    
+    let ctx = gsap.context(() => {
+      if (pinRef.current) {
+        ScrollTrigger.create({
+          trigger: containerRef.current, // trigger off the container
+          pin: pinRef.current, // but pin the inner element to avoid React DOM crashes
+          start: "bottom bottom",
+          pinSpacing: false, // Ensures next section smoothly stacks over this
+        });
+      }
+    }, containerRef);
+
+    return () => ctx.revert();
+  }, []);
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -58,8 +77,9 @@ export default function TrustMetricsBar() {
   }, [hasAnimated]);
 
   return (
-    <section ref={containerRef} className="relative z-10 w-full py-20 lg:py-32 bg-[#f8f7ef] text-[#1c1820] overflow-hidden">
-      <div className="w-full 2xl:px-24 mx-auto px-6 lg:px-12">
+    <section ref={containerRef} className="relative z-0">
+      <div ref={pinRef} className="w-full py-12 lg:py-20 bg-[#f8f7ef] text-[#1c1820] overflow-hidden min-h-screen flex flex-col justify-center">
+        <div className="w-full 2xl:px-24 mx-auto px-6 lg:px-12">
         
         <div className="text-center mb-10 lg:mb-16">
            <h2 className="text-4xl lg:text-5xl font-serif font-bold tracking-tight">Readiness at a Glance</h2>
@@ -70,37 +90,15 @@ export default function TrustMetricsBar() {
         <div className="w-full mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-[1.25fr_1.3fr_0.95fr] gap-5 lg:gap-6 lg:grid-rows-[250px_270px_250px] auto-rows-[300px] font-serif">
           
           {/* Card 1: Customization -> Founding Partner */}
-          <div className="relative overflow-hidden rounded-[32px] p-8 lg:p-10 bg-[#c6a9df] lg:col-[1] lg:row-[1_/_span_2] isolate hover:-translate-y-2 transition-transform duration-500 shadow-md">
-            <h2 className="relative z-20 m-0 mb-3 text-2xl lg:text-3xl font-bold tracking-tight leading-[1.05]">{counts[0]}{readinessMetrics[0].suffix}<br/>{readinessMetrics[0].label}</h2>
-            <p className="relative z-20 m-0 text-sm lg:text-[15px] font-sans leading-relaxed tracking-tight max-w-[85%]">{readinessMetrics[0].sublabel}</p>
-            
-            {/* Art Wrapper */}
-            <div className="absolute left-[15%] top-[40%] scale-[1.3] lg:scale-[1.6] xl:scale-[1.8] origin-top-left pointer-events-none">
-              {/* polaroid */}
-              <div className="absolute w-[72px] h-[93px] bg-[#f7f6ef] p-[6px_6px_13px] shadow-[0_8px_18px_rgba(55,30,65,0.12)] -rotate-[13deg] left-[0px] top-[0px]">
-                <div className="h-[65px] bg-gradient-to-br from-[#173244] from-38% via-[#8092a2] via-39% to-[#e8dfd1] to-63% relative overflow-hidden">
-                   <div className="absolute -right-1 bottom-[2px] w-[28px] h-[42px] bg-gradient-to-br from-[#5b7585] to-[#253a4a]" style={{ clipPath: 'polygon(35% 0,100% 20%,78% 100%,0 100%)' }}></div>
-                </div>
-                <small className="font-sans text-[6px] block text-center mt-[5px]">Radix Lab</small>
-              </div>
-              {/* birthday card */}
-              <div className="absolute left-[55px] top-[2px] w-[112px] h-[91px] bg-[#7466c3] border border-white/50 rotate-[1deg] p-[13px_12px] text-white shadow-[0_8px_18px_rgba(60,35,85,0.13)]">
-                <strong className="text-[12px] block leading-tight">Welcome<br/>Founders!</strong>
-                <div className="absolute right-[14px] bottom-[10px] w-[42px] h-[22px] bg-[#f2d84f] rounded-[5px_5px_8px_8px]">
-                   <div className="absolute left-[8px] right-[8px] -top-[8px] h-[10px] bg-[#f6a1a8] rounded-[4px]"></div>
-                   <div className="absolute left-[19px] -top-[18px] w-[3px] h-[10px] bg-[#fff2a1]"></div>
-                </div>
-              </div>
-            </div>
-
-            {/* toolstrip */}
-            <div className="absolute left-[8%] right-[8%] bottom-[5%] h-[56px] lg:h-[64px] bg-white rounded-[12px] shadow-[0_12px_24px_rgba(35,20,45,0.12)] flex items-center justify-around font-sans text-[9px] lg:text-[11px] text-[#555] pointer-events-none z-10">
-               <div className="flex flex-col gap-1 items-center"><b className="text-[14px] lg:text-[16px] font-normal">▦</b>Plan</div>
-               <div className="flex flex-col gap-1 items-center"><b className="text-[14px] lg:text-[16px] font-normal">T</b>Text</div>
-               <div className="flex flex-col gap-1 items-center"><b className="text-[14px] lg:text-[16px] font-normal">★</b>Kits</div>
-               <div className="flex flex-col gap-1 items-center"><b className="text-[14px] lg:text-[16px] font-normal">◉</b>3D</div>
-               <div className="flex flex-col gap-1 items-center"><b className="text-[14px] lg:text-[16px] font-normal">✓</b>Done</div>
-            </div>
+          <div className="relative overflow-hidden rounded-[32px] p-0 lg:p-0 bg-black lg:col-[1] lg:row-[1_/_span_2] isolate hover:-translate-y-2 transition-transform duration-500 shadow-md">
+            <video 
+              src="/robo.mp4" 
+              autoPlay 
+              loop 
+              muted 
+              playsInline 
+              className="absolute inset-0 w-full h-full object-cover z-0"
+            />
           </div>
 
           {/* Card 2: Scheduling -> NEP Mapped */}
@@ -191,8 +189,9 @@ export default function TrustMetricsBar() {
                 </div>
               </div>
             </div>
+            </div>
+            
           </div>
-          
         </div>
       </div>
     </section>

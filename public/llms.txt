@@ -1,0 +1,17 @@
+# RADIX Robotics
+
+RADIX Robotics installs world-class composite skill laboratories inside schools, empowering students with robotics, AI, drones, and advanced STEM education across India.
+
+## Key Offerings
+- Turnkey composite skill labs for Indian schools
+- NEP 2020 compliant curriculum
+- Autonomous systems, Drones, IoT, and Edge AI
+- Complete physical infrastructure setup
+- Resident engineer support and teacher training
+
+## Contact
+- Website: https://radixrobotics.com
+- Email: contact@radixrobotics.com
+
+## About
+We partner with schools to bring cutting-edge hardware and curriculum straight to their campuses, turning students into active robotics creators and tech pioneers.

@@ -1,7 +1,9 @@
 "use client";
 
 import Image from 'next/image';
+import { useRef } from 'react';
 import { CheckCircle2, ArrowUpRight } from 'lucide-react';
+import { motion, useScroll, useTransform } from 'framer-motion';
 
 interface LabTier {
   id: string;
@@ -165,9 +167,29 @@ const labTiers: LabTier[] = [
 ];
 
 export default function GSAPStackingFolders() {
+  const containerRef = useRef(null);
+  const { scrollYProgress } = useScroll({
+    target: containerRef,
+    offset: ["start end", "end start"]
+  });
+
+  const yFast = useTransform(scrollYProgress, [0, 1], [-100, 100]);
+  const ySlow = useTransform(scrollYProgress, [0, 1], [-40, 40]);
+  
+  // Scrubbed Scale Reveal
+  const scaleReveal = useTransform(scrollYProgress, [0.1, 0.5], [0.5, 1]);
+  const opacityReveal = useTransform(scrollYProgress, [0.1, 0.4], [0, 1]);
+  const blurReveal = useTransform(scrollYProgress, [0.1, 0.4], ["blur(20px)", "blur(0px)"]);
+
   return (
-    <section id="packages" className="relative z-10 w-full py-16 sm:py-24 bg-notebook-subtle border-b border-[#e8e0d4]">
-      <div className="w-full 2xl:px-24 mx-auto px-4 sm:px-8 lg:px-16">
+    <section ref={containerRef} id="packages" className="relative z-10 w-full py-16 sm:py-24 bg-grid border-b border-[#e8e0d4] overflow-hidden">
+      
+      {/* Background Parallax Watermark */}
+      <motion.div style={{ y: yFast }} className="absolute right-0 top-1/4 text-[250px] font-black text-[#111] opacity-[0.02] select-none pointer-events-none pr-font-sans leading-none">
+        PACKAGES
+      </motion.div>
+
+      <div className="w-full 2xl:px-24 mx-auto px-4 sm:px-8 lg:px-16 relative z-10">
 
         {/* Section Header */}
         <div className="mb-14 sm:mb-16 text-center">
@@ -184,12 +206,19 @@ export default function GSAPStackingFolders() {
         </div>
 
         {/* Glimpse Cards Grid */}
-        <div className="grid grid-cols-2 gap-3 sm:gap-6 lg:gap-8 max-w-5xl mx-auto">
-          {labTiers.slice(0, 4).map((tier, index) => (
-            <a
+        <div className="grid grid-cols-2 gap-3 sm:gap-6 lg:gap-8 max-w-5xl mx-auto overflow-visible">
+          {labTiers.slice(0, 4).map((tier, index) => {
+            return (
+            <motion.a
+              style={{ 
+                y: index % 2 === 0 ? ySlow : yFast,
+                scale: scaleReveal,
+                opacity: opacityReveal,
+                filter: blurReveal
+              }}
               key={tier.id}
               href={`/services#${tier.id}`}
-              className={`relative aspect-square rounded-[1.5rem] sm:rounded-[2rem] overflow-hidden group cursor-pointer shadow-lg hover:shadow-2xl transition-all duration-500 block ${tier.rotation} hover:rotate-0`}
+              className={`relative aspect-square rounded-[1.5rem] sm:rounded-[2rem] overflow-hidden group cursor-pointer shadow-lg hover:shadow-2xl transition-shadow duration-500 block ${tier.rotation}`}
             >
               <Image 
                 src={tier.image} 
@@ -224,8 +253,9 @@ export default function GSAPStackingFolders() {
                   </div>
                 </div>
               </div>
-            </a>
-          ))}
+            </motion.a>
+            );
+          })}
         </div>
       </div>
     </section>

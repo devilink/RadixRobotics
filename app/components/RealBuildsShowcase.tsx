@@ -9,11 +9,11 @@ interface CapstoneBuild {
   category: string;
   studentGrade: string;
   complexity: 'Intermediate' | 'Advanced' | 'Master';
-  stickerColor: string;
-  rotation: string;
   bgColor: string;
   textColor: string;
   mutedColor: string;
+  borderColor: string;
+  shadowColor: string;
   description: string;
   techStack: string[];
   telemetryMetrics: { label: string; val: string }[];
@@ -27,11 +27,11 @@ const builds: CapstoneBuild[] = [
     category: "Autonomous Systems & SLAM",
     studentGrade: "Grade 10–12",
     complexity: "Master",
-    stickerColor: "sticker-blue",
-    rotation: "rotate-[0.5deg]",
-    bgColor: "bg-[#1a1a1a]",
-    textColor: "text-[#faf8f5]",
-    mutedColor: "text-[#999]",
+    bgColor: "bg-[#111]",
+    textColor: "text-[#f8f7ef]",
+    mutedColor: "text-[#a1a1aa]",
+    borderColor: "border-[#111]",
+    shadowColor: "shadow-[8px_8px_0px_#ff5400]",
     description: "Full-stack autonomous mobile robot utilizing 360° LiDAR and SLAM algorithms to map unknown environments and navigate with obstacle avoidance.",
     techStack: ["ROS 2 Humble", "Python 3.11", "Cartographer SLAM", "Nav2"],
     telemetryMetrics: [
@@ -39,7 +39,7 @@ const builds: CapstoneBuild[] = [
       { label: "Lidar Range", val: "12 m" },
       { label: "Loop Rate", val: "50 Hz" }
     ],
-    handwrittenNote: "this robot maps rooms by itself!"
+    handwrittenNote: "Maps rooms autonomously!"
   },
   {
     id: "drone-telemetry",
@@ -47,11 +47,11 @@ const builds: CapstoneBuild[] = [
     category: "Aero & Autonomous Flight",
     studentGrade: "Grade 9–11",
     complexity: "Advanced",
-    stickerColor: "sticker-coral",
-    rotation: "-rotate-[0.5deg]",
-    bgColor: "bg-[#FFE66D]",
-    textColor: "text-[#1a1a1a]",
-    mutedColor: "text-[#4a4a4a]",
+    bgColor: "bg-[#ff5400]",
+    textColor: "text-white",
+    mutedColor: "text-white/80",
+    borderColor: "border-[#111]",
+    shadowColor: "shadow-[8px_8px_0px_#111]",
     description: "Custom carbon-fiber drone with ArduPilot flight controllers, real-time GPS telemetry, geofence fail-safe, and autonomous agricultural survey logging.",
     techStack: ["ArduPilot", "Mission Planner", "MAVLink", "Optical Flow"],
     telemetryMetrics: [
@@ -59,7 +59,7 @@ const builds: CapstoneBuild[] = [
       { label: "Stability", val: "±0.5 m" },
       { label: "Payload", val: "750 g" }
     ],
-    handwrittenNote: "flies completely on its own ✦"
+    handwrittenNote: "Full autonomous waypoint flight"
   },
   {
     id: "gesture-arm",
@@ -67,11 +67,11 @@ const builds: CapstoneBuild[] = [
     category: "Manipulators & Kinematics",
     studentGrade: "Grade 9–12",
     complexity: "Advanced",
-    stickerColor: "sticker-yellow",
-    rotation: "rotate-1",
     bgColor: "bg-white",
-    textColor: "text-[#1a1a1a]",
-    mutedColor: "text-[#6a6a6a]",
+    textColor: "text-[#111]",
+    mutedColor: "text-[#646a73]",
+    borderColor: "border-[#111]",
+    shadowColor: "shadow-[8px_8px_0px_#111]",
     description: "Real-time hand-pose tracking through HD camera translating finger joint coordinates into inverse kinematics for a 6-axis robotic arm.",
     techStack: ["OpenCV", "MediaPipe AI", "IK Kinematics", "ESP-NOW"],
     telemetryMetrics: [
@@ -79,7 +79,7 @@ const builds: CapstoneBuild[] = [
       { label: "Latency", val: "< 18 ms" },
       { label: "Payload", val: "1.2 kg" }
     ],
-    handwrittenNote: "your hand controls the robot! →"
+    handwrittenNote: "Hand gestures control the arm!"
   },
   {
     id: "smart-agro",
@@ -87,11 +87,11 @@ const builds: CapstoneBuild[] = [
     category: "Industrial IoT & Nodes",
     studentGrade: "Grade 8–10",
     complexity: "Intermediate",
-    stickerColor: "sticker-mint",
-    rotation: "-rotate-[0.8deg]",
-    bgColor: "bg-[#1a1a1a]",
-    textColor: "text-[#faf8f5]",
-    mutedColor: "text-[#999]",
+    bgColor: "bg-[#111]",
+    textColor: "text-[#f8f7ef]",
+    mutedColor: "text-[#a1a1aa]",
+    borderColor: "border-[#111]",
+    shadowColor: "shadow-[8px_8px_0px_white]",
     description: "Solar-powered environmental monitoring grid broadcasting soil moisture, NPK indices, and humidity over 10km LoRa mesh with automated micro-drip irrigation.",
     techStack: ["LoRaWAN Mesh", "MicroPython", "MQTT", "Grafana"],
     telemetryMetrics: [
@@ -99,160 +99,108 @@ const builds: CapstoneBuild[] = [
       { label: "Autonomy", val: "24/7" },
       { label: "Savings", val: "42%" }
     ],
-    handwrittenNote: "solar powered + self-watering ★"
-  },
-  {
-    id: "edge-ai-sorter",
-    title: "TensorFlow Edge Vision Sorter",
-    category: "Edge AI & Automation",
-    studentGrade: "Grade 11–12",
-    complexity: "Master",
-    stickerColor: "sticker-purple",
-    rotation: "rotate-[0.3deg]",
-    bgColor: "bg-[#FFE66D]",
-    textColor: "text-[#1a1a1a]",
-    mutedColor: "text-[#4a4a4a]",
-    description: "Miniature automated conveyor with an Edge TPU neural accelerator performing real-time defect classification on 3D printed parts.",
-    techStack: ["TensorFlow Lite", "Coral Edge TPU", "PLC Relays", "Node-RED"],
-    telemetryMetrics: [
-      { label: "Inference", val: "60 FPS" },
-      { label: "Accuracy", val: "99.2%" },
-      { label: "Throughput", val: "120/m" }
-    ],
-    handwrittenNote: "AI that spots defects in real-time"
-  },
-  {
-    id: "hexapod-walker",
-    title: "18-Servo Biomimetic Hexapod",
-    category: "Mechatronics & Gait",
-    studentGrade: "Grade 9–12",
-    complexity: "Advanced",
-    stickerColor: "sticker-pink",
-    rotation: "-rotate-1",
-    bgColor: "bg-white",
-    textColor: "text-[#1a1a1a]",
-    mutedColor: "text-[#6a6a6a]",
-    description: "Biological gait engine coordinating 18 synchronized servo actuators across six legs, maintaining dynamic balance via real-time IMU sensor fusion.",
-    techStack: ["IK Gait Engine", "C++ RTOS", "Sensor Fusion", "Bluetooth 5"],
-    telemetryMetrics: [
-      { label: "Actuators", val: "18 Servos" },
-      { label: "Gait", val: "Dynamic" },
-      { label: "Terrain", val: "Adaptive" }
-    ],
-    handwrittenNote: "walks like a real insect! 🕷"
+    handwrittenNote: "Data viz dashboard included"
   }
 ];
 
 export default function RealBuildsShowcase() {
-  const [activeFilter, setActiveFilter] = useState<'All' | 'Master' | 'Advanced' | 'Intermediate'>('All');
-
-  const filteredBuilds = activeFilter === 'All'
-    ? builds
-    : builds.filter((b) => b.complexity === activeFilter);
+  const [hoveredId, setHoveredId] = useState<string | null>(null);
 
   return (
-    <section id="showcase" className="relative z-10 w-full py-16 sm:py-24 bg-paper border-b border-[#e8e0d4] overflow-hidden">
+    <section className="relative z-10 py-12 sm:py-16 md:py-24 max-w-[1536px] mx-auto px-4 sm:px-8 lg:px-16">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8 md:gap-12">
+        {builds.map((build, idx) => (
+          <div 
+            key={build.id}
+            onMouseEnter={() => setHoveredId(build.id)}
+            onMouseLeave={() => setHoveredId(null)}
+            className={`
+              relative p-6 sm:p-8 md:p-12 transition-all duration-300
+              border-2 ${build.borderColor} ${build.bgColor} ${build.textColor}
+              hover:-translate-y-2 group ${build.shadowColor} rounded-none
+            `}
+          >
 
-      <div className="w-full 2xl:px-24 mx-auto px-4 sm:px-8 lg:px-16">
+            {/* Sticker Decorator */}
+            <div className={`
+              absolute -top-4 -right-4 md:-top-6 md:-right-6 
+              px-3 py-2 text-[9px] md:text-xs font-black uppercase tracking-widest text-[#111] bg-[#f2f3f5]
+              transform rotate-6 border-2 border-[#111] shadow-[2px_2px_0px_#111]
+            `}>
+              {build.complexity}
+            </div>
 
-        {/* Section Header */}
-        <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6 mb-10 sm:mb-14">
-          <div>
-            <span className="font-handwriting text-xl sm:text-2xl text-[#FF6B6B] block mb-2">
-              — student capstone projects —
-            </span>
-            <h2 className="text-3xl sm:text-5xl lg:text-6xl font-black tracking-tight text-[#1a1a1a] leading-[1.05]">
-              From Prototype to<br />
-              <span className="doodle-underline">Competition Blueprint</span>
-            </h2>
-          </div>
-
-          {/* Filter stickers */}
-          <div className="flex flex-wrap gap-2">
-            {(['All', 'Master', 'Advanced', 'Intermediate'] as const).map((filter) => (
-              <button
-                key={filter}
-                onClick={() => setActiveFilter(filter)}
-                className={`sticker cursor-pointer transition-all ${
-                  activeFilter === filter
-                    ? 'sticker-dark scale-110'
-                    : 'sticker-white opacity-70 hover:opacity-100'
-                }`}
-              >
-                {filter}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Build Cards Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6">
-          {filteredBuilds.map((build) => (
-            <div
-              key={build.id}
-              className={`paper-card ${build.rotation} hover:rotate-0 p-5 sm:p-7 flex flex-col justify-between transition-all duration-300`}
-            >
+            {/* Header section */}
+            <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 mb-8">
               <div>
-                {/* Top badges */}
-                <div className="flex items-center justify-between gap-2 mb-3">
-                  <span className={`sticker ${build.stickerColor} text-[9px]`}>
-                    {build.complexity}
-                  </span>
-                  <span className="text-xs font-mono text-[#8a8a8a] font-bold">
-                    {build.studentGrade}
-                  </span>
+                <div className={`font-mono text-xs font-bold uppercase tracking-widest mb-3 ${build.mutedColor}`}>
+                  // {build.category}
                 </div>
-
-                {/* Title */}
-                <h3 className="text-lg sm:text-xl font-black text-[#1a1a1a] tracking-tight leading-snug mb-1">
+                <h3 className="text-xl sm:text-2xl md:text-4xl font-black uppercase tracking-tighter leading-[1.05] max-w-sm">
                   {build.title}
                 </h3>
-                <div className="text-[11px] font-mono text-[#8a8a8a] uppercase tracking-wider font-semibold mb-2">
-                  {build.category}
-                </div>
-
-                {/* Handwritten note */}
-                <div className="font-handwriting text-sm text-[#FF6B6B] mb-3">
-                  {build.handwrittenNote}
-                </div>
-
-                <p className="text-[#4a4a4a] text-xs sm:text-sm leading-relaxed mb-4">
-                  {build.description}
-                </p>
-
-                {/* Telemetry chips */}
-                <div className="grid grid-cols-3 gap-2 mb-4 p-3 bg-[#faf8f5] border border-[#e8e0d4] rounded-md">
-                  {build.telemetryMetrics.map((tel, tIdx) => (
-                    <div key={tIdx} className="text-center">
-                      <div className="text-[9px] font-mono text-[#8a8a8a] uppercase font-semibold">{tel.label}</div>
-                      <div className="text-xs font-mono font-black text-[#1a1a1a] mt-0.5">{tel.val}</div>
-                    </div>
-                  ))}
-                </div>
-
-                {/* Tech stack tags */}
-                <div className="flex flex-wrap gap-1.5 mb-4">
-                  {build.techStack.map((tech, techIdx) => (
-                    <span key={techIdx} className="sticker sticker-white text-[9px]">
-                      {tech}
-                    </span>
-                  ))}
+              </div>
+              <div className="flex flex-col items-start sm:items-end gap-2">
+                <span className={`inline-flex items-center gap-1.5 px-3 py-1 text-[10px] font-black uppercase tracking-widest border-2 ${build.borderColor}`}>
+                  <Cpu size={12} strokeWidth={2.5} /> {build.studentGrade}
+                </span>
+                <div className={`font-mono text-[10px] uppercase font-bold tracking-widest ${build.mutedColor}`}>
+                  Live Deploy
                 </div>
               </div>
-
-              {/* CTA */}
-              <a
-                href="https://wa.me/916001979712?text=I%20am%20interested%20in%20learning%20more%20about%20Radix%20student%20capstone%20projects"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="w-full py-2.5 rounded-md bg-[#1a1a1a] hover:bg-[#333] text-white font-bold text-xs uppercase tracking-wider inline-flex items-center justify-center gap-2 transition-all shadow-sm"
-              >
-                View Blueprint <ArrowUpRight size={13} />
-              </a>
             </div>
-          ))}
-        </div>
 
+            <p className={`text-base md:text-lg font-medium leading-relaxed mb-10 max-w-md ${build.mutedColor}`}>
+              {build.description}
+            </p>
+
+            {/* Telemetry Dashboard Box */}
+            <div className={`
+              mb-8 p-4 md:p-6 border-2 ${build.borderColor} ${build.bgColor === 'bg-[#111]' ? 'bg-[#1a1a1a]' : 'bg-[#fff] text-[#111]'}
+            `}>
+              <h4 className={`text-[10px] font-black uppercase tracking-widest mb-4 flex items-center gap-2 ${build.bgColor === 'bg-[#111]' ? 'text-[#ff5400]' : 'text-[#ff5400]'}`}>
+                <div className="w-1.5 h-1.5 rounded-full bg-[#ff5400] animate-pulse"></div> Live Telemetry
+              </h4>
+              <div className="grid grid-cols-3 gap-4">
+                {build.telemetryMetrics.map((metric, i) => (
+                  <div key={i} className="flex flex-col">
+                    <span className="text-[9px] font-bold uppercase tracking-widest opacity-60 mb-1">{metric.label}</span>
+                    <span className="font-mono text-base md:text-xl font-black">{metric.val}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex flex-wrap items-center justify-between gap-6 pt-6 border-t-2 border-[#111] border-opacity-20">
+              
+              {/* Tech Stack Pills */}
+              <div className="flex flex-wrap gap-2">
+                {build.techStack.map((tech) => (
+                  <span 
+                    key={tech} 
+                    className={`
+                      px-2.5 py-1 text-[9px] md:text-[10px] font-bold uppercase tracking-widest
+                      border-2 ${build.borderColor} border-opacity-40
+                    `}
+                  >
+                    {tech}
+                  </span>
+                ))}
+              </div>
+
+              {/* Action Button */}
+              <button 
+                className={`
+                  w-10 h-10 flex items-center justify-center border-2 border-[#111] shadow-[2px_2px_0px_#111] bg-white text-[#111]
+                  group-hover:bg-[#ff5400] group-hover:text-white transition-colors duration-300
+                `}
+                aria-label="View Project Specs"
+              >
+                <ArrowUpRight size={20} strokeWidth={2.5} />
+              </button>
+            </div>
+          </div>
+        ))}
       </div>
     </section>
   );
