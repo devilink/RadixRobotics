@@ -114,7 +114,7 @@
         
         <div className="relative h-full min-h-[500px] rounded-[3rem] overflow-hidden p-2 group">
           <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/20 via-transparent to-cyan-500/20 opacity-50 group-hover:opacity-100 transition-opacity duration-700" />
-          <img src="robotics_lab.png" alt="Composite Robotics Lab" className="relative z-10 w-full h-full object-cover rounded-[2.5rem] shadow-2xl transition-transform duration-700 group-hover:scale-105" />
+          <Image src="/robotics_lab.png" alt="Composite Robotics Lab" width={800} height={600} className="relative z-10 w-full h-full object-cover rounded-[2.5rem] shadow-2xl transition-transform duration-700 group-hover:scale-105" />
         </div>
       </div>
     </div>

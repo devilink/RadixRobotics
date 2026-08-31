@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import Image from 'next/image';
 import { ArrowUpRight } from 'lucide-react';
 
 export default function Footer() {
@@ -24,8 +25,8 @@ export default function Footer() {
           <div className="lg:col-span-5 flex flex-col justify-between">
             <div>
               <Link href="/" className="block w-fit mb-6 group cursor-pointer flex items-center gap-2">
-                <img src="/ttiig.png" alt="RADIX Icon" className="h-8 w-auto object-contain" />
-                <img src="/txttt.png" alt="RADIX Robotics" className="h-6 w-auto object-contain" />
+                <Image src="/ttiig.png" alt="RADIX Icon" width={32} height={32} className="object-contain" />
+                <Image src="/txttt.png" alt="RADIX Robotics" width={120} height={24} className="object-contain" />
               </Link>
               <p className="text-[#a0aab8] text-sm sm:text-base max-w-sm leading-relaxed mb-6 font-semibold">
                 Engineering the future through elite Robotics Education, AI research, and turnkey Composite Skill Labs across Indian schools.

@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import FadeIn from "../ui/FadeIn";
 import Magnet from "../ui/Magnet";
 import ContactButton from "../ui/ContactButton";
@@ -47,10 +48,13 @@ export default function HeroSection() {
       {/* Center Portrait with Magnet Effect */}
       <FadeIn delay={0.6} y={30} className="absolute left-1/2 -translate-x-1/2 top-1/2 -translate-y-1/2 sm:top-auto sm:translate-y-0 sm:bottom-0 z-10 pointer-events-auto">
         <Magnet padding={150} strength={3}>
-          <img 
+          <Image 
             src="/drone.png" 
             alt="Radix Drone" 
-            className="w-[280px] sm:w-[360px] md:w-[440px] lg:w-[520px] object-contain pointer-events-none drop-shadow-[0_20px_50px_rgba(255,255,255,0.1)]"
+            width={520}
+            height={520}
+            priority
+            className="w-[280px] sm:w-[360px] md:w-[440px] lg:w-[520px] h-auto object-contain pointer-events-none drop-shadow-[0_20px_50px_rgba(255,255,255,0.1)]"
           />
         </Magnet>
       </FadeIn>
