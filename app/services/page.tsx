@@ -136,7 +136,7 @@ export default function ServicesPage() {
                       ))}
                     </div>
 
-                    <a href="https://wa.me/916001979712" target="_blank" rel="noopener noreferrer" className={`inline-flex items-center gap-3 px-8 py-4 font-black text-xs uppercase tracking-widest border-2 transition-all shadow-[6px_6px_0px_${service.bgClass === 'bg-[#111]' ? 'white' : service.bgClass === 'bg-[#ff5400]' ? '#111' : '#ff5400'}] hover:-translate-y-1 ${
+                    <a href="https://wa.me/916001979712" target="_blank" rel="noopener noreferrer nofollow" className={`inline-flex items-center gap-3 px-8 py-4 font-black text-xs uppercase tracking-widest border-2 transition-all shadow-[6px_6px_0px_${service.bgClass === 'bg-[#111]' ? 'white' : service.bgClass === 'bg-[#ff5400]' ? '#111' : '#ff5400'}] hover:-translate-y-1 ${
                         service.bgClass === 'bg-[#111]' ? 'bg-white text-[#111] border-transparent' : 
                         service.bgClass === 'bg-[#ff5400]' ? 'bg-white text-[#111] border-transparent' : 
                         'bg-[#111] text-white border-[#111]'
@@ -173,7 +173,7 @@ export default function ServicesPage() {
           <h2 className="text-4xl sm:text-6xl font-black uppercase tracking-tighter mb-8 leading-[1.05]">
             Ready to upgrade your campus?
           </h2>
-          <a href="https://wa.me/916001979712" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-3 px-10 py-5 bg-[#ff5400] text-white border-2 border-transparent font-black text-sm uppercase tracking-widest hover:border-white transition-all shadow-[8px_8px_0px_white] hover:-translate-y-1">
+          <a href="https://wa.me/916001979712" target="_blank" rel="noopener noreferrer nofollow" className="inline-flex items-center gap-3 px-10 py-5 bg-[#ff5400] text-white border-2 border-transparent font-black text-sm uppercase tracking-widest hover:border-white transition-all shadow-[8px_8px_0px_white] hover:-translate-y-1">
             Contact Engineering Team <ArrowUpRight size={20} strokeWidth={2.5} />
           </a>
         </div>

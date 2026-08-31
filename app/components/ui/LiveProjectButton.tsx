@@ -17,7 +17,7 @@ export default function LiveProjectButton({
   
   if (href) {
     return (
-      <a href={href} target="_blank" rel="noopener noreferrer" className={baseClasses}>
+      <a href={href} target="_blank" rel="noopener noreferrer nofollow" className={baseClasses}>
         {label}
       </a>
     );

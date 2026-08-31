@@ -53,7 +53,7 @@ const navLinks = [
 ];
 
 const socialLinks = [
-  { label: "Mail", href: "mailto:hello@radix.school", icon: Mail },
+  { label: "Mail", href: "/contact", icon: Mail },
   { label: "Github", href: "https://github.com", icon: Github },
 ];
 
@@ -143,7 +143,7 @@ export default function StudentPage() {
                       <a
                         href={link.href}
                         target="_blank"
-                        rel="noopener noreferrer"
+                        rel="noopener noreferrer nofollow"
                         className="font-grotesk text-[13px] uppercase tracking-[0.12em] text-cream transition-all duration-300 hover:text-neon hover:shadow-[0_0_8px_rgba(111,255,0,0.5)] drop-shadow-sm"
                       >
                         {link.label}

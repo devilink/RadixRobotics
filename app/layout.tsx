@@ -16,11 +16,11 @@ const caveat = Caveat({ subsets: ["latin"], weight: ['400', '500', '600', '700']
 export const metadata: Metadata = {
   metadataBase: new URL("https://radixrobotics.com"),
   title: {
-    default: "RADIX Robotics — Composite Skill Labs for Schools",
+    default: "RADIX Robotics | Turnkey Composite Skill Labs for Schools",
     template: "%s | RADIX Robotics",
   },
   description:
-    "RADIX Robotics installs world-class composite skill laboratories inside schools — empowering students with robotics, AI, drones, and advanced STEM education across India.",
+    "RADIX Robotics provides turnkey composite skill labs for schools. Empower students with robotics, AI, hardware, and advanced STEM education aligned with NEP.",
   keywords: [
     "robotics education",
     "STEM labs India",

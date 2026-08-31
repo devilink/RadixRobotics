@@ -1,4 +1,4 @@
-import Script from 'next/script';
+
 
 export default function StructuredData() {
   const jsonLd = {
@@ -23,8 +23,7 @@ export default function StructuredData() {
   };
 
   return (
-    <Script
-      id="structured-data"
+    <script
       type="application/ld+json"
       dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
     />

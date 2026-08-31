@@ -169,9 +169,9 @@ export default function TeamPage() {
                         <h3 className="text-4xl md:text-5xl font-black uppercase tracking-tighter text-white mb-4">Want to join the team?</h3>
                         <p className="text-[#a1a1aa] text-lg font-medium max-w-2xl">We are always looking for passionate educators and brilliant engineers to join our mission.</p>
                     </div>
-                    <a href="mailto:contact@radixrobotics.com" className="bg-[#ff5400] text-white border-2 border-transparent hover:border-white px-10 py-5 rounded-none font-black uppercase tracking-widest text-sm transition-all inline-flex items-center gap-3 transform hover:-translate-y-1 hover:shadow-[6px_6px_0px_white]">
-                        Email Us <ArrowRight size={16} />
-                    </a>
+                    <Link href="/contact" className="bg-[#ff5400] text-white border-2 border-transparent hover:border-white px-10 py-5 rounded-none font-black uppercase tracking-widest text-sm transition-all inline-flex items-center gap-3 transform hover:-translate-y-1 hover:shadow-[6px_6px_0px_white]">
+                        Contact Us <ArrowRight size={16} />
+                    </Link>
                 </div>
             </section>
 

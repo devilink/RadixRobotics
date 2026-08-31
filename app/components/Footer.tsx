@@ -14,7 +14,7 @@ export default function Footer() {
     <footer className="relative z-10 bg-[#111] text-white pt-20 sm:pt-24 pb-12 overflow-hidden border-t-2 border-[#111]">
       {/* Massive Watermark */}
       <div className="absolute top-0 left-0 w-full overflow-hidden flex justify-center pointer-events-none opacity-[0.03] select-none pr-font-sans">
-        <h1 className="text-[22vw] font-black leading-none tracking-tighter translate-y-[-20%]">RADIX</h1>
+        <div className="text-[22vw] font-black leading-none tracking-tighter translate-y-[-20%]">RADIX</div>
       </div>
 
       <div className="w-full 2xl:px-24 mx-auto px-4 sm:px-8 lg:px-16 relative z-10 pr-font-sans">
@@ -32,13 +32,13 @@ export default function Footer() {
               </p>
             </div>
 
-            <a
-              href="mailto:radixrobotics@gmail.com"
+            <Link
+              href="/contact"
               className="text-lg sm:text-xl font-black uppercase tracking-tighter hover:text-[#ff5400] transition-colors duration-300 w-fit flex items-center gap-2"
             >
-              radixrobotics@gmail.com
+              radixrobotics [at] gmail.com
               <ArrowUpRight size={18} className="text-[#ff5400]" />
-            </a>
+            </Link>
           </div>
 
           {/* Navigation Links */}
@@ -64,7 +64,7 @@ export default function Footer() {
                 { name: 'Instagram', url: 'https://www.instagram.com/radix.robotics?igsh=OHZiazg4eDA5ejl2' }
               ].map((item) => (
                 <li key={item.name}>
-                  <a href={item.url} target="_blank" rel="noopener noreferrer" className="text-white hover:text-[#ff5400] transition-colors">
+                  <a href={item.url} target="_blank" rel="noopener noreferrer nofollow" className="text-white hover:text-[#ff5400] transition-colors">
                     {item.name}
                   </a>
                 </li>

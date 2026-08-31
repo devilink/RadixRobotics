@@ -284,9 +284,9 @@ export default function Page() {
           <a href="#whatsapp" aria-label="WhatsApp">
             <MessageCircle size={18} strokeWidth={2} />
           </a>
-          <a href="mailto:contact@radixrobotics.com" aria-label="Email">
+          <Link href="/contact" aria-label="Email">
             <Mail size={18} strokeWidth={2} />
-          </a>
+          </Link>
         </aside>
 
         {/* 7. BOTTOM SCROLL INDICATOR */}
@@ -463,7 +463,7 @@ export default function Page() {
             <a
               href="https://wa.me/916001979712?text=Hello%20Radix%20Robotics,%20we%20want%20to%20apply%20for%20the%20Founding%20Partner%20School%20Cohort"
               target="_blank"
-              rel="noopener noreferrer"
+              rel="noopener noreferrer nofollow"
               className="relative z-10 w-fit bg-[#111] text-white px-8 sm:px-12 py-5 font-bold uppercase tracking-widest text-sm transition-transform duration-300 hover:scale-105 shadow-[8px_8px_0_rgba(17,17,17,0.3)] hover:shadow-[12px_12px_0_rgba(17,17,17,0.5)] flex items-center gap-4 group/btn"
             >
               Apply as Founding School 

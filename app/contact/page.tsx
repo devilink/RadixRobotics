@@ -53,17 +53,17 @@ export default function ContactPage() {
               </h3>
 
               <div className="space-y-6">
-                <a href="mailto:contact@radixrobotics.com" className="flex items-center gap-4 text-[#a1a1aa] hover:text-[#ff5400] transition-colors group">
+                <div className="flex items-center gap-4 text-[#a1a1aa] group">
                   <div className="w-12 h-12 border-2 border-[#333] flex items-center justify-center group-hover:border-[#ff5400] group-hover:bg-[#ff5400] group-hover:text-white transition-all">
                     <Mail size={20} />
                   </div>
                   <div>
                     <p className="text-[10px] font-mono font-bold uppercase tracking-widest text-[#7b828e] mb-1">Email</p>
-                    <p className="text-white font-bold text-sm sm:text-base">contact@radixrobotics.com</p>
+                    <p className="text-white font-bold text-sm sm:text-base">contact [at] radixrobotics.com</p>
                   </div>
-                </a>
+                </div>
 
-                <a href="https://wa.me/916001979712" target="_blank" rel="noreferrer" className="flex items-center gap-4 text-[#a1a1aa] hover:text-[#ff5400] transition-colors group">
+                <a href="https://wa.me/916001979712" target="_blank" rel="noopener noreferrer nofollow" className="flex items-center gap-4 text-[#a1a1aa] hover:text-[#ff5400] transition-colors group">
                   <div className="w-12 h-12 border-2 border-[#333] flex items-center justify-center group-hover:border-[#ff5400] group-hover:bg-[#ff5400] group-hover:text-white transition-all">
                     <Phone size={20} />
                   </div>
@@ -104,7 +104,7 @@ export default function ContactPage() {
               <a
                 href="https://wa.me/916001979712?text=Hello%20Radix%20Robotics"
                 target="_blank"
-                rel="noreferrer"
+                rel="noopener noreferrer nofollow"
                 className="relative z-10 inline-flex items-center gap-3 bg-white text-[#111] px-8 py-4 font-black text-xs uppercase tracking-widest border-2 border-[#111] shadow-[4px_4px_0px_#111] hover:-translate-y-1 hover:shadow-[6px_6px_0px_#111] transition-all"
               >
                 Chat on WhatsApp <ArrowUpRight size={16} strokeWidth={3} />

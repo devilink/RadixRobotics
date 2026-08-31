@@ -145,7 +145,7 @@
         <span>Join 120+ schools across India that have already partnered with RADIX Robotics.</span>
         <span className="text-emerald-400">Next cohort spots are filling fast.</span>
       </p>
-      <a href="https://wa.me/916001979712" target="_blank" rel="noreferrer" className="inline-flex items-center justify-center px-10 py-5 rounded-full bg-emerald-400 text-black font-bold text-xl tracking-wide hover:scale-105 hover:bg-emerald-300 shadow-[0_0_40px_rgba(52,211,153,0.4)] transition-all duration-300">
+      <a href="https://wa.me/916001979712" target="_blank" rel="noopener noreferrer nofollow" className="inline-flex items-center justify-center px-10 py-5 rounded-full bg-emerald-400 text-black font-bold text-xl tracking-wide hover:scale-105 hover:bg-emerald-300 shadow-[0_0_40px_rgba(52,211,153,0.4)] transition-all duration-300">
         Apply for Lab
       </a>
     </div>

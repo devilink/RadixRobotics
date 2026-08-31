@@ -133,7 +133,7 @@ export default function Navbar({ navLinks = defaultNavLinks }: NavbarProps) {
                   <a
                     href="https://wa.me/916001979712?text=Hello%20Radix%20Robotics,%20we%20would%20like%20to%20consult%20about%20the%20Founding%20School%20Lab%20Cohort"
                     target="_blank"
-                    rel="noopener noreferrer"
+                    rel="noopener noreferrer nofollow"
                     className="sticker sticker-dark text-[10px] px-4 py-2"
                   >
                     Schedule Audit <ArrowRight size={12} />
@@ -214,7 +214,7 @@ export default function Navbar({ navLinks = defaultNavLinks }: NavbarProps) {
               <a
                 href="https://wa.me/916001979712?text=Hello%20Radix%20Robotics"
                 target="_blank"
-                rel="noopener noreferrer"
+                rel="noopener noreferrer nofollow"
                 onClick={() => setMobileMenuOpen(false)}
                 className="w-full py-3.5 rounded-lg bg-[#FFE66D] text-[#1a1a1a] font-bold text-center uppercase tracking-widest text-xs shadow-sm"
               >
