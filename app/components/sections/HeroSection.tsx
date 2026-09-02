@@ -9,16 +9,6 @@ import ContactButton from "../ui/ContactButton";
 export default function HeroSection() {
   return (
     <section className="relative w-full h-[100svh] flex flex-col overflow-x-clip bg-[#0C0C0C]">
-      {/* Navbar */}
-      <FadeIn delay={0} y={-20} as="nav" className="w-full flex justify-between items-center px-6 md:px-10 pt-6 md:pt-8 absolute top-0 z-50">
-        <div className="flex w-full justify-between max-w-[1400px] mx-auto text-[#D7E2EA] font-medium uppercase tracking-wider text-sm md:text-lg lg:text-[1.4rem]">
-          <Link href="#about" className="hover:opacity-70 transition-opacity duration-200">About</Link>
-          <Link href="#services" className="hover:opacity-70 transition-opacity duration-200">Labs</Link>
-          <Link href="#projects" className="hover:opacity-70 transition-opacity duration-200">Projects</Link>
-          <Link href="#contact" className="hover:opacity-70 transition-opacity duration-200">Contact</Link>
-        </div>
-      </FadeIn>
-
       {/* Main Content (Absolute Fill) */}
       <div className="flex-1 flex flex-col justify-between pt-24 pb-7 sm:pb-8 md:pb-10 max-w-[1400px] mx-auto w-full px-6 md:px-10 z-20">
         

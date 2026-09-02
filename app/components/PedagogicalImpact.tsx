@@ -137,29 +137,55 @@ export default function PedagogicalImpact() {
         
         {/* Traditional Column (Light, Faded, Rigid) */}
         <div className="w-full md:w-5/12 bg-[#f2f3f5] p-10 sm:p-16 lg:p-24 border-b-2 md:border-b-0 md:border-r-2 border-[#111]">
-          <div className="flex items-center gap-4 mb-10 pb-6 border-b-2 border-[#d1d5db]">
-            <div className="p-3 bg-white border-2 border-[#111] text-[#111] shadow-[2px_2px_0_#111]">
+          <motion.div 
+            className="flex items-center gap-4 mb-10 pb-6 border-b-2 border-[#d1d5db]"
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-100px" }}
+          >
+            <motion.div 
+              className="p-3 bg-white border-2 border-[#111] text-[#111] shadow-[2px_2px_0_#111]"
+              whileHover={{ rotate: 180, scale: 1.1 }}
+              transition={{ type: "spring", stiffness: 200, damping: 10 }}
+            >
               <XCircle size={28} />
-            </div>
+            </motion.div>
             <div>
               <span className="font-mono text-[10px] font-bold text-[#7b828e] uppercase tracking-widest">// Rote & Passive</span>
               <h4 className="text-2xl sm:text-3xl font-black text-[#111] uppercase tracking-tighter mt-1">Traditional</h4>
             </div>
-          </div>
+          </motion.div>
 
-          <ul className="space-y-8 text-sm font-semibold text-[#5c6370]">
+          <motion.ul 
+            className="space-y-8 text-sm font-semibold text-[#5c6370]"
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, margin: "-50px" }}
+            variants={{
+              hidden: { opacity: 0 },
+              visible: { opacity: 1, transition: { staggerChildren: 0.1 } }
+            }}
+          >
             {[
               { bold: "20% Retention", rest: "High cognitive decay from lack of kinesthetic reinforcement." },
               { bold: "Theoretical Only", rest: "Code on blackboard without physical actuator feedback." },
               { bold: "Zero Failure Tolerance", rest: "Exams penalize mistakes instead of encouraging debugging." },
               { bold: "Generic Portfolio", rest: "No verifiable GitHub repos or functional hardware prototypes." }
             ].map((item, idx) => (
-              <li key={idx} className="flex items-start gap-4 opacity-70 grayscale">
+              <motion.li 
+                key={idx} 
+                className="flex items-start gap-4 opacity-70 grayscale cursor-default"
+                variants={{
+                  hidden: { opacity: 0, x: -20 },
+                  visible: { opacity: 0.7, x: 0 }
+                }}
+                whileHover={{ opacity: 1, x: 5, filter: "grayscale(0%)" }}
+              >
                 <span className="text-[#111] font-black text-xl shrink-0 mt-[-2px]">✕</span>
                 <span className="leading-relaxed"><strong className="text-[#111] block mb-1 text-base uppercase tracking-tight">{item.bold}</strong> {item.rest}</span>
-              </li>
+              </motion.li>
             ))}
-          </ul>
+          </motion.ul>
         </div>
 
         {/* Radix Column (Dark, Vibrant, Energetic) */}
@@ -167,32 +193,63 @@ export default function PedagogicalImpact() {
           {/* Abstract geometric background elements */}
           <div className="absolute right-0 bottom-0 w-[500px] h-[500px] bg-[radial-gradient(circle_at_bottom_right,rgba(255,84,0,0.15)_0%,transparent_70%)] pointer-events-none"></div>
 
-          <div className="flex items-center gap-4 mb-12 pb-6 border-b-2 border-white/10 relative z-10">
-            <div className="p-3 bg-[#ff5400] text-white border-2 border-[#ff5400] shadow-[4px_4px_0_white]">
+          <motion.div 
+            className="flex items-center gap-4 mb-12 pb-6 border-b-2 border-white/10 relative z-10"
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-100px" }}
+          >
+            <motion.div 
+              className="p-3 bg-[#ff5400] text-white border-2 border-[#ff5400] shadow-[4px_4px_0_white]"
+              whileHover={{ rotate: 360, scale: 1.1 }}
+              transition={{ type: "spring", stiffness: 200, damping: 10 }}
+            >
               <CheckCircle2 size={32} />
-            </div>
+            </motion.div>
             <div>
               <span className="font-mono text-xs font-bold text-[#ff5400] uppercase tracking-widest">// Kinesthetic & Problem-Based</span>
               <h4 className="text-3xl sm:text-5xl font-black text-white uppercase tracking-tighter mt-1">Radix Model</h4>
             </div>
-          </div>
+          </motion.div>
 
-          <ul className="space-y-10 text-sm md:text-base font-semibold text-[#a0aab8] relative z-10">
+          <motion.ul 
+            className="space-y-10 text-sm md:text-base font-semibold text-[#a0aab8] relative z-10"
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, margin: "-50px" }}
+            variants={{
+              hidden: { opacity: 0 },
+              visible: { opacity: 1, transition: { staggerChildren: 0.15 } }
+            }}
+          >
             {[
               { bold: "94% Retention", rest: "Tactile manipulation cements algorithmic principles permanently." },
               { bold: "Instant Feedback", rest: "Circuits light up, beep, and move physically upon compilation." },
               { bold: "Iterative Mindset", rest: "Hardware bugs teach resilience, analysis, and root-cause discovery." },
               { bold: "Verifiable Passports", rest: "Capstone projects ready for WRO, university portfolios, and careers." }
             ].map((item, idx) => (
-              <li key={idx} className="flex items-start gap-5 hover:translate-x-2 transition-transform duration-300">
+              <motion.li 
+                key={idx} 
+                className="flex items-start gap-5 cursor-default p-4 rounded-xl -ml-4"
+                variants={{
+                  hidden: { opacity: 0, x: -30 },
+                  visible: { opacity: 1, x: 0, transition: { type: "spring", damping: 12 } }
+                }}
+                whileHover={{ 
+                  scale: 1.02, 
+                  x: 10,
+                  backgroundColor: "rgba(255, 255, 255, 0.05)",
+                  color: "#ffffff"
+                }}
+              >
                 <span className="text-[#ff5400] font-black text-2xl shrink-0 mt-[-2px]">✓</span>
                 <span className="leading-relaxed">
                   <strong className="text-white block mb-1.5 text-lg uppercase tracking-tight font-black">{item.bold}</strong> 
                   {item.rest}
                 </span>
-              </li>
+              </motion.li>
             ))}
-          </ul>
+          </motion.ul>
         </div>
 
       </div>

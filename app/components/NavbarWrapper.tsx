@@ -19,9 +19,11 @@ export default function NavbarWrapper() {
 
   const shouldHideNavbar = hiddenPaths.some(path => pathname?.startsWith(path));
 
+  const isHomePage = pathname === '/';
+
   if (shouldHideNavbar) {
     return null;
   }
 
-  return <Navbar />;
+  return <Navbar darkHero={isHomePage} />;
 }

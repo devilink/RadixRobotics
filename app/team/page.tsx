@@ -3,7 +3,6 @@ import Image from 'next/image';
 import { ArrowRight, ArrowUpRight } from 'lucide-react';
 import { useEffect } from 'react';
 import Link from 'next/link';
-import Navbar from '@/app/components/Navbar';
 import Footer from '@/app/components/Footer';
 import Breadcrumbs from '@/app/components/Breadcrumbs';
 
@@ -36,7 +35,7 @@ export default function TeamPage() {
         },
         {
             name: "Aman Ahmed",
-            role: "CEO & Co-Founder",
+            role: "Founder & CEO",
             bio: "Driving operational excellence and strategic growth.",
             image: "/CEO.jpeg"
         },
@@ -66,7 +65,7 @@ export default function TeamPage() {
         { name: "Aleeza Khanam", role: "Business Development", image: "/teams/3.jpeg" },
         { name: "Manash Kumar Das", role: "3D Designer", image: "/teams/4.jpeg" },
         { name: "Gyandeep Duwarah", role: "Robotics Engineer", image: "/teams/5.jpeg" },
-        { name: "Nirmal Jyoti Thakuria", role: "Developer", image: "/teams/6.jpeg" },
+        { name: "Nirmal Jyoti Thakuria", role: "Hardware Engineer", image: "/teams/6.jpeg" },
         { name: "Himanta Bijoy Sarmah", role: "Sales & Marketing", image: "/teams/7.jpeg" },
         { name: "Jerifa Ahmed", role: "Operator Manager", image: "/teams/8.jpeg" },
         { name: "Nistha Rani Barphukon", role: "Robotics Engineer", image: "/teams/9.jpeg" },
@@ -79,10 +78,9 @@ export default function TeamPage() {
     ];
 
     return (
-        <div className="relative min-h-screen font-sans text-[#1a1a1a] bg-grid overflow-x-hidden">
-            
-            <Navbar />
-            <Breadcrumbs />
+        <div className="relative min-h-[100dvh] w-full max-w-full bg-grid text-[#1a1a1a] font-sans overflow-x-hidden">
+      
+      <Breadcrumbs />
 
             {/* --- HERO SECTION --- */}
             <main className="relative w-full pt-32 lg:pt-48 pb-24 overflow-hidden border-b-2 border-[#111]">
@@ -113,24 +111,34 @@ export default function TeamPage() {
                         </div>
                     </div>
 
-                    <div className="grid grid-cols-2 sm:grid-cols-6 gap-4 md:gap-6">
-                        {executiveDirectors.map((director, i) => (
-                            <div key={i} className={`reveal-on-scroll opacity-0 translate-y-12 transition-all duration-700 relative bg-[#f2f3f5] border-2 border-[#111] rounded-none overflow-hidden shadow-[6px_6px_0px_#111] aspect-[4/5] md:aspect-[3/4] lg:aspect-[4/5] ${
-                                i < 2 ? 'col-span-2 sm:col-span-3' : 'col-span-1 sm:col-span-2'
-                            }`} style={{ transitionDelay: `${i * 100}ms` }}>
-                                
-                                <Image src={director.image} alt={director.name} fill className="object-cover object-top" sizes="(max-width: 768px) 100vw, 50vw" />
-                                
-                                <div className="absolute inset-0 bg-gradient-to-t from-[#111] via-[#111]/60 to-transparent opacity-90"></div>
-                                
-                                <div className={`absolute bottom-0 left-0 w-full flex flex-col justify-end ${i < 2 ? 'p-6 md:p-10' : 'p-4 md:p-6'}`}>
-                                    <h3 className={`${i < 2 ? 'text-2xl md:text-3xl lg:text-4xl' : 'text-lg md:text-xl lg:text-2xl'} font-black uppercase tracking-tighter text-white mb-2 leading-tight`}>{director.name}</h3>
-                                    <p className={`w-fit font-mono font-bold uppercase tracking-widest bg-white text-[#111] ${i < 2 ? 'text-[10px] md:text-xs px-3 py-1.5' : 'text-[9px] md:text-[10px] px-2.5 py-1'}`}>
-                                        {director.role}
-                                    </p>
+                    <div className="flex flex-col gap-4 md:gap-6 w-full max-w-[1200px] mx-auto">
+                        {/* Top Row: 2 Wide Bento Cards */}
+                        <div className="grid grid-cols-2 gap-4 md:gap-6 w-full">
+                            {executiveDirectors.slice(0, 2).map((director, i) => (
+                                <div key={i} className="relative bg-[#f2f3f5] border-2 border-[#111] overflow-hidden shadow-[6px_6px_0px_#111] aspect-[4/3] md:aspect-[16/9] w-full">
+                                    <Image src={director.image} alt={director.name} fill className="object-cover object-[center_20%]" sizes="(max-width: 768px) 100vw, 50vw" />
+                                    <div className="absolute inset-0 bg-gradient-to-t from-[#111] via-[#111]/40 to-transparent opacity-90"></div>
+                                    <div className="absolute bottom-0 left-0 w-full flex flex-col justify-end p-6 md:p-8 lg:p-10">
+                                        <h3 className="text-2xl md:text-3xl lg:text-4xl font-black uppercase tracking-tighter text-white mb-2 leading-tight">{director.name}</h3>
+                                        <p className="w-fit font-mono font-bold uppercase tracking-widest bg-white text-[#111] text-[10px] md:text-xs px-3 py-1.5">{director.role}</p>
+                                    </div>
                                 </div>
-                            </div>
-                        ))}
+                            ))}
+                        </div>
+
+                        {/* Bottom Row: 3 Square Bento Cards */}
+                        <div className="grid grid-cols-3 gap-4 md:gap-6 w-full">
+                            {executiveDirectors.slice(2, 5).map((director, i) => (
+                                <div key={i + 2} className="relative bg-[#f2f3f5] border-2 border-[#111] overflow-hidden shadow-[6px_6px_0px_#111] aspect-[4/5] md:aspect-square w-full">
+                                    <Image src={director.image} alt={director.name} fill className="object-cover object-top" sizes="(max-width: 768px) 100vw, 33vw" />
+                                    <div className="absolute inset-0 bg-gradient-to-t from-[#111] via-[#111]/60 to-transparent opacity-90"></div>
+                                    <div className="absolute bottom-0 left-0 w-full flex flex-col justify-end p-4 md:p-6">
+                                        <h3 className="text-lg md:text-xl lg:text-2xl font-black uppercase tracking-tighter text-white mb-2 leading-tight">{director.name}</h3>
+                                        <p className="w-fit font-mono font-bold uppercase tracking-widest bg-white text-[#111] text-[9px] md:text-[10px] px-2.5 py-1">{director.role}</p>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
                     </div>
                 </div>
             </section>
@@ -146,7 +154,7 @@ export default function TeamPage() {
                         <h2 className="text-4xl md:text-5xl font-black uppercase tracking-tighter text-[#111]">Core Team</h2>
                     </div>
 
-                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-4 sm:gap-x-6 gap-y-10 sm:gap-y-12 max-w-7xl mx-auto">
+                    <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-x-4 sm:gap-x-6 gap-y-10 sm:gap-y-12 max-w-7xl mx-auto">
                         {teamMembers.map((member, i) => (
                             <div key={i} className="reveal-on-scroll opacity-0 translate-y-12 transition-all duration-700 flex flex-col" style={{ transitionDelay: `${(i % 5) * 100}ms` }}>
                                 {/* Brutalist Portrait Box */}

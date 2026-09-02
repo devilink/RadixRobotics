@@ -98,10 +98,10 @@ export default function AsymmetricLifecycle() {
               const isEven = index % 2 === 0;
               return (
                 <motion.div 
-                  initial={{ opacity: 0, y: 50 }}
-                  whileInView={{ opacity: 1, y: 0 }}
+                  initial={{ opacity: 0, y: 50, rotateX: 20, perspective: 1000 }}
+                  whileInView={{ opacity: 1, y: 0, rotateX: 0 }}
                   viewport={{ once: true, margin: "-100px" }}
-                  transition={{ duration: 0.6, delay: index * 0.1 }}
+                  transition={{ duration: 0.6, delay: index * 0.1, type: "spring", bounce: 0.4 }}
                   key={step.number} 
                   className={`flex flex-col md:flex-row items-center gap-8 md:gap-16 ${isEven ? '' : 'md:flex-row-reverse'}`}
                 >
@@ -112,7 +112,16 @@ export default function AsymmetricLifecycle() {
                     {/* Mobile Timeline Node */}
                     <div className="absolute left-[27px] top-8 -translate-x-1/2 w-6 h-6 bg-[#ff5400] border-4 border-[#faf8f5] rounded-full z-20 md:hidden"></div>
 
-                    <div className="bg-white border-2 border-[#111] p-6 sm:p-10 shadow-[8px_8px_0_#111] hover:shadow-[12px_12px_0_#ff5400] hover:-translate-y-2 transition-all duration-300 w-full max-w-[480px] relative group">
+                    <motion.div 
+                      className="bg-white border-2 border-[#111] p-6 sm:p-10 shadow-[8px_8px_0_#111] w-full max-w-[480px] relative group origin-center cursor-default"
+                      whileHover={{ 
+                        scale: 1.03, 
+                        rotate: 1,
+                        boxShadow: "15px 15px 0px #ff5400",
+                        y: -5
+                      }}
+                      transition={{ type: "spring", stiffness: 300, damping: 15 }}
+                    >
                       {/* Large Step Number */}
                       <span className="absolute top-4 right-5 text-7xl sm:text-8xl font-black text-[#111] opacity-[0.03] leading-none pointer-events-none select-none font-mono group-hover:opacity-[0.08] transition-opacity">
                         {step.number}
@@ -151,7 +160,7 @@ export default function AsymmetricLifecycle() {
                           </li>
                         ))}
                       </ul>
-                    </div>
+                    </motion.div>
                   </div>
 
                   {/* Desktop Timeline Node & Spacer */}

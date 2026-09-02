@@ -3,7 +3,6 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { ArrowUpRight, Cpu, Bot, BookOpen, Trophy, CheckCircle2 } from 'lucide-react';
-import Navbar from '@/app/components/Navbar';
 import Footer from '@/app/components/Footer';
 import Breadcrumbs from '@/app/components/Breadcrumbs';
 
@@ -66,7 +65,6 @@ export default function ServicesPage() {
   return (
     <div className="relative min-h-[100dvh] w-full max-w-full bg-grid text-[#1a1a1a] font-sans overflow-x-hidden">
       
-      <Navbar />
       <Breadcrumbs />
 
       {/* --- PAGE HEADER --- */}

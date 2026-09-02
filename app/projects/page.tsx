@@ -1,6 +1,5 @@
 import RealBuildsShowcase from '../components/RealBuildsShowcase';
 import { ArrowUpRight } from 'lucide-react';
-import Navbar from '@/app/components/Navbar';
 import Footer from '@/app/components/Footer';
 import Breadcrumbs from '@/app/components/Breadcrumbs';
 import type { Metadata } from 'next';
@@ -13,9 +12,8 @@ export const metadata: Metadata = {
 
 export default function ProjectsPage() {
   return (
-    <div className="relative min-h-[100dvh] w-full max-w-full bg-grid text-[#1a1a1a] font-sans overflow-x-hidden">
+    <div className="relative min-h-[100dvh] w-full max-w-full bg-[#f2f3f5] text-[#1a1a1a] font-sans overflow-x-hidden">
       
-      <Navbar />
       <Breadcrumbs />
 
       {/* --- PAGE HEADER --- */}

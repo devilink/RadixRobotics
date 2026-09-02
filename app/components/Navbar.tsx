@@ -13,6 +13,7 @@ export interface NavLink {
 
 interface NavbarProps {
   navLinks?: NavLink[];
+  darkHero?: boolean;
 }
 
 const defaultNavLinks: NavLink[] = [
@@ -22,7 +23,7 @@ const defaultNavLinks: NavLink[] = [
   { name: 'Team', href: '/team' },
 ];
 
-export default function Navbar({ navLinks = defaultNavLinks }: NavbarProps) {
+export default function Navbar({ navLinks = defaultNavLinks, darkHero = false }: NavbarProps) {
   const [user, setUser] = useState<any>(null);
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -64,10 +65,15 @@ export default function Navbar({ navLinks = defaultNavLinks }: NavbarProps) {
     return '/login';
   };
 
+  // Determine if elements should be dark based on scroll and darkHero prop
+  const isDarkContent = scrolled || !darkHero;
+
   return (
     <>
       <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-        scrolled ? 'bg-[#faf8f5]/95 backdrop-blur-md shadow-sm py-3 border-b border-[#e8e0d4]' : 'bg-transparent py-4 sm:py-5'
+        scrolled 
+          ? 'bg-white/95 backdrop-blur-md shadow-sm py-3 border-b border-[#e8e0d4]' 
+          : (darkHero ? 'bg-transparent py-4 sm:py-5 border-b border-transparent' : 'bg-white shadow-sm py-4 sm:py-5 border-b border-[#e8e0d4]')
       }`}>
         <div className="w-full max-w-[1400px] mx-auto px-4 sm:px-8 lg:px-16 flex items-center justify-between">
 
@@ -78,26 +84,26 @@ export default function Navbar({ navLinks = defaultNavLinks }: NavbarProps) {
               alt="RADIX Symbol"
               width={200}
               height={200}
-              className="h-8 sm:h-10 lg:h-11 w-auto object-contain transition-transform duration-300 group-hover:scale-105"
+              className="h-8 sm:h-10 lg:h-11 w-auto object-contain transition-all duration-300 group-hover:scale-105 brightness-0"
               priority
             />
             <Image
-              src="/txtw.jpeg"
+              src="/txtw.png"
               alt="RADIX Robotics"
               width={600}
               height={200}
-              className="h-5 sm:h-6 lg:h-7 w-auto object-contain"
+              className="h-5 sm:h-6 lg:h-7 w-auto object-contain transition-all duration-300 brightness-0"
               priority
             />
           </Link>
 
           {/* Desktop Nav Links */}
-          <div className="hide-on-mobile items-center gap-2 xl:gap-7 text-[10px] lg:text-xs font-bold uppercase tracking-widest text-[#4a4a4a]">
+          <div className="hide-on-mobile items-center gap-2 xl:gap-7 text-[10px] lg:text-xs font-bold uppercase tracking-widest text-[#1a1a1a]">
             {navLinks.map((item) => (
               <Link
                 key={item.name}
                 href={item.href}
-                className="nav-link hover:text-[#1a1a1a] py-1.5 transition-colors"
+                className="nav-link py-1.5 transition-colors hover:text-[#ff5400]"
               >
                 {item.name}
               </Link>
@@ -111,13 +117,13 @@ export default function Navbar({ navLinks = defaultNavLinks }: NavbarProps) {
                 <>
                   <button
                     onClick={handleLogout}
-                    className="text-xs font-bold uppercase tracking-widest text-[#8a8a8a] hover:text-[#FF6B6B] transition-colors"
+                    className="text-xs font-bold uppercase tracking-widest transition-colors text-[#8a8a8a] hover:text-[#FF6B6B]"
                   >
                     Logout
                   </button>
                   <Link
                     href={getSchoolPortalUrl()}
-                    className="bg-[#1a1a1a] text-white px-5 py-2.5 rounded-lg text-xs font-bold uppercase tracking-wider flex items-center gap-2 hover:bg-[#333] transition-all shadow-sm"
+                    className="px-5 py-2.5 rounded-lg text-xs font-bold uppercase tracking-wider flex items-center gap-2 transition-all shadow-sm bg-[#1a1a1a] text-white hover:bg-[#333]"
                   >
                     Portal <ArrowRight size={14} />
                   </Link>
@@ -126,7 +132,7 @@ export default function Navbar({ navLinks = defaultNavLinks }: NavbarProps) {
                 <>
                   <Link
                     href="/login"
-                    className="text-xs font-bold uppercase tracking-widest text-[#4a4a4a] hover:text-[#1a1a1a] transition-colors px-3 py-2"
+                    className="text-xs font-bold uppercase tracking-widest transition-colors px-3 py-2 text-[#1a1a1a] hover:text-[#ff5400]"
                   >
                     Login
                   </Link>
@@ -134,7 +140,7 @@ export default function Navbar({ navLinks = defaultNavLinks }: NavbarProps) {
                     href="https://wa.me/916001979712?text=Hello%20Radix%20Robotics,%20we%20would%20like%20to%20consult%20about%20the%20Founding%20School%20Lab%20Cohort"
                     target="_blank"
                     rel="noopener noreferrer nofollow"
-                    className="sticker sticker-dark text-[10px] px-4 py-2"
+                    className="text-[10px] px-4 py-2 bg-[#1a1a1a] text-white font-bold uppercase tracking-widest hover:bg-[#333] transition-colors rounded-sm flex items-center gap-2 shadow-[2px_2px_0_#ff5400]"
                   >
                     Schedule Audit <ArrowRight size={12} />
                   </a>
@@ -144,7 +150,7 @@ export default function Navbar({ navLinks = defaultNavLinks }: NavbarProps) {
 
             {/* Mobile Menu Toggle */}
             <button
-              className="hide-on-desktop p-2 text-[#1a1a1a] hover:text-[#FF6B6B] transition-colors"
+              className="hide-on-desktop p-2 transition-colors text-[#1a1a1a] hover:text-[#ff5400]"
               onClick={() => setMobileMenuOpen(true)}
               aria-label="Open Navigation Menu"
             >
@@ -163,8 +169,8 @@ export default function Navbar({ navLinks = defaultNavLinks }: NavbarProps) {
       >
         <div className="flex justify-between items-center pb-5 border-b border-[#e8e0d4]">
           <Link href="/" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-2">
-            <Image src="/imgw.PNG" alt="RADIX Symbol" width={160} height={160} className="h-8 w-auto object-contain" priority />
-            <Image src="/txtw.jpeg" alt="RADIX Robotics" width={400} height={160} className="h-5 w-auto object-contain" priority />
+            <Image src="/imgw.PNG" alt="RADIX Symbol" width={160} height={160} className="h-8 w-auto object-contain brightness-0" priority />
+            <Image src="/txtw.png" alt="RADIX Robotics" width={400} height={160} className="h-5 w-auto object-contain brightness-0" priority />
           </Link>
           <button onClick={() => setMobileMenuOpen(false)} className="p-2 text-[#8a8a8a] hover:text-[#1a1a1a]">
             <X size={24} />

@@ -397,28 +397,54 @@ export default function Page() {
             </div>
 
             {/* Right scattered small cards */}
-            <div className="lg:w-7/12 grid grid-cols-1 sm:grid-cols-2 gap-6 relative pt-0 lg:pt-16">
+            <motion.div 
+              className="lg:w-7/12 grid grid-cols-1 sm:grid-cols-2 gap-6 relative pt-0 lg:pt-16"
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true, margin: "-100px" }}
+              variants={{
+                hidden: { opacity: 0 },
+                visible: { opacity: 1, transition: { staggerChildren: 0.15 } }
+              }}
+            >
               {[
                 { icon: ShieldCheck, title: "NEP Validated", desc: "Full compliance with the latest education framework.", mt: "mt-0" },
-                { icon: Award, title: "Skill-First", desc: "Digital skill passports with verifiable GitHub portfolios.", mt: "sm:mt-12" },
+                { icon: Award, title: "Skill-First", desc: "Digital skill passports with verifiable GitHub portfolios.", mt: "mt-0" },
                 { icon: Cpu, title: "Hardware-First", desc: "100+ modular hardware testbeds for circuits.", mt: "mt-0" },
-                { icon: Clock, title: "14-Day Setup", desc: "Full lab installation and onboarding in just two weeks.", mt: "sm:mt-12" },
+                { icon: Clock, title: "14-Day Setup", desc: "Full lab installation and onboarding in just two weeks.", mt: "mt-0" },
               ].map((item, i) => {
                 const Icon = item.icon;
                 return (
-                  <div key={i} className={`bg-gradient-to-br from-[#111] to-black border-2 border-[#222] p-6 sm:p-8 hover:border-[#ff5400]/50 transition-colors duration-300 relative group ${item.mt}`}>
+                  <motion.div 
+                    key={i} 
+                    className={`bg-gradient-to-br from-[#111] to-black border-2 border-[#222] p-6 sm:p-8 relative group cursor-default ${item.mt}`}
+                    variants={{
+                      hidden: { opacity: 0, y: 50, rotateX: 15, perspective: 800 },
+                      visible: { opacity: 1, y: 0, rotateX: 0, transition: { type: "spring", damping: 14 } }
+                    }}
+                    whileHover={{ 
+                      scale: 1.05, 
+                      y: -10, 
+                      borderColor: "rgba(255, 84, 0, 0.6)",
+                      boxShadow: "0 25px 50px -12px rgba(255, 84, 0, 0.25)"
+                    }}
+                  >
                     <div className="flex items-center justify-between mb-8">
-                      <div className="text-[#ff5400] group-hover:scale-110 transition-transform">
+                      <motion.div 
+                        className="text-[#ff5400]"
+                        whileHover={{ rotate: 180, scale: 1.2 }}
+                        transition={{ type: "spring", stiffness: 200, damping: 10 }}
+                      >
                         <Icon size={32} strokeWidth={1.5} />
-                      </div>
+                      </motion.div>
                       <span className="font-mono text-xs text-white/30">0{i + 2}</span>
                     </div>
                     <h4 className="text-lg sm:text-xl font-black text-white uppercase tracking-tight mb-3">{item.title}</h4>
                     <p className="text-[#888] text-sm leading-relaxed">{item.desc}</p>
-                  </div>
+                  </motion.div>
                 );
               })}
-            </div>
+            </motion.div>
 
           </div>
         </div>
@@ -460,15 +486,27 @@ export default function Page() {
               Partner with RADIX to bring world-class robotic and STEM infrastructure directly to your campus.
             </p>
 
-            <a
+            <motion.a
               href="https://wa.me/916001979712?text=Hello%20Radix%20Robotics,%20we%20want%20to%20apply%20for%20the%20Founding%20Partner%20School%20Cohort"
               target="_blank"
               rel="noopener noreferrer nofollow"
-              className="relative z-10 w-fit bg-[#111] text-white px-8 sm:px-12 py-5 font-bold uppercase tracking-widest text-sm transition-transform duration-300 hover:scale-105 shadow-[8px_8px_0_rgba(17,17,17,0.3)] hover:shadow-[12px_12px_0_rgba(17,17,17,0.5)] flex items-center gap-4 group/btn"
+              className="relative z-10 w-fit bg-[#111] text-white px-8 sm:px-12 py-5 font-bold uppercase tracking-widest text-sm flex items-center gap-4 group/btn cursor-pointer"
+              whileHover={{ 
+                scale: 1.05, 
+                y: -5,
+                boxShadow: "12px 12px 0px rgba(17,17,17,0.6)"
+              }}
+              whileTap={{ scale: 0.95, y: 0, boxShadow: "4px 4px 0px rgba(17,17,17,0.8)" }}
+              style={{ boxShadow: "8px 8px 0px rgba(17,17,17,0.3)" }}
             >
               Apply as Founding School 
-              <ArrowRight size={20} className="group-hover/btn:translate-x-1 transition-transform" />
-            </a>
+              <motion.div
+                animate={{ x: [0, 5, 0] }}
+                transition={{ repeat: Infinity, duration: 1.5, ease: "easeInOut" }}
+              >
+                <ArrowRight size={20} />
+              </motion.div>
+            </motion.a>
           </motion.div>
         </div>
       </section>

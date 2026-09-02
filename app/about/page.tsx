@@ -2,15 +2,13 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { ArrowRight, ArrowUpRight } from 'lucide-react';
-import Navbar from '@/app/components/Navbar';
 import Footer from '@/app/components/Footer';
 import Breadcrumbs from '@/app/components/Breadcrumbs';
 
 export default function AboutPage() {
     return (
-        <div className="relative min-h-screen font-sans text-[#1a1a1a] bg-grid overflow-x-hidden">
+        <div className="relative min-h-[100dvh] w-full max-w-full bg-[#050505] text-[#f2f3f5] font-sans overflow-x-hidden">
             
-            <Navbar />
             <Breadcrumbs />
 
             {/* --- ABOUT SECTION --- */}
