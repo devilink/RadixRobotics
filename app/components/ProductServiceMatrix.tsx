@@ -191,26 +191,26 @@ export default function ProductServiceMatrix() {
                 style={{ isolation: 'isolate', opacity: 0 }}
               >
                 {/* Title and Subtitle */}
-                <div className="relative z-10 flex flex-col">
-                  <span className={`text-[16px] sm:text-[24px] lg:text-[32px] leading-[1.1] sm:leading-[1.05] font-bold tracking-tight sm:tracking-[-0.03em] ${titleColor}`}>
+                <div className="relative z-10 flex flex-col max-w-[70%] sm:max-w-none">
+                  <span className={`text-[clamp(16px,4vw,32px)] leading-[1.1] font-bold tracking-tight ${titleColor}`}>
                     {titleTop}
                   </span>
-                  <span className={`text-[16px] sm:text-[24px] lg:text-[32px] leading-[1.1] sm:leading-[1.05] font-semibold tracking-tight sm:tracking-[-0.03em] mt-1 ${subtitleColor}`}>
+                  <span className={`text-[clamp(16px,4vw,32px)] leading-[1.1] font-semibold tracking-tight mt-1 ${subtitleColor}`}>
                     {titleBottom}
                   </span>
                 </div>
 
                 {/* 'Learn More' Button */}
-                <div className="absolute left-[15px] sm:left-[30px] bottom-[15px] sm:bottom-[30px] flex items-center gap-2 sm:gap-3 text-[9px] sm:text-[13px] font-bold tracking-[0.05em] z-10 text-inherit">
-                  <div className={`w-[20px] h-[20px] sm:w-[28px] sm:h-[28px] rounded-full flex items-center justify-center text-[10px] sm:text-[14px] leading-none ${arrowBg} transition-transform group-hover:scale-110 group-hover:rotate-45 shadow-md`}>
+                <div className="absolute left-[5%] bottom-[5%] flex items-center gap-[clamp(4px,1vw,12px)] text-[clamp(9px,2vw,13px)] font-bold tracking-[0.05em] z-10 text-inherit">
+                  <div className={`w-[clamp(20px,4vw,28px)] h-[clamp(20px,4vw,28px)] rounded-full flex items-center justify-center text-[clamp(10px,2vw,14px)] leading-none ${arrowBg} transition-transform group-hover:scale-110 group-hover:rotate-45 shadow-md`}>
                     ↗
                   </div>
                   <span className={isWhite ? 'text-[#101010]' : 'text-white'}>LEARN MORE</span>
                 </div>
 
                 {/* Oversized Graphic Illustration */}
-                <div className="absolute -right-8 -bottom-8 sm:-right-4 sm:-bottom-4 z-0 group-hover:scale-110 group-hover:-rotate-12 transition-transform duration-500 ease-out pointer-events-none">
-                  <Icon size={140} className={`${iconColor} drop-shadow-2xl w-[140px] h-[140px] sm:w-[200px] sm:h-[200px] lg:w-[240px] lg:h-[240px]`} strokeWidth={1.5} />
+                <div className="absolute -right-[5%] -bottom-[5%] z-0 group-hover:scale-110 group-hover:-rotate-12 transition-transform duration-500 ease-out pointer-events-none opacity-40 sm:opacity-100">
+                  <Icon className={`${iconColor} drop-shadow-2xl w-[clamp(100px,30vw,240px)] h-[clamp(100px,30vw,240px)]`} strokeWidth={1.5} />
                 </div>
               </Link>
             );
