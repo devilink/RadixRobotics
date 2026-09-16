@@ -142,9 +142,9 @@ export default function ProductServiceMatrix() {
           </p>
         </div>
 
-        {/* 4 Iconly-Style Cards Grid (2x2 Always Side-by-Side) */}
+        {/* 4 Iconly-Style Cards Grid */}
         <div 
-          className="w-full max-w-[1200px] mx-auto mt-12 grid grid-cols-2 gap-4 sm:gap-6 lg:gap-10"
+          className="w-full max-w-[1200px] mx-auto mt-12 grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 lg:gap-10"
         >
           {services.map((service, idx) => {
             const Icon = service.icon;

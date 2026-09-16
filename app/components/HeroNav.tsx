@@ -25,7 +25,7 @@ export default function HeroNav() {
   }, []);
 
   return (
-    <div className="relative min-h-screen bg-white overflow-hidden font-sans">
+    <div className="relative min-h-[100dvh] bg-white overflow-hidden font-sans">
       {/* Background Image */}
       <div className="absolute inset-0 z-0">
         <Image 
@@ -88,7 +88,7 @@ export default function HeroNav() {
       </nav>
 
       {/* Hero Section */}
-      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full min-h-screen flex items-center">
+      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full min-h-[100dvh] flex items-center">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-12 w-full mt-20 md:mt-0 items-center">
           
           {/* Left Column - Content */}

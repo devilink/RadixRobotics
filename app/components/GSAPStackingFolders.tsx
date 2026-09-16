@@ -173,8 +173,8 @@ export default function GSAPStackingFolders() {
     offset: ["start end", "end start"]
   });
 
-  const yFast = useTransform(scrollYProgress, [0, 1], [-100, 100]);
-  const ySlow = useTransform(scrollYProgress, [0, 1], [-40, 40]);
+  const yFast = useTransform(scrollYProgress, [0, 1], [-50, 50]);
+  const ySlow = useTransform(scrollYProgress, [0, 1], [-20, 20]);
   
   // Scrubbed Scale Reveal
   const scaleReveal = useTransform(scrollYProgress, [0.1, 0.5], [0.5, 1]);

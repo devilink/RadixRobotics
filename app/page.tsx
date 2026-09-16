@@ -43,10 +43,10 @@ export default function Page() {
 
   // Framer Motion Parallax setup
   const { scrollY } = useScroll();
-  const yBg = useTransform(scrollY, [0, 1000], [0, 200]); // Slow movement down (background)
-  const yBgFast = useTransform(scrollY, [0, 1000], [0, 350]); // Faster movement down
-  const yFg = useTransform(scrollY, [0, 1000], [0, -150]); // Move up slightly (foreground)
-  const yFloat = useTransform(scrollY, [0, 1000], [0, -300]); // Float up fast
+  const yBg = useTransform(scrollY, [0, 1000], [0, 100]); // Slow movement down (background)
+  const yBgFast = useTransform(scrollY, [0, 1000], [0, 200]); // Faster movement down
+  const yFg = useTransform(scrollY, [0, 1000], [0, -100]); // Move up slightly (foreground)
+  const yFloat = useTransform(scrollY, [0, 1000], [0, -200]); // Float up fast
   
   // GSAP Drone Floating
   useEffect(() => {
@@ -77,7 +77,7 @@ export default function Page() {
     <div className="relative min-h-[100dvh] w-full max-w-full bg-grid text-[#1a1a1a] font-sans">
 
       {/* --- HERO SECTION (PIXEL RISE EXACT MATCH) --- */}
-      <section className="w-full min-h-[calc(100vh-80px)] relative flex flex-col justify-between py-[20px] px-4 sm:px-8 md:px-[60px] pb-[24px] overflow-hidden text-[#111317]" style={{ background: 'radial-gradient(circle at 50% 50%, #ffffff 0%, #f1f2f4 65%, #e5e7eb 100%)' }}>
+      <section className="w-full min-h-[calc(100dvh-80px)] relative flex flex-col justify-between py-[20px] px-4 sm:px-8 md:px-[60px] pb-[24px] overflow-hidden text-[#111317]" style={{ background: 'radial-gradient(circle at 50% 50%, #ffffff 0%, #f1f2f4 65%, #e5e7eb 100%)' }}>
         <style dangerouslySetInnerHTML={{__html: `
           @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&family=Silkscreen:wght@700&display=swap');
           .pr-font-sans { font-family: 'Plus Jakarta Sans', sans-serif; }

@@ -109,12 +109,12 @@ function FloatingSocials({
 
 export default function StudentPage() {
   return (
-    <main className="relative min-h-screen overflow-x-hidden bg-[#010828] text-cream font-mono">
+    <main className="relative min-h-[100dvh] overflow-x-hidden bg-[#010828] text-cream font-mono">
       {/* Texture Overlay */}
       <div className="pointer-events-none fixed inset-0 z-50 bg-[url('/texture.png')] bg-cover bg-center opacity-60 mix-blend-lighten" />
 
       {/* SECTION 1: HERO */}
-      <section id="hero" className="relative min-h-screen overflow-hidden rounded-b-[32px] shadow-2xl">
+      <section id="hero" className="relative min-h-[100dvh] overflow-hidden rounded-b-[32px] shadow-2xl">
         <video
           autoPlay
           loop
@@ -129,7 +129,7 @@ export default function StudentPage() {
         </video>
         <div className="absolute inset-0 bg-gradient-to-b from-[#010828]/40 via-transparent to-[#010828]/25" />
 
-        <div className="relative z-10 mx-auto flex min-h-screen w-full max-w-[1831px] flex-col px-5 py-6 sm:px-8 md:px-12 md:py-8">
+        <div className="relative z-10 mx-auto flex min-h-[100dvh] w-full max-w-[1831px] flex-col px-5 py-6 sm:px-8 md:px-12 md:py-8">
           <header className="flex items-center justify-between gap-6 animate-fade-up w-full">
             <div className="flex-1 font-grotesk text-[16px] uppercase tracking-[0.12em] text-cream drop-shadow-md">
               RADIX.STUDENT
@@ -187,7 +187,7 @@ export default function StudentPage() {
       </section>
 
       {/* SECTION 2: ABOUT / INTRO */}
-      <section id="about" className="relative min-h-screen overflow-hidden">
+      <section id="about" className="relative min-h-[100dvh] overflow-hidden">
         <video
           autoPlay
           loop
@@ -202,7 +202,7 @@ export default function StudentPage() {
         </video>
         <div className="absolute inset-0 bg-gradient-to-b from-[#010828]/20 via-transparent to-[#010828]/35" />
 
-        <div className="relative z-10 mx-auto flex min-h-screen w-full max-w-[1831px] flex-col justify-between px-5 py-16 sm:px-8 md:px-12 md:py-24 xl:py-32">
+        <div className="relative z-10 mx-auto flex min-h-[100dvh] w-full max-w-[1831px] flex-col justify-between px-5 py-16 sm:px-8 md:px-12 md:py-24 xl:py-32">
           <div className="flex flex-col gap-12 sm:flex-row sm:items-start sm:justify-between animate-fade-up">
             <div className="relative">
               <h2 className="font-grotesk text-[32px] uppercase leading-[1.05] text-cream sm:text-[44px] md:text-[52px] lg:text-[60px] xl:text-[80px] drop-shadow-md">

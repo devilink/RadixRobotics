@@ -112,8 +112,7 @@ export default function TeamPage() {
                     </div>
 
                     <div className="flex flex-col gap-4 md:gap-6 w-full max-w-[1200px] mx-auto">
-                        {/* Top Row: 2 Wide Bento Cards */}
-                        <div className="grid grid-cols-2 gap-4 md:gap-6 w-full">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 w-full">
                             {executiveDirectors.slice(0, 2).map((director, i) => (
                                 <div key={i} className="relative bg-[#f2f3f5] border-2 border-[#111] overflow-hidden shadow-[6px_6px_0px_#111] aspect-[4/3] md:aspect-[16/9] w-full">
                                     <Image src={director.image} alt={director.name} fill className="object-cover object-[center_20%]" sizes="(max-width: 768px) 100vw, 50vw" />
@@ -126,8 +125,7 @@ export default function TeamPage() {
                             ))}
                         </div>
 
-                        {/* Bottom Row: 3 Square Bento Cards */}
-                        <div className="grid grid-cols-3 gap-4 md:gap-6 w-full">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 md:gap-6 w-full">
                             {executiveDirectors.slice(2, 5).map((director, i) => (
                                 <div key={i + 2} className="relative bg-[#f2f3f5] border-2 border-[#111] overflow-hidden shadow-[6px_6px_0px_#111] aspect-[4/5] md:aspect-square w-full">
                                     <Image src={director.image} alt={director.name} fill className="object-cover object-top" sizes="(max-width: 768px) 100vw, 33vw" />

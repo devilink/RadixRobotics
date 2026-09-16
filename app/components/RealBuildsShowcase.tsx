@@ -123,7 +123,7 @@ export default function RealBuildsShowcase() {
 
             {/* Sticker Decorator */}
             <div className={`
-              absolute -top-4 -right-4 md:-top-6 md:-right-6 
+              absolute -top-3 -right-2 sm:-top-4 sm:-right-4 md:-top-6 md:-right-6 
               px-3 py-2 text-[9px] md:text-xs font-black uppercase tracking-widest text-[#111] bg-[#f2f3f5]
               transform rotate-6 border-2 border-[#111] shadow-[2px_2px_0px_#111]
             `}>

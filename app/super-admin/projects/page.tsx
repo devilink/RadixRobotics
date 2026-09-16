@@ -176,7 +176,7 @@ export default function ContactLandingPage() {
     <div className="min-h-screen bg-white p-3 sm:p-4 md:p-6 font-inter text-gray-900 flex flex-col gap-8">
       
       {/* Hero Section */}
-      <div className="relative w-full rounded-2xl sm:rounded-3xl overflow-hidden min-h-[calc(100vh-24px)] sm:min-h-[calc(100vh-32px)] md:min-h-[calc(100vh-48px)] lg:h-[calc(100vh-48px)] shadow-2xl shrink-0">
+      <div className="relative w-full rounded-2xl sm:rounded-3xl overflow-hidden min-h-[calc(100dvh-24px)] sm:min-h-[calc(100dvh-32px)] md:min-h-[calc(100dvh-48px)] lg:h-[calc(100dvh-48px)] shadow-2xl shrink-0">
         
         <video
           src={VIDEO_URL}
@@ -187,7 +187,7 @@ export default function ContactLandingPage() {
           playsInline
         />
 
-        <div className="relative z-10 flex flex-col min-h-[calc(100vh-24px)] sm:min-h-[calc(100vh-32px)] md:min-h-[calc(100vh-48px)] lg:h-full p-4 sm:p-6 md:p-8 gap-6">
+        <div className="relative z-10 flex flex-col min-h-[calc(100dvh-24px)] sm:min-h-[calc(100dvh-32px)] md:min-h-[calc(100dvh-48px)] lg:h-full p-4 sm:p-6 md:p-8 gap-6">
           
           {/* Navigation */}
           <div style={{ position: 'fixed', top: '2rem', left: 0, right: 0, zIndex: 100, display: 'flex', justifyContent: 'center', padding: '0 1rem' }}>
@@ -195,7 +195,7 @@ export default function ContactLandingPage() {
                   <Link href="/" className="nav-link font-bold text-sm uppercase tracking-tighter text-white" style={{ flexShrink: 0 }}>Radix</Link>
 
                   {/* Desktop Nav Links */}
-                  <div className="flex items-center" style={{ gap: '1.25rem' }}>
+                  <div className="hidden md:flex items-center" style={{ gap: '1.25rem' }}>
                       <div style={{ width: '1px', height: '20px', background: 'rgba(255,255,255,0.2)' }}></div>
                       <Link href="/super-admin" className="nav-link text-white" style={{ fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.1em', opacity: 0.7, whiteSpace: 'nowrap' }}>Dashboard</Link>
                       <a href="#projects" className="nav-link text-white" style={{ fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.1em', opacity: 0.7, whiteSpace: 'nowrap' }}>Ongoing</a>
