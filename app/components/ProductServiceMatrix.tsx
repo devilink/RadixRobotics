@@ -191,13 +191,23 @@ export default function ProductServiceMatrix() {
                 style={{ isolation: 'isolate', opacity: 0 }}
               >
                 {/* Title and Subtitle */}
-                <div className="relative z-10 flex flex-col max-w-[70%] sm:max-w-none">
+                <div className="relative z-10 flex flex-col max-w-[80%] sm:max-w-[70%]">
                   <span className={`text-[clamp(16px,4vw,32px)] leading-[1.1] font-bold tracking-tight ${titleColor}`}>
                     {titleTop}
                   </span>
                   <span className={`text-[clamp(16px,4vw,32px)] leading-[1.1] font-semibold tracking-tight mt-1 ${subtitleColor}`}>
                     {titleBottom}
                   </span>
+                  <p className={`mt-4 text-[clamp(11px,1.5vw,14px)] leading-relaxed hidden sm:block ${subtitleColor} opacity-90 max-w-md`}>
+                    {service.description}
+                  </p>
+                  <div className="flex flex-wrap gap-2 mt-4 hidden md:flex">
+                    {service.tags.map(tag => (
+                      <span key={tag} className={`text-[9px] font-bold uppercase tracking-widest px-2 py-1 rounded-md border ${isWhite ? 'border-black/10 text-black/60' : 'border-white/10 text-white/60'}`}>
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
                 </div>
 
                 {/* 'Learn More' Button */}

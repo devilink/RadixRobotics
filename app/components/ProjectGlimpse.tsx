@@ -64,8 +64,8 @@ export default function ProjectGlimpse() {
   });
 
   // Parallax values for alternating cards
-  const yFast = useTransform(scrollYProgress, [0, 1], [-150, 150]);
-  const ySlow = useTransform(scrollYProgress, [0, 1], [-50, 50]);
+  const yFast = useTransform(scrollYProgress, [0, 1], [-30, 30]);
+  const ySlow = useTransform(scrollYProgress, [0, 1], [-10, 10]);
 
   return (
     <section ref={containerRef} className="relative z-10 w-full bg-grid border-b border-[#e8e0d4] py-20 sm:py-32 overflow-hidden">
@@ -100,7 +100,7 @@ export default function ProjectGlimpse() {
         </div>
 
         {/* 4 Cards Row Grid - Small Squares */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 pt-4 pr-font-sans pb-10 items-center justify-center max-w-6xl mx-auto w-full">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 md:gap-6 pt-12 md:pt-16 pr-font-sans pb-10 items-center justify-center max-w-6xl mx-auto w-full relative z-20">
           {glimpseProjects.map((p, idx) => (
             <motion.a 
               style={{ y: idx % 2 === 0 ? yFast : ySlow }}

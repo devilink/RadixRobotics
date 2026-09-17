@@ -206,7 +206,7 @@ export default function GSAPStackingFolders() {
         </div>
 
         {/* Glimpse Cards Grid */}
-        <div className="grid grid-cols-2 gap-3 sm:gap-6 lg:gap-8 max-w-5xl mx-auto overflow-visible">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 lg:gap-8 max-w-5xl mx-auto overflow-visible">
           {labTiers.slice(0, 4).map((tier, index) => {
             return (
             <motion.a
@@ -226,7 +226,7 @@ export default function GSAPStackingFolders() {
                 fill 
                 priority={index < 4}
                 className="object-cover group-hover:scale-110 transition-transform duration-700 ease-out" 
-                sizes="(max-width: 768px) 50vw, 25vw" 
+                sizes="(max-width: 768px) 100vw, 50vw" 
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black via-black/60 to-transparent opacity-80 group-hover:opacity-95 transition-opacity duration-500"></div>
               

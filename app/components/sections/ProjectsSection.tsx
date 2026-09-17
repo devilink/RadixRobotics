@@ -83,13 +83,13 @@ function ProjectCard({ project, index, totalCards }: { project: any; index: numb
   const scale = useTransform(scrollYProgress, [0, 1], [1, targetScale]);
 
   return (
-    <div ref={containerRef} className="h-[85vh] w-full flex items-start justify-center">
+    <div ref={containerRef} className="h-auto min-h-screen md:h-[85vh] w-full flex items-start justify-center mb-12 md:mb-0">
       <motion.div 
         style={{ 
           scale,
-          top: `calc(6rem + ${index * 28}px)`
-        }}
-        className="sticky w-full h-[65vh] md:h-[70vh] bg-[#0a0a0a] border-2 border-[#D7E2EA]/20 rounded-[40px] sm:rounded-[50px] md:rounded-[60px] p-6 sm:p-10 md:p-14 flex flex-col justify-between shadow-2xl overflow-hidden"
+          "--index-offset": `${index * 28}px`
+        } as any}
+        className="relative md:sticky md:top-[calc(6rem+var(--index-offset))] w-full h-auto md:h-[70vh] bg-[#0a0a0a] border-2 border-[#D7E2EA]/20 rounded-[40px] sm:rounded-[50px] md:rounded-[60px] p-6 sm:p-10 md:p-14 flex flex-col justify-between shadow-2xl overflow-hidden"
       >
         
         {/* Top Row */}

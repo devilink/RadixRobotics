@@ -41,12 +41,12 @@ const GSAPStackingFolders = dynamic(() => import('@/app/components/GSAPStackingF
 export default function Page() {
   const droneRef = useRef<HTMLImageElement>(null);
 
-  // Framer Motion Parallax setup
+  // Framer Motion Parallax setup using vh for responsive scaling
   const { scrollY } = useScroll();
-  const yBg = useTransform(scrollY, [0, 1000], [0, 100]); // Slow movement down (background)
-  const yBgFast = useTransform(scrollY, [0, 1000], [0, 200]); // Faster movement down
-  const yFg = useTransform(scrollY, [0, 1000], [0, -100]); // Move up slightly (foreground)
-  const yFloat = useTransform(scrollY, [0, 1000], [0, -200]); // Float up fast
+  const yBg = useTransform(scrollY, [0, 1000], ["0vh", "10vh"]); // Slow movement down (background)
+  const yBgFast = useTransform(scrollY, [0, 1000], ["0vh", "20vh"]); // Faster movement down
+  const yFg = useTransform(scrollY, [0, 1000], ["0vh", "-10vh"]); // Move up slightly (foreground)
+  const yFloat = useTransform(scrollY, [0, 1000], ["0vh", "-20vh"]); // Float up fast
   
   // GSAP Drone Floating
   useEffect(() => {
@@ -85,11 +85,11 @@ export default function Page() {
           
           .pr-pixel-backdrop { position: absolute; top: 65%; left: 0; width: 100%; transform: translateY(-50%); display: flex; justify-content: space-between; padding: 0 4vw; font-size: 14vw; font-weight: 700; color: #ffffff; text-shadow: 0 1px 0 #dedede, 0 2px 0 #cfcfcf, 0 3px 0 #c2c2c2, 0 4px 0 #b5b5b5, 0 25px 45px rgba(0, 0, 0, 0.07); letter-spacing: 0.2vw; z-index: 15; pointer-events: none; line-height: 0.9; }
           
-          .pr-center-workspace { position: absolute; top: 52%; left: 50%; transform: translate(-50%, -50%); width: 500px; height: 500px; z-index: 30; display: flex; justify-content: center; align-items: center; pointer-events: none; perspective: 1200px; }
-          .pr-sticky-note { position: absolute; top: 30px; left: 60px; width: 52px; height: 52px; background: #ffab00; border-radius: 6px; box-shadow: 0 12px 24px rgba(255, 171, 0, 0.35); transform: rotate(-14deg); display: flex; flex-direction: column; align-items: center; justify-content: center; }
-          .pr-note-smile { width: 16px; height: 7px; border-bottom: 2px solid #111; border-radius: 0 0 10px 10px; }
+          .pr-center-workspace { position: absolute; top: 52%; left: 50%; transform: translate(-50%, -50%); width: clamp(280px, 40vw, 500px); height: clamp(280px, 40vw, 500px); z-index: 30; display: flex; justify-content: center; align-items: center; pointer-events: none; perspective: 1200px; }
+          .pr-sticky-note { position: absolute; top: 6%; left: 12%; width: clamp(32px, 4.5vw, 52px); height: clamp(32px, 4.5vw, 52px); background: #ffab00; border-radius: 6px; box-shadow: 0 12px 24px rgba(255, 171, 0, 0.35); transform: rotate(-14deg); display: flex; flex-direction: column; align-items: center; justify-content: center; }
+          .pr-note-smile { width: 30%; height: 15%; border-bottom: 2px solid #111; border-radius: 0 0 10px 10px; }
 
-          .pr-floating-letter { position: absolute; top: 25px; right: 50px; width: 68px; height: 46px; background: linear-gradient(135deg, #ffc83b, #ff9f1c); border-radius: 6px; box-shadow: 0 15px 30px rgba(255, 159, 28, 0.35); transform: rotate(20deg); }
+          .pr-floating-letter { position: absolute; top: 5%; right: 10%; width: clamp(42px, 6vw, 68px); height: clamp(28px, 4vw, 46px); background: linear-gradient(135deg, #ffc83b, #ff9f1c); border-radius: 6px; box-shadow: 0 15px 30px rgba(255, 159, 28, 0.35); transform: rotate(20deg); }
           .pr-floating-letter::after { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 50%; border-bottom: 2px solid rgba(0,0,0,0.12); clip-path: polygon(0 0, 50% 100%, 100% 0); }
 
           .pr-retro-rig { position: relative; width: 320px; height: 320px; transform: rotateX(24deg) rotateY(-26deg) rotateZ(8deg); transform-style: preserve-3d; }
@@ -101,11 +101,11 @@ export default function Page() {
           .pr-rig-keyboard { position: absolute; bottom: 25px; left: 20px; width: 250px; height: 90px; background: #ff5400; border-radius: 12px; transform: rotateX(45deg); box-shadow: 0 14px 0px #b83200, 0 30px 40px rgba(0, 0, 0, 0.35); padding: 10px; display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; }
           .pr-key-cap { background: #ffffff; height: 11px; border-radius: 3px; box-shadow: 0 2px 0 #d1d5db; }
 
-          .pr-floating-white-torus { position: absolute; top: 140px; left: 30px; width: 28px; height: 28px; border: 6px solid #ffffff; border-radius: 50%; box-shadow: 0 8px 16px rgba(0,0,0,0.12); }
-          .pr-floating-orange-ring { position: absolute; bottom: 70px; left: 70px; width: 75px; height: 26px; border: 7px solid #ff5e00; border-radius: 50%; box-shadow: 0 12px 24px rgba(255, 94, 0, 0.35); transform: rotate(-15deg); }
+          .pr-floating-white-torus { position: absolute; top: 28%; left: 6%; width: clamp(16px, 2.5vw, 28px); height: clamp(16px, 2.5vw, 28px); border: clamp(3px, 0.5vw, 6px) solid #ffffff; border-radius: 50%; box-shadow: 0 8px 16px rgba(0,0,0,0.12); }
+          .pr-floating-orange-ring { position: absolute; bottom: 14%; left: 14%; width: clamp(45px, 6.5vw, 75px); height: clamp(15px, 2.5vw, 26px); border: clamp(4px, 0.6vw, 7px) solid #ff5e00; border-radius: 50%; box-shadow: 0 12px 24px rgba(255, 94, 0, 0.35); transform: rotate(-15deg); }
 
-          .pr-smiley-mouse { position: absolute; bottom: 70px; right: 70px; width: 44px; height: 44px; background: #ffb100; border-radius: 50%; box-shadow: 0 10px 22px rgba(0,0,0,0.2); display: flex; flex-direction: column; align-items: center; justify-content: center; }
-          .pr-mouse-smile { width: 12px; height: 6px; border-bottom: 2px solid #111; border-radius: 0 0 8px 8px; }
+          .pr-smiley-mouse { position: absolute; bottom: 14%; right: 14%; width: clamp(28px, 4vw, 44px); height: clamp(28px, 4vw, 44px); background: #ffb100; border-radius: 50%; box-shadow: 0 10px 22px rgba(0,0,0,0.2); display: flex; flex-direction: column; align-items: center; justify-content: center; }
+          .pr-mouse-smile { width: 30%; height: 15%; border-bottom: 2px solid #111; border-radius: 0 0 8px 8px; }
 
           .pr-social-dock { position: absolute; right: 32px; top: 50%; transform: translateY(-50%); background: rgba(215, 218, 224, 0.55); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.7); border-radius: 12px; display: flex; flex-direction: column; gap: 16px; padding: 14px 10px; z-index: 15; }
           .pr-social-dock a { color: #555b66; display: flex; align-items: center; justify-content: center; text-decoration: none; transition: color 0.2s ease, transform 0.15s ease; }
@@ -131,9 +131,9 @@ export default function Page() {
           .pr-heading-line-3 { padding-left: 0; }
           .pr-heading-line-4 { padding-left: 0; }
 
-          @media (max-width: 1024px) { .pr-center-workspace { transform: translate(-50%, -50%) scale(0.8); } .pr-editorial-heading { font-size: 28px; } }
-          @media (max-width: 768px) { .pr-nav-pill, .pr-pixel-backdrop, .pr-social-dock { display: none; } .pr-hero-upper, .pr-hero-bottom { flex-direction: column; gap: 24px; text-align: left; } .pr-bottom-right { text-align: left; } .pr-btn-group { flex-direction: column; width: 100%; } .pr-btn-group button, .pr-btn-group a { width: 100%; justify-content: center; text-align: center; } .pr-center-workspace { position: relative; top: 0; left: 0; transform: none; margin: 30px auto; width: 100%; max-width: 320px; height: 350px; } .pr-heading-line-1, .pr-heading-line-3 { padding-left: 0; } .pr-editorial-heading { font-size: 28px; } }
-          @media (max-width: 480px) { .pr-editorial-heading { font-size: 22px; } .pr-center-workspace { max-width: 260px; height: 280px; } .pr-retro-rig { width: 220px; height: 220px; } }
+          @media (max-width: 1024px) { .pr-editorial-heading { font-size: 28px; } }
+          @media (max-width: 768px) { .pr-nav-pill, .pr-pixel-backdrop, .pr-social-dock { display: none; } .pr-hero-upper, .pr-hero-bottom { flex-direction: column; gap: 24px; text-align: left; } .pr-bottom-right { text-align: left; } .pr-btn-group { flex-direction: column; width: 100%; } .pr-btn-group button, .pr-btn-group a { width: 100%; justify-content: center; text-align: center; } .pr-center-workspace { position: relative; top: 0; left: 0; transform: none; margin: 30px auto; width: 100%; } .pr-heading-line-1, .pr-heading-line-3 { padding-left: 0; } .pr-editorial-heading { font-size: 28px; } }
+          @media (max-width: 480px) { .pr-editorial-heading { font-size: 22px; } .pr-retro-rig { width: 220px; height: 220px; } }
         `}} />
 
         {/* 1. NAVBAR */}
@@ -225,16 +225,16 @@ export default function Page() {
           <motion.div style={{ y: yBgFast, animation: 'spin 8s linear infinite reverse' }} className="pr-floating-orange-ring block z-[20]"></motion.div>
           
           {/* New Vibrant Orange Tech/Edu Elements (Parallax) */}
-          <motion.div style={{ y: yFloat }} className="absolute top-[-40px] left-[50px] text-[#ff5400] animate-bounce block z-[20]">
+          <motion.div style={{ y: yFloat }} className="absolute top-[10%] left-[10%] text-[#ff5400] animate-bounce block z-[20]">
             <GraduationCap size={48} strokeWidth={1.5} className="drop-shadow-lg" />
           </motion.div>
-          <motion.div style={{ y: yFg }} className="absolute top-[80px] right-[-60px] text-[#ff6c00] block z-[20]">
+          <motion.div style={{ y: yFg }} className="absolute top-[20%] right-[5%] text-[#ff6c00] block z-[20]">
             <Settings size={42} strokeWidth={1.5} className="drop-shadow-lg" style={{animation: 'spin 12s linear infinite'}} />
           </motion.div>
-          <motion.div style={{ y: yBg }} className="absolute bottom-[-20px] left-[0px] text-[#ff9f1c] animate-pulse block z-[20]">
+          <motion.div style={{ y: yBg }} className="absolute bottom-[10%] left-[5%] text-[#ff9f1c] animate-pulse block z-[20]">
             <Code size={40} strokeWidth={2} className="drop-shadow-lg" />
           </motion.div>
-          <motion.div style={{ y: yFloat, animationDuration: '4.2s', animationDelay: '1s' }} className="absolute bottom-[40px] right-[-80px] text-[#ee4700] animate-bounce block z-[20]">
+          <motion.div style={{ y: yFloat, animationDuration: '4.2s', animationDelay: '1s' }} className="absolute bottom-[15%] right-[5%] text-[#ee4700] animate-bounce block z-[20]">
             <Pencil size={36} strokeWidth={2} className="drop-shadow-lg -rotate-45" />
           </motion.div>
           
@@ -244,7 +244,7 @@ export default function Page() {
             transition={{ duration: 1, ease: "easeOut" }}
             src="/her.gif"
             alt="Hero Video"  
-            className="w-[150%] h-auto max-w-none object-contain drop-shadow-2xl z-10 translate-x-[40px] md:translate-x-[80px]"
+            className="w-[120%] md:w-[130%] h-auto max-w-none object-contain drop-shadow-2xl z-10"
           />
         </div>
 

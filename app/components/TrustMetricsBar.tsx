@@ -106,7 +106,7 @@ export default function TrustMetricsBar() {
             <h2 className="relative z-20 m-0 mb-3 text-[clamp(1.2rem,4vw,2.5rem)] font-bold tracking-tight leading-[1.05] max-w-[85%] lg:max-w-[65%]">{counts[1]}{readinessMetrics[1].suffix} {readinessMetrics[1].label}</h2>
             <p className="relative z-20 m-0 text-[clamp(0.8rem,2vw,1.1rem)] font-sans leading-relaxed tracking-tight max-w-[85%] lg:max-w-[60%]">{readinessMetrics[1].sublabel}</p>
             
-            <div className="absolute right-[-10%] sm:right-[20%] top-[40%] sm:top-[10%] lg:top-[20%] scale-[0.5] sm:scale-[1.3] lg:scale-[1.6] xl:scale-[1.8] origin-top-right pointer-events-none opacity-30 sm:opacity-100">
+            <div className="absolute right-[5%] sm:right-[20%] bottom-[5%] sm:bottom-auto sm:top-[10%] lg:top-[20%] scale-[0.8] sm:scale-[1.3] lg:scale-[1.6] xl:scale-[1.8] origin-bottom-right pointer-events-none opacity-100">
               <div className="absolute right-[40px] -top-[10px] w-[105px] h-[110px] bg-[#78cbb4] border-[7px] border-white -rotate-[21deg] shadow-[0_7px_16px_rgba(70,35,50,0.12)]">
                  <div className="absolute left-[8px] right-[8px] top-[9px] h-[70px] rounded-[8px]" style={{ background: 'repeating-linear-gradient(90deg,#f28e51 0 10px,#f7d66b 10px 20px)' }}></div>
               </div>
@@ -125,7 +125,7 @@ export default function TrustMetricsBar() {
             <h2 className="relative z-20 m-0 mb-3 text-[clamp(1.2rem,4vw,2.5rem)] font-bold tracking-tight leading-[1.05] max-w-[90%] lg:max-w-none">{counts[2]}{readinessMetrics[2].suffix}<br/>{readinessMetrics[2].label}</h2>
             <p className="relative z-20 m-0 text-[clamp(0.8rem,2vw,1.1rem)] font-sans leading-relaxed tracking-tight max-w-[90%] lg:max-w-[80%]">{readinessMetrics[2].sublabel}</p>
             
-            <div className="absolute right-[-5%] sm:right-[10%] lg:right-[5%] bottom-[5%] sm:bottom-[15%] scale-[0.7] sm:scale-[1.3] lg:scale-[1.6] xl:scale-[1.8] origin-bottom-right pointer-events-none opacity-40 sm:opacity-100">
+            <div className="absolute right-[5%] sm:right-[10%] lg:right-[5%] bottom-[10%] sm:bottom-[15%] scale-[1] sm:scale-[1.3] lg:scale-[1.6] xl:scale-[1.8] origin-bottom-right pointer-events-none opacity-100">
               <div className="relative w-[115px] h-[63px] rounded-[13px] bg-gradient-to-br from-[#2d382c] to-[#111] shadow-[0_8px_14px_rgba(35,50,25,0.2)] text-white p-[12px_12px] font-sans">
                 <div className="text-[6px] opacity-80">Inventory Status</div>
                 <div className="text-[15px] mt-[8px] font-bold">{counts[2]} Kits</div>
@@ -139,7 +139,7 @@ export default function TrustMetricsBar() {
             <h2 className="relative z-20 m-0 mb-3 text-[clamp(1.2rem,4vw,2.5rem)] font-bold tracking-tight leading-[1.05] max-w-[90%] lg:max-w-none">{counts[3]}{readinessMetrics[3].suffix}<br/>{readinessMetrics[3].label}</h2>
             <p className="relative z-20 m-0 text-[clamp(0.8rem,2vw,1.1rem)] font-sans leading-relaxed tracking-tight max-w-[90%] lg:max-w-[80%]">{readinessMetrics[3].sublabel}</p>
             
-            <div className="absolute right-[-5%] sm:right-[10%] lg:right-[15%] bottom-[5%] sm:bottom-[10%] lg:bottom-[15%] scale-[0.7] sm:scale-[1.3] lg:scale-[1.6] xl:scale-[1.8] origin-bottom-right pointer-events-none opacity-50 sm:opacity-100">
+            <div className="absolute right-[5%] sm:right-[10%] lg:right-[15%] bottom-[10%] sm:bottom-[10%] lg:bottom-[15%] scale-[1] sm:scale-[1.3] lg:scale-[1.6] xl:scale-[1.8] origin-bottom-right pointer-events-none opacity-100">
               <div className="relative w-[112px] h-[104px] bg-white rounded-[12px] p-[10px] font-sans shadow-[0_7px_15px_rgba(60,55,20,0.12)]">
                 {[1,2,3,4].map(i => (
                   <div key={i} className="h-[22px] flex items-center gap-[5px] border-b border-[#eee]">
@@ -159,7 +159,7 @@ export default function TrustMetricsBar() {
             <h2 className="relative z-20 m-0 mb-3 text-[clamp(1.2rem,4vw,2.5rem)] font-bold tracking-tight leading-[1.05] max-w-[85%] lg:max-w-[65%]">{counts[4]}{readinessMetrics[4].suffix} {readinessMetrics[4].label}</h2>
             <p className="relative z-20 m-0 text-[clamp(0.8rem,2vw,1.1rem)] font-sans leading-relaxed tracking-tight max-w-[85%] lg:max-w-[60%]">{readinessMetrics[4].sublabel}</p>
             
-            <div className="absolute right-[-25%] sm:right-[15%] lg:right-[20%] xl:right-[25%] top-[10%] sm:top-[25%] scale-[0.45] sm:scale-[1.1] lg:scale-[1.4] xl:scale-[1.6] origin-top-right pointer-events-none opacity-20 sm:opacity-100">
+            <div className="absolute right-[5%] sm:right-[15%] lg:right-[20%] xl:right-[25%] bottom-[5%] sm:bottom-auto sm:top-[25%] scale-[0.75] sm:scale-[1.1] lg:scale-[1.4] xl:scale-[1.6] origin-bottom-right pointer-events-none opacity-100">
               <div className="relative w-[250px] h-[120px]">
                 <div className="absolute w-[88px] h-[46px] rounded-[5px] shadow-[0_6px_12px_rgba(80,45,30,0.16)] flex items-center justify-center font-sans font-[800] text-[12px] bg-[#151515] text-white" style={{left: '5px', top: '38px', transform: 'rotate(-12deg)'}}>IoT</div>
                 <div className="absolute w-[88px] h-[46px] rounded-[5px] shadow-[0_6px_12px_rgba(80,45,30,0.16)] flex items-center justify-center font-sans font-[800] text-[12px] bg-white text-[#222]" style={{left: '65px', top: '18px', transform: 'rotate(6deg)'}}>Drones</div>
@@ -178,7 +178,7 @@ export default function TrustMetricsBar() {
             <h2 className="relative z-20 m-0 mb-3 text-[clamp(1.2rem,4vw,2.5rem)] font-bold tracking-tight leading-[1.05] max-w-[95%] lg:max-w-[90%]">{counts[5]}{readinessMetrics[5].suffix}<br/>{readinessMetrics[5].label}</h2>
             <p className="relative z-20 m-0 text-[clamp(0.8rem,2vw,1.1rem)] font-sans leading-relaxed tracking-tight max-w-[95%] lg:max-w-[85%]">{readinessMetrics[5].sublabel}</p>
             
-            <div className="absolute right-[-15%] sm:right-[-10%] lg:right-[-5%] bottom-0 scale-[0.7] sm:scale-[1.3] lg:scale-[1.6] xl:scale-[1.8] origin-bottom-right pointer-events-none opacity-40 sm:opacity-100">
+            <div className="absolute right-[5%] sm:right-[-10%] lg:right-[-5%] bottom-0 scale-[1] sm:scale-[1.3] lg:scale-[1.6] xl:scale-[1.8] origin-bottom-right pointer-events-none opacity-100">
               <div className="relative w-[132px] h-[112px] bg-[#101010] rounded-[20px_20px_0_0] p-[12px_8px] shadow-[0_7px_16px_rgba(20,35,40,0.2)]">
                 <div className="absolute top-[5px] left-[47px] w-[37px] h-[7px] rounded-[8px] bg-[#111]"></div>
                 <div className="h-full bg-[#f3f3f3] rounded-[13px_13px_0_0] p-[12px_8px] font-sans">
