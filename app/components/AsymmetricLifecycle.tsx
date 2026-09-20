@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 import { CheckCircle2, ArrowUpRight } from 'lucide-react';
 import { motion, useScroll, useTransform } from 'framer-motion';
 
@@ -60,6 +60,12 @@ const steps = [
 ];
 
 export default function AsymmetricLifecycle() {
+  const [expandedCards, setExpandedCards] = useState<Record<number, boolean>>({});
+
+  const toggleCard = (index: number) => {
+    setExpandedCards(prev => ({ ...prev, [index]: !prev[index] }));
+  };
+
   const containerRef = useRef(null);
   const { scrollYProgress } = useScroll({
     target: containerRef,
@@ -147,19 +153,30 @@ export default function AsymmetricLifecycle() {
                         {step.handwrittenNote}
                       </div>
 
-                      <p className="text-[#3b3f46] text-sm sm:text-base font-medium leading-relaxed mb-8">
-                        {step.description}
-                      </p>
+                      {/* Desktop content (always visible) / Mobile content (conditional) */}
+                      <div className={`${expandedCards[index] ? 'block' : 'hidden md:block'}`}>
+                        <p className="text-[#3b3f46] text-sm sm:text-base font-medium leading-relaxed mb-8 mt-4">
+                          {step.description}
+                        </p>
 
-                      {/* Deliverables checklist */}
-                      <ul className="space-y-4 border-t-2 border-[#111]/10 pt-6">
-                        {step.deliverables.map((d, dIdx) => (
-                          <li key={dIdx} className="flex items-start gap-3 text-sm text-[#111] font-bold">
-                            <span className="shrink-0 mt-[-2px] text-lg text-[#ff5400]">✓</span>
-                            <span>{d}</span>
-                          </li>
-                        ))}
-                      </ul>
+                        {/* Deliverables checklist */}
+                        <ul className="space-y-4 border-t-2 border-[#111]/10 pt-6">
+                          {step.deliverables.map((d, dIdx) => (
+                            <li key={dIdx} className="flex items-start gap-3 text-sm text-[#111] font-bold">
+                              <span className="shrink-0 mt-[-2px] text-lg text-[#ff5400]">✓</span>
+                              <span>{d}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+
+                      {/* Mobile Read More / Less Button */}
+                      <button 
+                        onClick={() => toggleCard(index)}
+                        className="md:hidden mt-4 w-full bg-[#f2f3f5] hover:bg-[#111] hover:text-white transition-colors text-[#111] py-3 text-xs font-bold uppercase tracking-widest border-2 border-[#111]"
+                      >
+                        {expandedCards[index] ? 'Read Less' : 'Read More'}
+                      </button>
                     </motion.div>
                   </div>
 

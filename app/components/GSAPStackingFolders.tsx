@@ -176,11 +176,6 @@ export default function GSAPStackingFolders() {
   const yFast = useTransform(scrollYProgress, [0, 1], [-50, 50]);
   const ySlow = useTransform(scrollYProgress, [0, 1], [-20, 20]);
   
-  // Scrubbed Scale Reveal
-  const scaleReveal = useTransform(scrollYProgress, [0.1, 0.5], [0.5, 1]);
-  const opacityReveal = useTransform(scrollYProgress, [0.1, 0.4], [0, 1]);
-  const blurReveal = useTransform(scrollYProgress, [0.1, 0.4], ["blur(20px)", "blur(0px)"]);
-
   return (
     <section ref={containerRef} id="packages" className="relative z-10 w-full py-16 sm:py-24 bg-grid border-b border-[#e8e0d4] overflow-hidden">
       
@@ -211,10 +206,7 @@ export default function GSAPStackingFolders() {
             return (
             <motion.a
               style={{ 
-                y: index % 2 === 0 ? ySlow : yFast,
-                scale: scaleReveal,
-                opacity: opacityReveal,
-                filter: blurReveal
+                y: index % 2 === 0 ? ySlow : yFast
               }}
               key={tier.id}
               href={`/services#${tier.id}`}

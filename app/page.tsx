@@ -76,203 +76,243 @@ export default function Page() {
   return (
     <div className="relative min-h-[100dvh] w-full max-w-full bg-grid text-[#1a1a1a] font-sans">
 
-      {/* --- HERO SECTION (PIXEL RISE EXACT MATCH) --- */}
-      <section className="w-full min-h-[calc(100dvh-80px)] relative flex flex-col justify-between py-[20px] px-4 sm:px-8 md:px-[60px] pb-[24px] overflow-hidden text-[#111317]" style={{ background: 'radial-gradient(circle at 50% 50%, #ffffff 0%, #f1f2f4 65%, #e5e7eb 100%)' }}>
+      {/* --- 100dvh Hero + Marquee Wrapper --- */}
+      <div className="w-full h-[100dvh] flex flex-col">
+        {/* --- HERO SECTION --- */}
+        <section className="w-full flex-1 min-h-0 relative flex flex-col overflow-hidden text-[#111317]" style={{ background: 'radial-gradient(circle at 50% 50%, #ffffff 0%, #f1f2f4 65%, #e5e7eb 100%)' }}>
         <style dangerouslySetInnerHTML={{__html: `
           @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&family=Silkscreen:wght@700&display=swap');
           .pr-font-sans { font-family: 'Plus Jakarta Sans', sans-serif; }
           .pr-font-pixel { font-family: 'Silkscreen', monospace; }
-          
-          .pr-pixel-backdrop { position: absolute; top: 65%; left: 0; width: 100%; transform: translateY(-50%); display: flex; justify-content: space-between; padding: 0 4vw; font-size: 14vw; font-weight: 700; color: #ffffff; text-shadow: 0 1px 0 #dedede, 0 2px 0 #cfcfcf, 0 3px 0 #c2c2c2, 0 4px 0 #b5b5b5, 0 25px 45px rgba(0, 0, 0, 0.07); letter-spacing: 0.2vw; z-index: 15; pointer-events: none; line-height: 0.9; }
-          
-          .pr-center-workspace { position: absolute; top: 52%; left: 50%; transform: translate(-50%, -50%); width: clamp(280px, 40vw, 500px); height: clamp(280px, 40vw, 500px); z-index: 30; display: flex; justify-content: center; align-items: center; pointer-events: none; perspective: 1200px; }
-          .pr-sticky-note { position: absolute; top: 6%; left: 12%; width: clamp(32px, 4.5vw, 52px); height: clamp(32px, 4.5vw, 52px); background: #ffab00; border-radius: 6px; box-shadow: 0 12px 24px rgba(255, 171, 0, 0.35); transform: rotate(-14deg); display: flex; flex-direction: column; align-items: center; justify-content: center; }
-          .pr-note-smile { width: 30%; height: 15%; border-bottom: 2px solid #111; border-radius: 0 0 10px 10px; }
 
-          .pr-floating-letter { position: absolute; top: 5%; right: 10%; width: clamp(42px, 6vw, 68px); height: clamp(28px, 4vw, 46px); background: linear-gradient(135deg, #ffc83b, #ff9f1c); border-radius: 6px; box-shadow: 0 15px 30px rgba(255, 159, 28, 0.35); transform: rotate(20deg); }
+          /* --- HERO FLEX LAYOUT --- */
+          .pr-hero-flex {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            padding: 0 3.75rem;
+            padding-top: 4.375rem; /* space for fixed navbar */
+          }
+          .pr-hero-row-top { flex-shrink: 0; padding-top: clamp(0.375rem, 1.5vh, 1.25rem); }
+          .pr-hero-row-center { flex: 1 1 0%; min-height: 0; display: flex; align-items: center; justify-content: center; position: relative; }
+          .pr-hero-row-bottom { flex-shrink: 0; padding-bottom: clamp(0.5rem, 1.5vh, 1.5rem); }
+
+          @media (max-width: 768px) {
+            .pr-hero-flex { padding: 0 1rem; padding-top: 3.875rem; }
+          }
+          @media (min-width: 769px) and (max-width: 1024px) {
+            .pr-hero-flex { padding: 0 2rem; padding-top: 4.25rem; }
+          }
+
+          /* --- PIXEL BACKDROP --- */
+          .pr-pixel-backdrop { position: absolute; top: 55%; left: 0; width: 100%; transform: translateY(-50%); display: flex; justify-content: space-between; padding: 0 4vw; font-size: min(14vw, 18vh); font-weight: 700; color: #ffffff; text-shadow: 0 1px 0 #dedede, 0 2px 0 #cfcfcf, 0 3px 0 #c2c2c2, 0 4px 0 #b5b5b5, 0 25px 45px rgba(0, 0, 0, 0.07); letter-spacing: 0.2vw; z-index: 1; pointer-events: none; line-height: 0.9; }
+
+          /* --- CENTER WORKSPACE --- */
+          .pr-center-workspace {
+            position: relative;
+            width: min(100%, 45rem, 55vw);
+            height: 100%;
+            max-height: 100%;
+            aspect-ratio: 1 / 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            pointer-events: none;
+            perspective: 75rem;
+            z-index: 30;
+          }
+
+          .pr-sticky-note { position: absolute; top: 6%; left: 12%; width: clamp(1.5rem, 4vw, 3.25rem); height: clamp(1.5rem, 4vw, 3.25rem); background: #ffab00; border-radius: 0.375rem; box-shadow: 0 0.75rem 1.5rem rgba(255, 171, 0, 0.35); transform: rotate(-14deg); display: flex; flex-direction: column; align-items: center; justify-content: center; }
+          .pr-note-smile { width: 30%; height: 15%; border-bottom: 2px solid #111; border-radius: 0 0 0.625rem 0.625rem; }
+
+          .pr-floating-letter { position: absolute; top: 5%; right: 10%; width: clamp(2rem, 5vw, 4.25rem); height: clamp(1.375rem, 3.5vw, 2.875rem); background: linear-gradient(135deg, #ffc83b, #ff9f1c); border-radius: 0.375rem; box-shadow: 0 0.9375rem 1.875rem rgba(255, 159, 28, 0.35); transform: rotate(20deg); }
           .pr-floating-letter::after { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 50%; border-bottom: 2px solid rgba(0,0,0,0.12); clip-path: polygon(0 0, 50% 100%, 100% 0); }
 
-          .pr-retro-rig { position: relative; width: 320px; height: 320px; transform: rotateX(24deg) rotateY(-26deg) rotateZ(8deg); transform-style: preserve-3d; }
-          .pr-rig-camera { position: absolute; top: 5px; left: 140px; width: 38px; height: 34px; background: #d62222; border-radius: 6px; box-shadow: 6px 6px 0px #8f1212; display: flex; align-items: center; justify-content: center; z-index: 10; }
-          .pr-rig-monitor { position: absolute; top: 35px; left: 55px; width: 210px; height: 175px; background: #ff5400; border-radius: 20px; border: 8px solid #ff7324; box-shadow: 18px 18px 0px #b83200, 30px 30px 45px rgba(0, 0, 0, 0.28); display: flex; justify-content: center; align-items: center; }
-          .pr-rig-screen { width: 155px; height: 120px; background: #ffffff; border-radius: 10px; padding: 12px; display: flex; flex-direction: column; gap: 6px; box-shadow: inset 0 3px 8px rgba(0,0,0,0.18); }
-          .pr-code-line { height: 5px; background: #e2e5eb; border-radius: 3px; }
-          
-          .pr-rig-keyboard { position: absolute; bottom: 25px; left: 20px; width: 250px; height: 90px; background: #ff5400; border-radius: 12px; transform: rotateX(45deg); box-shadow: 0 14px 0px #b83200, 0 30px 40px rgba(0, 0, 0, 0.35); padding: 10px; display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; }
-          .pr-key-cap { background: #ffffff; height: 11px; border-radius: 3px; box-shadow: 0 2px 0 #d1d5db; }
+          .pr-retro-rig { position: relative; width: 20rem; height: 20rem; transform: rotateX(24deg) rotateY(-26deg) rotateZ(8deg); transform-style: preserve-3d; }
+          .pr-rig-camera { position: absolute; top: 0.3125rem; left: 8.75rem; width: 2.375rem; height: 2.125rem; background: #d62222; border-radius: 0.375rem; box-shadow: 0.375rem 0.375rem 0px #8f1212; display: flex; align-items: center; justify-content: center; z-index: 10; }
+          .pr-rig-monitor { position: absolute; top: 2.1875rem; left: 3.4375rem; width: 13.125rem; height: 10.9375rem; background: #ff5400; border-radius: 1.25rem; border: 0.5rem solid #ff7324; box-shadow: 1.125rem 1.125rem 0px #b83200, 1.875rem 1.875rem 2.8125rem rgba(0, 0, 0, 0.28); display: flex; justify-content: center; align-items: center; }
+          .pr-rig-screen { width: 9.6875rem; height: 7.5rem; background: #ffffff; border-radius: 0.625rem; padding: 0.75rem; display: flex; flex-direction: column; gap: 0.375rem; box-shadow: inset 0 0.1875rem 0.5rem rgba(0,0,0,0.18); }
+          .pr-code-line { height: 0.3125rem; background: #e2e5eb; border-radius: 0.1875rem; }
 
-          .pr-floating-white-torus { position: absolute; top: 28%; left: 6%; width: clamp(16px, 2.5vw, 28px); height: clamp(16px, 2.5vw, 28px); border: clamp(3px, 0.5vw, 6px) solid #ffffff; border-radius: 50%; box-shadow: 0 8px 16px rgba(0,0,0,0.12); }
-          .pr-floating-orange-ring { position: absolute; bottom: 14%; left: 14%; width: clamp(45px, 6.5vw, 75px); height: clamp(15px, 2.5vw, 26px); border: clamp(4px, 0.6vw, 7px) solid #ff5e00; border-radius: 50%; box-shadow: 0 12px 24px rgba(255, 94, 0, 0.35); transform: rotate(-15deg); }
+          .pr-rig-keyboard { position: absolute; bottom: 1.5625rem; left: 1.25rem; width: 15.625rem; height: 5.625rem; background: #ff5400; border-radius: 0.75rem; transform: rotateX(45deg); box-shadow: 0 0.875rem 0px #b83200, 0 1.875rem 2.5rem rgba(0, 0, 0, 0.35); padding: 0.625rem; display: grid; grid-template-columns: repeat(7, 1fr); gap: 0.3125rem; }
+          .pr-key-cap { background: #ffffff; height: 0.6875rem; border-radius: 0.1875rem; box-shadow: 0 0.125rem 0 #d1d5db; }
 
-          .pr-smiley-mouse { position: absolute; bottom: 14%; right: 14%; width: clamp(28px, 4vw, 44px); height: clamp(28px, 4vw, 44px); background: #ffb100; border-radius: 50%; box-shadow: 0 10px 22px rgba(0,0,0,0.2); display: flex; flex-direction: column; align-items: center; justify-content: center; }
-          .pr-mouse-smile { width: 30%; height: 15%; border-bottom: 2px solid #111; border-radius: 0 0 8px 8px; }
+          .pr-floating-white-torus { position: absolute; top: 28%; left: 6%; width: clamp(0.75rem, 2vw, 1.75rem); height: clamp(0.75rem, 2vw, 1.75rem); border: clamp(0.1875rem, 0.4vw, 0.375rem) solid #ffffff; border-radius: 50%; box-shadow: 0 0.5rem 1rem rgba(0,0,0,0.12); }
+          .pr-floating-orange-ring { position: absolute; bottom: 14%; left: 14%; width: clamp(2.25rem, 5.5vw, 4.6875rem); height: clamp(0.75rem, 2vw, 1.625rem); border: clamp(0.1875rem, 0.5vw, 0.4375rem) solid #ff5e00; border-radius: 50%; box-shadow: 0 0.75rem 1.5rem rgba(255, 94, 0, 0.35); transform: rotate(-15deg); }
 
-          .pr-social-dock { position: absolute; right: 32px; top: 50%; transform: translateY(-50%); background: rgba(215, 218, 224, 0.55); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.7); border-radius: 12px; display: flex; flex-direction: column; gap: 16px; padding: 14px 10px; z-index: 15; }
+          .pr-smiley-mouse { position: absolute; bottom: 14%; right: 14%; width: clamp(1.375rem, 3.5vw, 2.75rem); height: clamp(1.375rem, 3.5vw, 2.75rem); background: #ffb100; border-radius: 50%; box-shadow: 0 0.625rem 1.375rem rgba(0,0,0,0.2); display: flex; flex-direction: column; align-items: center; justify-content: center; }
+          .pr-mouse-smile { width: 30%; height: 15%; border-bottom: 2px solid #111; border-radius: 0 0 0.5rem 0.5rem; }
+
+          .pr-social-dock { position: absolute; right: 2rem; top: 50%; transform: translateY(-50%); background: rgba(215, 218, 224, 0.55); backdrop-filter: blur(0.75rem); border: 1px solid rgba(255, 255, 255, 0.7); border-radius: 0.75rem; display: flex; flex-direction: column; gap: 1rem; padding: 0.875rem 0.625rem; z-index: 15; }
           .pr-social-dock a { color: #555b66; display: flex; align-items: center; justify-content: center; text-decoration: none; transition: color 0.2s ease, transform 0.15s ease; }
           .pr-social-dock a:hover { color: #ff5400; transform: scale(1.15); }
 
-          .pr-btn-cta-orange { background: linear-gradient(180deg, #ff6c00 0%, #ee4700 100%); color: #ffffff; font-size: 13px; font-weight: 700; padding: 12px 26px; border-radius: 8px; border: none; box-shadow: 0 8px 20px rgba(238, 71, 0, 0.35); cursor: pointer; transition: transform 0.15s ease; }
+          .pr-btn-cta-orange { background: linear-gradient(180deg, #ff6c00 0%, #ee4700 100%); color: #ffffff; font-size: clamp(0.6875rem, 1.5vh, 0.8125rem); font-weight: 700; padding: clamp(0.5rem, 1.2vh, 0.75rem) clamp(1rem, 2vw, 1.625rem); border-radius: 0.5rem; border: none; box-shadow: 0 0.5rem 1.25rem rgba(238, 71, 0, 0.35); cursor: pointer; transition: transform 0.15s ease; }
           .pr-btn-cta-orange:hover { transform: translateY(-2px); }
 
-          .pr-btn-cta-ghost { background: rgba(255, 255, 255, 0.6); color: #2b2f36; font-size: 13px; font-weight: 700; padding: 12px 24px; border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.9); backdrop-filter: blur(8px); cursor: pointer; transition: background 0.2s ease; }
+          .pr-btn-cta-ghost { background: rgba(255, 255, 255, 0.6); color: #2b2f36; font-size: clamp(0.6875rem, 1.5vh, 0.8125rem); font-weight: 700; padding: clamp(0.5rem, 1.2vh, 0.75rem) clamp(0.875rem, 2vw, 1.5rem); border-radius: 0.5rem; border: 1px solid rgba(255, 255, 255, 0.9); backdrop-filter: blur(0.5rem); cursor: pointer; transition: background 0.2s ease; }
           .pr-btn-cta-ghost:hover { background: rgba(255, 255, 255, 0.9); }
 
-          .pr-scroll-mouse-icon { width: 14px; height: 22px; border: 1.5px solid #7b828e; border-radius: 10px; position: relative; }
-          .pr-scroll-mouse-icon::after { content: ''; position: absolute; top: 3px; left: 50%; transform: translateX(-50%); width: 2px; height: 4px; background: #7b828e; border-radius: 2px; }
+          .pr-scroll-mouse-icon { width: 0.875rem; height: 1.375rem; border: 1.5px solid #7b828e; border-radius: 0.625rem; position: relative; }
+          .pr-scroll-mouse-icon::after { content: ''; position: absolute; top: 0.1875rem; left: 50%; transform: translateX(-50%); width: 0.125rem; height: 0.25rem; background: #7b828e; border-radius: 0.125rem; }
 
-          .pr-nav-pill { background: rgba(185, 187, 192, 0.45); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.6); padding: 6px 8px; border-radius: 40px; display: flex; align-items: center; gap: 4px; }
-          .pr-nav-link { color: #383c43; text-decoration: none; font-size: 12.5px; font-weight: 600; padding: 8px 16px; border-radius: 30px; transition: 0.2s ease; display: flex; align-items: center; gap: 4px; }
+          .pr-nav-pill { background: rgba(185, 187, 192, 0.45); backdrop-filter: blur(0.75rem); border: 1px solid rgba(255, 255, 255, 0.6); padding: 0.375rem 0.5rem; border-radius: 2.5rem; display: flex; align-items: center; gap: 0.25rem; }
+          .pr-nav-link { color: #383c43; text-decoration: none; font-size: 0.78rem; font-weight: 600; padding: 0.5rem 1rem; border-radius: 1.875rem; transition: 0.2s ease; display: flex; align-items: center; gap: 0.25rem; }
           .pr-nav-link.active { background: #888d95; color: #ffffff; }
-          .pr-nav-link svg { width: 10px; height: 10px; stroke: currentColor; }
+          .pr-nav-link svg { width: 0.625rem; height: 0.625rem; stroke: currentColor; }
 
-          .pr-editorial-heading { font-size: 34px; line-height: 1.15; letter-spacing: -0.5px; font-weight: 900; color: #121418; text-transform: uppercase; }
+          /* --- EDITORIAL HEADING --- fully vh-based */
+          .pr-editorial-heading { font-size: clamp(1.125rem, 4.5vh, 2.125rem); line-height: 1.15; letter-spacing: -0.03125rem; font-weight: 900; color: #121418; text-transform: uppercase; }
           .pr-heading-line-1 { padding-left: 0; }
           .pr-heading-line-2 { padding-left: 0; }
           .pr-heading-line-3 { padding-left: 0; }
           .pr-heading-line-4 { padding-left: 0; }
 
-          @media (max-width: 1024px) { .pr-editorial-heading { font-size: 28px; } }
-          @media (max-width: 768px) { .pr-nav-pill, .pr-pixel-backdrop, .pr-social-dock { display: none; } .pr-hero-upper, .pr-hero-bottom { flex-direction: column; gap: 24px; text-align: left; } .pr-bottom-right { text-align: left; } .pr-btn-group { flex-direction: column; width: 100%; } .pr-btn-group button, .pr-btn-group a { width: 100%; justify-content: center; text-align: center; } .pr-center-workspace { position: relative; top: 0; left: 0; transform: none; margin: 30px auto; width: 100%; } .pr-heading-line-1, .pr-heading-line-3 { padding-left: 0; } .pr-editorial-heading { font-size: 28px; } }
-          @media (max-width: 480px) { .pr-editorial-heading { font-size: 22px; } .pr-retro-rig { width: 220px; height: 220px; } }
+          /* --- HERO DESCRIPTION TEXT --- */
+          .pr-hero-desc { font-size: clamp(0.625rem, 1.4vh, 0.75rem); line-height: 1.45; }
+          .pr-hero-stats-big { font-size: clamp(1.75rem, 5vh, 2.625rem); }
+          .pr-hero-stats-label { font-size: clamp(0.625rem, 1.6vh, 0.875rem); }
+          .pr-hero-stats-arrow { font-size: clamp(1rem, 3vh, 1.5rem); }
+
+          /* --- DESKTOP OVERRIDES --- */
+          @media (max-width: 1024px) { .pr-editorial-heading { font-size: clamp(1.125rem, 4vh, 1.75rem); } }
+
+          /* --- MOBILE OVERRIDES --- */
+          @media (max-width: 768px) {
+            .pr-nav-pill, .pr-pixel-backdrop, .pr-social-dock, .pr-floating-icon { display: none !important; }
+            .pr-hero-upper, .pr-hero-bottom { flex-direction: column; gap: clamp(0.5rem, 1.5vh, 1rem); text-align: left; }
+            .pr-bottom-right { display: none; }
+            .pr-btn-group { flex-direction: row; width: 100%; }
+            .pr-btn-group button, .pr-btn-group a { flex: 1; justify-content: center; text-align: center; }
+            .pr-center-workspace { width: min(100%, 85vw); }
+            .pr-heading-line-1, .pr-heading-line-3 { padding-left: 0; }
+            .pr-editorial-heading { font-size: clamp(1rem, 4vh, 1.625rem); }
+          }
+
+          @media (max-width: 380px) {
+            .pr-editorial-heading { font-size: clamp(0.875rem, 3.5vh, 1.25rem); }
+            .pr-center-workspace { width: min(100%, 75vw); }
+          }
         `}} />
 
-        {/* 1. NAVBAR */}
-        <header className="flex justify-between items-center relative z-[20] w-full pr-font-sans hidden md:flex">
-          <a href="#" className="flex items-center gap-[10px] font-[800] text-[17px] text-[#111] no-underline">
-            <div className="grid grid-cols-[repeat(3,4px)] gap-[2px]">
-              {[...Array(9)].map((_,i) => <span key={i} className="w-[4px] h-[4px]"></span>)}
-            </div>
-            RADIX ROBOTICS
-          </a>
+        {/* HERO 3-ROW FLEX LAYOUT */}
+        <div className="pr-hero-flex pr-font-sans">
 
-          <nav className="pr-nav-pill">
-            <a href="#home" className="pr-nav-link active">Home</a>
-            <a href="#about" className="pr-nav-link">About</a>
-            <a href="#services" className="pr-nav-link">
-              Services
-              <svg viewBox="0 0 24 24" fill="none" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <polyline points="6 9 12 15 18 9"></polyline>
-              </svg>
-            </a>
-            <a href="#pricing" className="pr-nav-link">Pricing</a>
-            <a href="#solution" className="pr-nav-link">Solution</a>
-            <a href="#english" className="pr-nav-link">
-              English
-              <svg viewBox="0 0 24 24" fill="none" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <polyline points="6 9 12 15 18 9"></polyline>
-              </svg>
-            </a>
-          </nav>
+          {/* ROW 1: HEADLINE & STATS */}
+          <div className="pr-hero-row-top">
+            <div className="flex justify-between items-start w-full pr-hero-upper">
+              <motion.div 
+                className="w-full md:w-auto relative z-20"
+                initial="hidden"
+                animate="visible"
+                variants={{
+                  hidden: { opacity: 0 },
+                  visible: { opacity: 1, transition: { staggerChildren: 0.15 } }
+                }}
+              >
+                <h1 className="pr-editorial-heading relative">
+                  <motion.div variants={{ hidden: { opacity: 0, y: 30 }, visible: { opacity: 1, y: 0 } }} className="pr-heading-line-1">Building India&apos;s</motion.div>
+                  <motion.div variants={{ hidden: { opacity: 0, y: 30 }, visible: { opacity: 1, y: 0 } }} className="pr-heading-line-2">Next Generation of</motion.div>
+                  <motion.div variants={{ hidden: { opacity: 0, y: 30 }, visible: { opacity: 1, y: 0 } }} className="pr-heading-line-3">Future Tech.</motion.div>
+                </h1>
+              </motion.div>
 
-          <button className="bg-[#0f1115] text-white border-none py-[10px] px-[22px] rounded-[8px] text-[12.5px] font-[700] cursor-pointer">Login / Register</button>
-        </header>
-
-        {/* 2. TOP ROW: [1/8] HEADLINE & GROWTH STATS */}
-        <div className="flex justify-between items-start relative z-[10] w-full pr-font-sans pr-hero-upper mt-[60px] md:mt-[18vh]">
-          <motion.div 
-            className="w-full md:w-auto relative z-20"
-            initial="hidden"
-            animate="visible"
-            variants={{
-              hidden: { opacity: 0 },
-              visible: { opacity: 1, transition: { staggerChildren: 0.15 } }
-            }}
-          >
-            <h1 className="pr-editorial-heading relative">
-              <motion.div variants={{ hidden: { opacity: 0, y: 30 }, visible: { opacity: 1, y: 0 } }} className="pr-heading-line-1">Building India's</motion.div>
-              <motion.div variants={{ hidden: { opacity: 0, y: 30 }, visible: { opacity: 1, y: 0 } }} className="pr-heading-line-2">Next Generation of</motion.div>
-              <motion.div variants={{ hidden: { opacity: 0, y: 30 }, visible: { opacity: 1, y: 0 } }} className="pr-heading-line-3">Future Tech.</motion.div>
-            </h1>
-          </motion.div>
-
-          <motion.div 
-            initial={{ opacity: 0, x: 50 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.8, delay: 0.4, ease: "easeOut" }}
-            className="w-full md:w-auto md:max-w-[260px] text-left pr-bottom-right mt-6 md:mt-0"
-          >
-            <div className="flex items-baseline gap-[6px] justify-start">
-              <span className="text-[#7b828e] text-[24px] font-[800]">↑</span>
-              <span className="text-[42px] font-[900] tracking-[-1.5px] text-[#111] leading-[1]">10x</span>
-              <span className="text-[14px] font-[800] uppercase text-[#3b3f46]">Efficiency</span>
-            </div>
-            <p className="text-[12px] leading-[1.45] text-[#646a73] mt-[6px] font-[500] m-0">
-              Our autonomous systems deliver measurable operational efficiency and global scale.
-            </p>
-          </motion.div>
-        </div>
-
-        {/* 3. GIANT PIXEL TEXT WATERMARK (Parallax) */}
-        <div className="pr-pixel-backdrop pr-font-pixel">
-          <motion.div style={{ y: yBgFast }}>RADIX</motion.div>
-          <motion.div style={{ y: yBgFast }} className="self-end mt-[180px] -translate-x-[25vw]">ROBOTICS</motion.div>
-        </div>
-
-        {/* 4. ACCURATE ISOMETRIC 3D WORKSPACE */}
-        <div className="pr-center-workspace">
-          {/* Floating Elements (Parallax) */}
-          <motion.div style={{ y: yFg }} className="pr-sticky-note flex animate-bounce z-[20]">
-            <div className="flex gap-[10px] mb-[3px]">
-              <span className="w-[4px] h-[4px] bg-[#111] rounded-full"></span>
-              <span className="w-[4px] h-[4px] bg-[#111] rounded-full"></span>
-            </div> 
-            <div className="pr-note-smile"></div>
-          </motion.div>
-          
-          <motion.div style={{ y: yFloat }} className="pr-floating-letter block animate-pulse z-[20]"></motion.div>
-          
-          <motion.div style={{ y: yBg, animation: 'spin 10s linear infinite' }} className="pr-floating-white-torus block z-[20]"></motion.div>
-          <motion.div style={{ y: yBgFast, animation: 'spin 8s linear infinite reverse' }} className="pr-floating-orange-ring block z-[20]"></motion.div>
-          
-          {/* New Vibrant Orange Tech/Edu Elements (Parallax) */}
-          <motion.div style={{ y: yFloat }} className="absolute top-[10%] left-[10%] text-[#ff5400] animate-bounce block z-[20]">
-            <GraduationCap size={48} strokeWidth={1.5} className="drop-shadow-lg" />
-          </motion.div>
-          <motion.div style={{ y: yFg }} className="absolute top-[20%] right-[5%] text-[#ff6c00] block z-[20]">
-            <Settings size={42} strokeWidth={1.5} className="drop-shadow-lg" style={{animation: 'spin 12s linear infinite'}} />
-          </motion.div>
-          <motion.div style={{ y: yBg }} className="absolute bottom-[10%] left-[5%] text-[#ff9f1c] animate-pulse block z-[20]">
-            <Code size={40} strokeWidth={2} className="drop-shadow-lg" />
-          </motion.div>
-          <motion.div style={{ y: yFloat, animationDuration: '4.2s', animationDelay: '1s' }} className="absolute bottom-[15%] right-[5%] text-[#ee4700] animate-bounce block z-[20]">
-            <Pencil size={36} strokeWidth={2} className="drop-shadow-lg -rotate-45" />
-          </motion.div>
-          
-          <motion.img
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 1, ease: "easeOut" }}
-            src="/her.gif"
-            alt="Hero Video"  
-            className="w-[120%] md:w-[130%] h-auto max-w-none object-contain drop-shadow-2xl z-10"
-          />
-        </div>
-
-        {/* 5. BOTTOM ROW & CTA */}
-        <motion.div 
-          initial={{ opacity: 0, y: 50 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.6 }}
-          className="flex justify-between items-end relative z-[10] w-full pr-font-sans pr-hero-bottom mt-12 md:mt-0"
-        >
-          <div className="w-full md:max-w-[340px]">
-            <p className="text-[12px] leading-[1.45] text-[#646a73] font-[500] mb-[18px] m-0">
-              Engineering the future <br />through Robotics Education with our <br />Composite Skill Lab, Research, <br />AI, Drones and Innovation.
-            </p>
-            <div className="flex items-center gap-[12px] pr-btn-group">
-              <button className="pr-btn-cta-orange">Get Started</button>
-              <Link href="/contact" className="pr-btn-cta-ghost flex items-center justify-center">Contact Us</Link>
+              <motion.div 
+                initial={{ opacity: 0, x: 50 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.8, delay: 0.4, ease: "easeOut" }}
+                className="hidden md:block md:max-w-[260px] text-left pr-bottom-right"
+              >
+                <div className="flex items-baseline gap-[6px] justify-start">
+                  <span className="pr-hero-stats-arrow text-[#7b828e] font-[800]">↑</span>
+                  <span className="pr-hero-stats-big font-[900] tracking-[-1.5px] text-[#111] leading-[1]">10x</span>
+                  <span className="pr-hero-stats-label font-[800] uppercase text-[#3b3f46]">Efficiency</span>
+                </div>
+                <p className="pr-hero-desc text-[#646a73] mt-[6px] font-[500] m-0">
+                  Our autonomous systems deliver measurable operational efficiency and global scale.
+                </p>
+              </motion.div>
             </div>
           </div>
 
-          <div className="max-w-[270px] text-right pr-bottom-right hidden md:block">
-            <p className="text-[12px] leading-[1.45] text-[#646a73] font-[500] m-0">
-              From the first spark of an idea to worldwide recognition — we partner with brands
-            </p>
-          </div>
-        </motion.div>
+          {/* ROW 2: CENTER GRAPHIC (fills remaining space) */}
+          <div className="pr-hero-row-center">
+            {/* GIANT PIXEL TEXT WATERMARK (Parallax) */}
+            <div className="pr-pixel-backdrop pr-font-pixel">
+              <motion.div style={{ y: yBgFast }}>RADIX</motion.div>
+              <motion.div style={{ y: yBgFast }} className="self-end mt-[180px] -translate-x-[25vw]">ROBOTICS</motion.div>
+            </div>
 
-        {/* 6. FLOATING SOCIAL SIDEBAR */}
+            {/* CENTER WORKSPACE */}
+            <div className="pr-center-workspace">
+              {/* Floating Elements (Parallax) */}
+              <motion.div style={{ y: yFg }} className="pr-sticky-note pr-floating-icon flex animate-bounce z-[20]">
+                <div className="flex gap-[10px] mb-[3px]">
+                  <span className="w-[4px] h-[4px] bg-[#111] rounded-full"></span>
+                  <span className="w-[4px] h-[4px] bg-[#111] rounded-full"></span>
+                </div> 
+                <div className="pr-note-smile"></div>
+              </motion.div>
+              
+              <motion.div style={{ y: yFloat }} className="pr-floating-letter pr-floating-icon block animate-pulse z-[20]"></motion.div>
+              
+              <motion.div style={{ y: yBg, animation: 'spin 10s linear infinite' }} className="pr-floating-white-torus pr-floating-icon block z-[20]"></motion.div>
+              <motion.div style={{ y: yBgFast, animation: 'spin 8s linear infinite reverse' }} className="pr-floating-orange-ring pr-floating-icon block z-[20]"></motion.div>
+              
+              {/* Vibrant Orange Tech/Edu Elements (Parallax) */}
+              <motion.div style={{ y: yFloat }} className="absolute top-[10%] left-[10%] text-[#ff5400] animate-bounce block z-[20]">
+                <GraduationCap size={48} strokeWidth={1.5} className="drop-shadow-lg" />
+              </motion.div>
+              <motion.div style={{ y: yFg }} className="absolute pr-floating-icon top-[20%] right-[5%] text-[#ff6c00] block z-[20]">
+                <Settings size={42} strokeWidth={1.5} className="drop-shadow-lg" style={{animation: 'spin 12s linear infinite'}} />
+              </motion.div>
+              <motion.div style={{ y: yBg }} className="absolute pr-floating-icon bottom-[10%] left-[5%] text-[#ff9f1c] animate-pulse block z-[20]">
+                <Code size={40} strokeWidth={2} className="drop-shadow-lg" />
+              </motion.div>
+              <motion.div style={{ y: yFloat, animationDuration: '4.2s', animationDelay: '1s' }} className="absolute bottom-[15%] right-[5%] text-[#ee4700] animate-bounce block z-[20]">
+                <Pencil size={36} strokeWidth={2} className="drop-shadow-lg -rotate-45" />
+              </motion.div>
+              
+              <motion.img
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1.3 }}
+                transition={{ duration: 1, ease: "easeOut" }}
+                src="/her.gif"
+                alt="Hero Video"  
+                className="w-full h-full object-contain drop-shadow-2xl z-10"
+              />
+            </div>
+          </div>
+
+          {/* ROW 3: BOTTOM CTA */}
+          <div className="pr-hero-row-bottom">
+            <motion.div 
+              initial={{ opacity: 0, y: 50 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.6 }}
+              className="flex justify-between items-end w-full pr-hero-bottom"
+            >
+              <div className="w-full md:max-w-[340px]">
+                <p className="pr-hero-desc text-[#646a73] font-[500] mb-[clamp(8px,1.5vh,18px)] m-0">
+                  Engineering the future through Robotics Education with our Composite Skill Lab, Research, AI, Drones and Innovation.
+                </p>
+                <div className="flex items-center gap-[12px] pr-btn-group">
+                  <button className="pr-btn-cta-orange">Get Started</button>
+                  <Link href="/contact" className="pr-btn-cta-ghost flex items-center justify-center">Contact Us</Link>
+                </div>
+              </div>
+
+              <div className="max-w-[270px] text-right pr-bottom-right hidden md:block">
+                <p className="pr-hero-desc text-[#646a73] font-[500] m-0">
+                  From the first spark of an idea to worldwide recognition — we partner with brands
+                </p>
+              </div>
+            </motion.div>
+          </div>
+
+        </div>
+
+        {/* FLOATING SOCIAL SIDEBAR */}
         <aside className="pr-social-dock">
           <a href="#instagram" aria-label="Instagram">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -288,16 +328,10 @@ export default function Page() {
             <Mail size={18} strokeWidth={2} />
           </Link>
         </aside>
-
-        {/* 7. BOTTOM SCROLL INDICATOR */}
-        <div className="absolute bottom-[12px] left-[50%] -translate-x-[50%] flex flex-col items-center gap-[4px] text-[10px] font-[600] text-[#7b828e] z-[10] pr-font-sans hidden md:flex">
-          <div className="pr-scroll-mouse-icon"></div>
-          <span>Scroll to explore more</span>
-        </div>
       </section>
 
       {/* --- MARQUEE --- */}
-      <div className="relative z-20 bg-[#1a1a1a] text-white py-3 sm:py-4 overflow-hidden flex whitespace-nowrap w-full">
+      <div className="shrink-0 relative z-20 bg-[#1a1a1a] text-white py-2 sm:py-3 overflow-hidden flex whitespace-nowrap w-full">
         <div className="flex w-fit animate-marquee">
           {[...Array(2)].map((_, i) => (
             <div key={i} className="flex gap-8 sm:gap-12 items-center shrink-0 pr-8 sm:pr-12">
@@ -322,6 +356,7 @@ export default function Page() {
             </div>
           ))}
         </div>
+      </div>
       </div>
 
       {/* --- SECTION 1: TRUST METRICS --- */}

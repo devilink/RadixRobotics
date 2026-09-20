@@ -87,7 +87,7 @@ export default function TrustMetricsBar() {
         </div>
 
         {/* Bento Grid Container */}
-        <div className="w-full mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-[1.25fr_1.3fr_0.95fr] gap-5 lg:gap-6 lg:grid-rows-[250px_270px_250px] auto-rows-[300px] font-serif">
+        <div className="w-full mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-[1.25fr_1.3fr_0.95fr] gap-5 lg:gap-6 lg:grid-rows-[250px_270px_250px] auto-rows-[220px] sm:auto-rows-[260px] md:auto-rows-[300px] font-serif">
           
           {/* Card 1: Customization -> Founding Partner */}
           <div className="relative overflow-hidden rounded-[32px] p-0 lg:p-0 bg-black lg:col-[1] lg:row-[1_/_span_2] isolate hover:-translate-y-2 transition-transform duration-500 shadow-md">

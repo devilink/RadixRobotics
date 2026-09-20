@@ -35,6 +35,21 @@
     -moz-osx-font-smoothing: grayscale;
   }
 
+  /*
+   * FLUID ROOT SCALING
+   * Base: 16px at 430px (6.7" phone baseline)
+   * Scales linearly down to ~13px at 320px
+   * All rem-based sizing (Tailwind classes, cards, gaps, fonts) scales proportionally.
+   * This keeps the same visual ratio on ALL mobile screen sizes.
+   */
+  html {
+    font-size: clamp(13px, calc(10px + (100vw - 320px) * 6 / 110), 16px);
+  }
+  @media (min-width: 431px) {
+    html { font-size: 16px; }
+  }
+
+
   * {
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     box-sizing: border-box;

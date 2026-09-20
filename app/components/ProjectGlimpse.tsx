@@ -100,7 +100,7 @@ export default function ProjectGlimpse() {
         </div>
 
         {/* 4 Cards Row Grid - Small Squares */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 md:gap-6 pt-12 md:pt-16 pr-font-sans pb-10 items-center justify-center max-w-6xl mx-auto w-full relative z-20">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 lg:gap-8 pt-12 md:pt-16 pr-font-sans pb-10 items-center justify-center max-w-6xl mx-auto w-full relative z-20">
           {glimpseProjects.map((p, idx) => (
             <motion.a 
               style={{ y: idx % 2 === 0 ? yFast : ySlow }}
@@ -112,7 +112,7 @@ export default function ProjectGlimpse() {
               key={p.id} 
               className="block group"
             >
-              <div className={`p-5 sm:p-6 aspect-square w-full flex flex-col justify-between relative overflow-hidden transition-all duration-300 hover:-translate-y-2 rounded-3xl ${p.cardClass} hover:border-[#ff5400]/50 shadow-xl`}>
+              <div className={`p-3 sm:p-5 lg:p-6 aspect-square w-full flex flex-col justify-between relative overflow-hidden transition-all duration-300 hover:-translate-y-2 rounded-2xl sm:rounded-3xl ${p.cardClass} hover:border-[#ff5400]/50 shadow-xl`}>
                 {/* Background Video */}
                 <video 
                   src="/fff.mp4" 
@@ -125,13 +125,13 @@ export default function ProjectGlimpse() {
                 />
 
                 <div className="flex justify-between items-start z-20 relative">
-                  <span className={`px-3 py-1.5 text-[9px] sm:text-[10px] font-bold uppercase tracking-widest bg-white/20 backdrop-blur-md text-white rounded-full border border-white/20 shadow-md drop-shadow-md`}>{p.category}</span>
+                  <span className={`px-2 py-1 sm:px-3 sm:py-1.5 text-[7px] sm:text-[10px] font-bold uppercase tracking-widest bg-white/20 backdrop-blur-md text-white rounded-full border border-white/20 shadow-md drop-shadow-md`}>{p.category}</span>
                   <ArrowUpRight size={20} className="text-white opacity-40 group-hover:opacity-100 group-hover:translate-x-1 group-hover:-translate-y-1 transition-all hidden sm:block drop-shadow-md" />
                 </div>
                 <div className="z-20 mt-auto relative">
-                  <h3 className="text-base sm:text-xl lg:text-3xl font-black uppercase tracking-tighter text-white mb-2 leading-[1.1] drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">{p.title}</h3>
-                  <div className="flex items-center mt-3 pt-3 border-t border-white/40 shadow-sm">
-                    <span className="font-mono text-[9px] sm:text-[10px] font-bold uppercase tracking-widest text-[#fff] group-hover:text-[#ff5400] transition-colors drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
+                  <h3 className="text-xs sm:text-lg lg:text-3xl font-black uppercase tracking-tighter text-white mb-1.5 sm:mb-2 leading-[1.1] drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">{p.title}</h3>
+                  <div className="flex items-center mt-2 pt-2 sm:mt-3 sm:pt-3 border-t border-white/40 shadow-sm">
+                    <span className="font-mono text-[7px] sm:text-[10px] font-bold uppercase tracking-widest text-[#fff] group-hover:text-[#ff5400] transition-colors drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
                       // {p.tech}
                     </span>
                   </div>

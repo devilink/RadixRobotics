@@ -187,7 +187,7 @@ export default function ProductServiceMatrix() {
                 ref={(el) => {
                   cardsRef.current[idx] = el;
                 }}
-                className={`group relative min-h-[220px] sm:min-h-[280px] lg:min-h-[320px] rounded-[14px] sm:rounded-[24px] overflow-hidden p-5 sm:p-8 lg:p-10 block transition-transform hover:-translate-y-2 hover:shadow-2xl ${cardBg} w-full`}
+                className={`group relative min-h-[160px] sm:min-h-[280px] lg:min-h-[320px] rounded-[14px] sm:rounded-[24px] overflow-hidden p-5 sm:p-8 lg:p-10 block transition-transform hover:-translate-y-2 hover:shadow-2xl ${cardBg} w-full`}
                 style={{ isolation: 'isolate', opacity: 0 }}
               >
                 {/* Title and Subtitle */}
