@@ -144,7 +144,7 @@ export default function ProductServiceMatrix() {
 
         {/* 4 Iconly-Style Cards Grid */}
         <div 
-          className="w-full max-w-[1200px] mx-auto mt-12 grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 lg:gap-10"
+          className="w-full max-w-[1200px] mx-auto mt-12 services-grid"
         >
           {services.map((service, idx) => {
             const Icon = service.icon;
@@ -187,23 +187,23 @@ export default function ProductServiceMatrix() {
                 ref={(el) => {
                   cardsRef.current[idx] = el;
                 }}
-                className={`group relative min-h-[160px] sm:min-h-[280px] lg:min-h-[320px] rounded-[14px] sm:rounded-[24px] overflow-hidden p-5 sm:p-8 lg:p-10 block transition-transform hover:-translate-y-2 hover:shadow-2xl ${cardBg} w-full`}
+                className={`w-full group relative min-h-[160px] sm:min-h-[280px] lg:min-h-[320px] rounded-[14px] sm:rounded-[24px] overflow-hidden p-5 sm:p-8 lg:p-10 block transition-transform hover:-translate-y-2 hover:shadow-2xl ${cardBg}`}
                 style={{ isolation: 'isolate', opacity: 0 }}
               >
                 {/* Title and Subtitle */}
                 <div className="relative z-10 flex flex-col max-w-[80%] sm:max-w-[70%]">
-                  <span className={`text-[clamp(16px,4vw,32px)] leading-[1.1] font-bold tracking-tight ${titleColor}`}>
+                  <span className={`text-[clamp(16px,2.5vw,26px)] leading-[1.1] font-bold tracking-tight ${titleColor}`}>
                     {titleTop}
                   </span>
-                  <span className={`text-[clamp(16px,4vw,32px)] leading-[1.1] font-semibold tracking-tight mt-1 ${subtitleColor}`}>
+                  <span className={`text-[clamp(16px,2.5vw,26px)] leading-[1.1] font-semibold tracking-tight mt-1 ${subtitleColor}`}>
                     {titleBottom}
                   </span>
-                  <p className={`mt-4 text-[clamp(11px,1.5vw,14px)] leading-relaxed hidden sm:block ${subtitleColor} opacity-90 max-w-md`}>
+                  <p className={`mt-3 text-[clamp(11px,1.2vw,13px)] leading-relaxed hidden sm:block ${subtitleColor} opacity-90 max-w-md`}>
                     {service.description}
                   </p>
                   <div className="flex flex-wrap gap-2 mt-4 hidden md:flex">
                     {service.tags.map(tag => (
-                      <span key={tag} className={`text-[9px] font-bold uppercase tracking-widest px-2 py-1 rounded-md border ${isWhite ? 'border-black/10 text-black/60' : 'border-white/10 text-white/60'}`}>
+                      <span key={tag} className={`text-[8px] font-bold uppercase tracking-widest px-2 py-1 rounded-md border ${isWhite ? 'border-black/10 text-black/60' : 'border-white/10 text-white/60'}`}>
                         {tag}
                       </span>
                     ))}
@@ -211,8 +211,8 @@ export default function ProductServiceMatrix() {
                 </div>
 
                 {/* 'Learn More' Button */}
-                <div className="absolute left-[5%] bottom-[5%] flex items-center gap-[clamp(4px,1vw,12px)] text-[clamp(9px,2vw,13px)] font-bold tracking-[0.05em] z-10 text-inherit">
-                  <div className={`w-[clamp(20px,4vw,28px)] h-[clamp(20px,4vw,28px)] rounded-full flex items-center justify-center text-[clamp(10px,2vw,14px)] leading-none ${arrowBg} transition-transform group-hover:scale-110 group-hover:rotate-45 shadow-md`}>
+                <div className="absolute left-[5%] bottom-[5%] flex items-center gap-[clamp(4px,1vw,10px)] text-[clamp(9px,1vw,11px)] font-bold tracking-[0.05em] z-10 text-inherit">
+                  <div className={`w-[clamp(20px,2.5vw,24px)] h-[clamp(20px,2.5vw,24px)] rounded-full flex items-center justify-center text-[clamp(10px,1.5vw,12px)] leading-none ${arrowBg} transition-transform group-hover:scale-110 group-hover:rotate-45 shadow-md`}>
                     ↗
                   </div>
                   <span className={isWhite ? 'text-[#101010]' : 'text-white'}>LEARN MORE</span>

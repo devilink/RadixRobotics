@@ -100,7 +100,7 @@ export default function ProjectGlimpse() {
         </div>
 
         {/* 4 Cards Row Grid - Small Squares */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 lg:gap-8 pt-12 md:pt-16 pr-font-sans pb-10 items-center justify-center max-w-6xl mx-auto w-full relative z-20">
+        <div className="project-glimpse-grid pt-12 md:pt-16 pr-font-sans pb-10 items-center justify-center max-w-6xl mx-auto w-full relative z-20">
           {glimpseProjects.map((p, idx) => (
             <motion.a 
               style={{ y: idx % 2 === 0 ? yFast : ySlow }}

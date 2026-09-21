@@ -112,7 +112,7 @@ export default function TeamPage() {
                     </div>
 
                     <div className="flex flex-col gap-4 md:gap-6 w-full max-w-[1200px] mx-auto">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 w-full">
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 400px), 1fr))', gap: '1.5rem' }} className="w-full">
                             {executiveDirectors.slice(0, 2).map((director, i) => (
                                 <div key={i} className="relative bg-[#f2f3f5] border-2 border-[#111] overflow-hidden shadow-[6px_6px_0px_#111] aspect-[4/3] md:aspect-[16/9] w-full">
                                     <Image src={director.image} alt={director.name} fill className="object-cover object-[center_20%]" sizes="(max-width: 768px) 100vw, 50vw" />
@@ -125,7 +125,7 @@ export default function TeamPage() {
                             ))}
                         </div>
 
-                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 md:gap-6 w-full">
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 300px), 1fr))', gap: '1.5rem' }} className="w-full mt-6">
                             {executiveDirectors.slice(2, 5).map((director, i) => (
                                 <div key={i + 2} className="relative bg-[#f2f3f5] border-2 border-[#111] overflow-hidden shadow-[6px_6px_0px_#111] aspect-[4/5] md:aspect-square w-full">
                                     <Image src={director.image} alt={director.name} fill className="object-cover object-top" sizes="(max-width: 768px) 100vw, 33vw" />
@@ -152,7 +152,7 @@ export default function TeamPage() {
                         <h2 className="text-4xl md:text-5xl font-black uppercase tracking-tighter text-[#111]">Core Team</h2>
                     </div>
 
-                    <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-x-4 sm:gap-x-6 gap-y-10 sm:gap-y-12 max-w-7xl mx-auto">
+                    <div className="core-team-grid gap-x-8 sm:gap-x-12 lg:gap-x-16 gap-y-12 sm:gap-y-16 max-w-4xl mx-auto w-full">
                         {teamMembers.map((member, i) => (
                             <div key={i} className="reveal-on-scroll opacity-0 translate-y-12 transition-all duration-700 flex flex-col" style={{ transitionDelay: `${(i % 5) * 100}ms` }}>
                                 {/* Brutalist Portrait Box */}

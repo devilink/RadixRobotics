@@ -154,7 +154,7 @@ export default function AsymmetricLifecycle() {
                       </div>
 
                       {/* Desktop content (always visible) / Mobile content (conditional) */}
-                      <div className={`${expandedCards[index] ? 'block' : 'hidden md:block'}`}>
+                      <div className={`${expandedCards[index] ? 'block' : 'hide-on-mobile-block'}`}>
                         <p className="text-[#3b3f46] text-sm sm:text-base font-medium leading-relaxed mb-8 mt-4">
                           {step.description}
                         </p>
@@ -173,7 +173,7 @@ export default function AsymmetricLifecycle() {
                       {/* Mobile Read More / Less Button */}
                       <button 
                         onClick={() => toggleCard(index)}
-                        className="md:hidden mt-4 w-full bg-[#f2f3f5] hover:bg-[#111] hover:text-white transition-colors text-[#111] py-3 text-xs font-bold uppercase tracking-widest border-2 border-[#111]"
+                        className="hide-on-desktop-block mt-4 w-full bg-[#f2f3f5] hover:bg-[#111] hover:text-white transition-colors text-[#111] py-3 text-xs font-bold uppercase tracking-widest border-2 border-[#111]"
                       >
                         {expandedCards[index] ? 'Read Less' : 'Read More'}
                       </button>

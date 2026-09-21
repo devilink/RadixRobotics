@@ -75,8 +75,8 @@ export const metadata: Metadata = {
     },
   },
   icons: {
-    icon: "/favicon.ico",
-    apple: "/favicon.ico",
+    icon: "/fav.png",
+    apple: "/fav.png",
   },
   alternates: {
     canonical: "https://radixrobotics.com",
