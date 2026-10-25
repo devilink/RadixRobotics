@@ -2,6 +2,8 @@
 
 import { createClient } from '@supabase/supabase-js';
 import { revalidatePath } from 'next/cache';
+import { getLegacyRole, requireLegacySuperAdmin, superAdminEmail } from '@/lib/auth/legacy';
+import { createClient as createSessionClient } from '@/utils/supabase/server';
 
 // Initialize Supabase Admin strictly on the server-side to bypass RLS
 const supabaseAdmin = createClient(
@@ -10,35 +12,66 @@ const supabaseAdmin = createClient(
   { auth: { autoRefreshToken: false, persistSession: false } }
 );
 
-// Fail-safe to auto-assign super_admin if the database trigger didn't catch an old account
-export async function autoAssignSuperAdmin(email: string, userId: string) {
-  if (email === 'princedas000555@gmail.com') {
-    const { data } = await supabaseAdmin.from('user_roles').select('id').eq('id', userId).single();
-    if (!data) {
-      await supabaseAdmin.from('user_roles').insert({ id: userId, role: 'super_admin' });
-    }
+// Bootstraps the owner account (SUPER_ADMIN_EMAIL) as super admin in the portal and the ERP.
+// The arguments are kept for backwards compatibility but ignored: identity always
+// comes from the verified session, never from the caller.
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export async function autoAssignSuperAdmin(_email?: string, _userId?: string) {
+  const owner = superAdminEmail();
+  if (!owner) return;
+  const supabase = await createSessionClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  // A confirmed email proves the caller owns that mailbox, so nobody can claim the
+  // owner role by signing up with the owner's address first.
+  if (!user || user.email?.toLowerCase() !== owner || !user.email_confirmed_at) return;
+
+  await supabaseAdmin.from('user_roles').upsert({ id: user.id, role: 'super_admin', school_id: null });
+
+  // ERP role (ignored if the ERP migrations are not applied yet).
+  const { count } = await supabaseAdmin
+    .from('user_role_assignments')
+    .select('id', { count: 'exact', head: true })
+    .eq('user_id', user.id)
+    .eq('role_key', 'super_admin');
+  if (count === 0) {
+    await supabaseAdmin.from('user_role_assignments').insert({ user_id: user.id, role_key: 'super_admin' });
   }
 }
 
-// Bypass RLS to securely fetch the true database role of a user
+// Bypass RLS to fetch the caller's own role. Only the signed-in user's role is returned.
 export async function getUserRoleById(userId: string) {
-  const { data } = await supabaseAdmin.from('user_roles').select('role, school_id, is_approved').eq('id', userId).single();
+  const me = await getLegacyRole();
+  if (!me || me.userId !== userId) return null;
+  const { data } = await supabaseAdmin.from('user_roles').select('role, school_id, is_approved').eq('id', userId).maybeSingle();
   return data;
 }
 
 // 1. Create School & School Admin
-export async function createSchoolAndAdmin(schoolName: string, customId: string, adminPassword: string) {
+export async function createSchoolAndAdmin(
+  schoolName: string,
+  customId: string,
+  adminPassword: string,
+  category: 'school' | 'learning_center' = 'school'
+) {
   try {
+    await requireLegacySuperAdmin();
+    if (category !== 'school' && category !== 'learning_center') {
+      return { success: false, message: 'Invalid category.' };
+    }
     // Auto-generate an internal email from the school ID
     const internalEmail = `${customId.toLowerCase()}@radix.school`;
 
     // Insert school first
+    // `category` exists once the ERP sync migration is applied; schools work without it.
     const { error: schoolError } = await supabaseAdmin
       .from('schools')
-      .insert({ custom_id: customId, school_name: schoolName });
+      .insert(category === 'school' ? { custom_id: customId, school_name: schoolName } : { custom_id: customId, school_name: schoolName, category });
 
     if (schoolError) {
-      if (schoolError.code === '23505') return { success: false, message: 'Custom School ID already exists.' };
+      if (schoolError.code === '23505') return { success: false, message: 'This ID already exists.' };
+      if (category === 'learning_center' && /category/i.test(schoolError.message)) {
+        return { success: false, message: 'Apply the ERP database migrations before adding learning centers.' };
+      }
       return { success: false, message: schoolError.message };
     }
 
@@ -69,6 +102,7 @@ export async function createSchoolAndAdmin(schoolName: string, customId: string,
 // 2. Update School Details
 export async function updateSchool(customId: string, newName: string) {
   try {
+    await requireLegacySuperAdmin();
     const { error } = await supabaseAdmin
       .from('schools')
       .update({ school_name: newName })
@@ -86,6 +120,7 @@ export async function updateSchool(customId: string, newName: string) {
 // 3. Delete School (Cascades user_roles automatically per DB schema, but we must delete auth accounts explicitly)
 export async function deleteSchool(customId: string) {
   try {
+    await requireLegacySuperAdmin();
     // Get all users associated with this school (Students & School Admins)
     const { data: users } = await supabaseAdmin
       .from('user_roles')
@@ -117,6 +152,7 @@ export async function deleteSchool(customId: string) {
 // 4. Fetch All Schools for Dashboard
 export async function getAllSchools() {
   try {
+    await requireLegacySuperAdmin();
     const { data, error } = await supabaseAdmin
       .from('schools')
       .select('*')

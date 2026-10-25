@@ -46,26 +46,20 @@ export default async function SchoolCurriculumPage({ params }: PageProps) {
   const supabase = await createServerClient();
   const { data: { user } } = await supabase.auth.getUser();
 
-  let userRole = "school_admin"; // fallback
+  // Least privilege by default; the real role comes only from user_roles.
+  let userRole = "student";
   let userId = undefined;
 
   if (user) {
     userId = user.id;
-    // Check if super admin
-    if (user.email === 'princedas000555@gmail.com') {
-      userRole = 'super_admin';
-    } 
-    // Otherwise check database role
-    else {
-      const { data: roleData } = await supabaseAdmin
-        .from('user_roles')
-        .select('role')
-        .eq('id', user.id)
-        .single();
-      
-      if (roleData) {
-        userRole = roleData.role;
-      }
+    const { data: roleData } = await supabaseAdmin
+      .from('user_roles')
+      .select('role')
+      .eq('id', user.id)
+      .maybeSingle();
+
+    if (roleData) {
+      userRole = roleData.role;
     }
   }
 

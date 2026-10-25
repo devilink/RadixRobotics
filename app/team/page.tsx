@@ -31,50 +31,50 @@ export default function TeamPage() {
             name: "Dimpu Baruah",
             role: "Director & Co-Founder",
             bio: "Visionary leader with a passion for robotics education and scaling impact across institutions.",
-            image: "/DIRECTOR.jpeg"
+            image: "/DIRECTOR.png"
         },
         {
             name: "Aman Ahmed",
             role: "Founder & CEO",
             bio: "Driving operational excellence and strategic growth.",
-            image: "/CEO.jpeg"
+            image: "/CEO.png"
         },
         {
             name: "Gourangon Gogoi",
             role: "Chief Financial Officer",
             bio: "Architecting the technical infrastructure and advanced curriculum frameworks.",
-            image: "/CFO.jpeg"
+            image: "/CFO.png"
         },
         {
             name: "Prince Das",
             role: "Chief Technical Officer",
             bio: "Ensuring our programs meet the highest pedagogical standards.",
-            image: "/CTO.jpeg"
+            image: "/CTO.png"
         },
         {
             name: "Bidyut Nayan Nath",
             role: "Chief Marketing Officer",
             bio: "Building long-term partnerships and expanding globally.",
-            image: "/CMO.jpeg"
+            image: "/CMO.png"
         }
     ];
 
     const teamMembers = [
-        { name: "Apurba Sarmah", role: "Software Engineer", image: "/teams/1.jpeg" },
         { name: "Abhinash Sarmah", role: "AI Engineer", image: "/teams/2.jpeg" },
         { name: "Aleeza Khanam", role: "Business Development", image: "/teams/3.jpeg" },
-        { name: "Manash Kumar Das", role: "3D Designer", image: "/teams/4.jpeg" },
-        { name: "Gyandeep Duwarah", role: "Robotics Engineer", image: "/teams/5.jpeg" },
-        { name: "Nirmal Jyoti Thakuria", role: "Hardware Engineer", image: "/teams/6.jpeg" },
         { name: "Himanta Bijoy Sarmah", role: "Sales & Marketing", image: "/teams/7.jpeg" },
         { name: "Jerifa Ahmed", role: "Operator Manager", image: "/teams/8.jpeg" },
         { name: "Nistha Rani Barphukon", role: "Robotics Engineer", image: "/teams/9.jpeg" },
-        { name: "Riyan Rishav Deka", role: "Data Engineer", image: "/teams/10.jpeg" },
-        { name: "Nayan Jyoti Athporia", role: "AI Engineer", image: "/teams/11.jpeg" },
         { name: "Tofajul Hoque", role: "Software Engineer", image: "/teams/12.jpeg" },
         { name: "Plaban Jyoti Rajhkhowa", role: "Designer", image: "/teams/13.jpeg" },
-        { name: "Eshan Kashyap", role: "Backend Developer", image: "/teams/14.jpeg" },
-        { name: "Divyam Bajpai", role: "Technical Manager", image: "/teams/15.jpeg" }
+        { name: "Divyam Bajpai", role: "Technical Manager", image: "/teams/15.jpeg" },
+        { name: "Nayan Jyoti Athporia", role: "AI Engineer", image: "/teams/11.jpeg" },
+        { name: "Apurba Sarmah", role: "Software Engineer", image: "/teams/1.jpeg" },
+        { name: "Gyandeep Duwarah", role: "Robotics Engineer", image: "/teams/5.jpeg" },
+        { name: "Nirmal Jyoti Thakuria", role: "Hardware Engineer", image: "/teams/6.jpeg" },
+        { name: "Manash Kumar Das", role: "3D Designer", image: "/teams/4.jpeg" },
+        { name: "Riyan Rishav Deka", role: "Data Engineer", image: "/teams/10.jpeg" }
+        
     ];
 
     return (
@@ -114,8 +114,8 @@ export default function TeamPage() {
                     <div className="flex flex-col gap-4 md:gap-6 w-full max-w-[1200px] mx-auto">
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 400px), 1fr))', gap: '1.5rem' }} className="w-full">
                             {executiveDirectors.slice(0, 2).map((director, i) => (
-                                <div key={i} className="relative bg-[#f2f3f5] border-2 border-[#111] overflow-hidden shadow-[6px_6px_0px_#111] aspect-[4/3] md:aspect-[16/9] w-full">
-                                    <Image src={director.image} alt={director.name} fill className="object-cover object-[center_20%]" sizes="(max-width: 768px) 100vw, 50vw" />
+                                <div key={i} className="relative bg-[#f2f3f5] border-2 border-[#111] overflow-hidden shadow-[6px_6px_0px_#111] aspect-[4/5] md:aspect-[16/9] w-full">
+                                    <Image src={director.image} alt={director.name} fill className="object-cover object-[50%_0%] md:object-[center_20%]" sizes="(max-width: 768px) 100vw, 50vw" />
                                     <div className="absolute inset-0 bg-gradient-to-t from-[#111] via-[#111]/40 to-transparent opacity-90"></div>
                                     <div className="absolute bottom-0 left-0 w-full flex flex-col justify-end p-6 md:p-8 lg:p-10">
                                         <h3 className="text-2xl md:text-3xl lg:text-4xl font-black uppercase tracking-tighter text-white mb-2 leading-tight">{director.name}</h3>

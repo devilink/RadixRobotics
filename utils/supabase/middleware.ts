@@ -1,4 +1,5 @@
 import { createServerClient } from '@supabase/ssr'
+import { createClient as createAdminClient } from '@supabase/supabase-js'
 import { NextResponse, type NextRequest } from 'next/server'
 
 export async function updateSession(request: NextRequest) {
@@ -24,10 +25,22 @@ export async function updateSession(request: NextRequest) {
 
   const { data: { user } } = await supabase.auth.getUser();
 
+  // ERP: require a session here; roles and institution access are enforced by
+  // the ERP data layer and database RLS, not by the legacy user_roles table.
+  if (pathname === '/erp' || pathname.startsWith('/erp/')) {
+    if (!user) {
+      const login = new URL('/login', request.url);
+      login.searchParams.set('next', pathname);
+      return NextResponse.redirect(login);
+    }
+    return supabaseResponse;
+  }
+
   // If no user and trying to access protected routes, bounce to login
   const isProtected = pathname.startsWith('/super-admin') || 
                       pathname.startsWith('/school-admin') || 
-                      pathname.startsWith('/curriculum');
+                      pathname.startsWith('/curriculum') ||
+                      pathname.startsWith('/kits');
 
   if (isProtected && !user) {
     return NextResponse.redirect(new URL('/login', request.url));
@@ -35,39 +48,29 @@ export async function updateSession(request: NextRequest) {
 
   // RBAC Access Control Enforcement
   if (user && isProtected) {
-    // Use service role to bypass RLS for role checking
-    const supabaseAdmin = createServerClient(
+    // Service role to bypass RLS for role checking. Deliberately not built with the
+    // request cookies: with them, the user's session token would replace the
+    // service key and the query would run under RLS as the user.
+    const supabaseAdmin = createAdminClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.SUPABASE_SERVICE_ROLE_KEY!,
-      {
-        cookies: {
-          getAll() { return request.cookies.getAll() },
-          setAll() {},
-        },
-      }
+      { auth: { autoRefreshToken: false, persistSession: false } }
     );
 
     const { data: roleData } = await supabaseAdmin
       .from('user_roles')
       .select('role, school_id, is_approved')
       .eq('id', user.id)
-      .single();
+      .maybeSingle();
 
-    // Super Admin email bypass
-    const isSuperAdminEmail = user.email === 'princedas000555@gmail.com';
-
-    // School Admin email bypass — detect internal @radix.school emails
-    const isSchoolEmail = user.email?.endsWith('@radix.school') || false;
-    const derivedSchoolId = isSchoolEmail ? user.email!.replace('@radix.school', '').toUpperCase() : null;
-
-    // If no role found and not a recognized internal account, block
-    if (!roleData && !isSuperAdminEmail && !isSchoolEmail) {
+    // Roles come only from user_roles; nothing is inferred from the email address.
+    if (!roleData) {
       return NextResponse.redirect(new URL('/403', request.url));
     }
 
-    const role = roleData?.role || (isSuperAdminEmail ? 'super_admin' : isSchoolEmail ? 'school_admin' : null);
-    const school_id = roleData?.school_id || derivedSchoolId;
-    const isApproved = roleData?.is_approved ?? true; // Default true for admins who don't have this field
+    const role = roleData.role;
+    const school_id = roleData.school_id;
+    const isApproved = roleData.is_approved ?? true; // Default true for admins who don't have this field
 
     // Block unapproved students from all protected routes
     if (role === 'student' && !isApproved) {

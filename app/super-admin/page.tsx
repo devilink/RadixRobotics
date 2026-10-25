@@ -5,11 +5,16 @@ import { createSchoolAndAdmin, getAllSchools, updateSchool, deleteSchool } from 
 import { Plus, School, Key, Loader2, CheckCircle, Hash, Copy, Pencil, Trash2, X, Save, ArrowLeft, Users, Building2, BookOpen, Menu } from "lucide-react";
 import Link from "next/link";
 
+type Category = "school" | "learning_center";
+
 type SchoolRecord = {
   custom_id: string;
   school_name: string;
+  category?: Category; // absent until the ERP sync migration adds the column
   created_at?: string;
 };
+
+const isCenter = (s: SchoolRecord) => s.category === "learning_center";
 
 export default function SuperAdminPage() {
   // --- View State ---
@@ -17,13 +22,20 @@ export default function SuperAdminPage() {
   const [view, setView] = useState<"list" | "create">("list");
   const [schools, setSchools] = useState<SchoolRecord[]>([]);
   const [loadingSchools, setLoadingSchools] = useState(true);
+  const [listFilter, setListFilter] = useState<"all" | Category>("all");
 
   // --- Create Form ---
   const [formData, setFormData] = useState({
     schoolName: "",
     customSchoolId: "",
-    password: ""
+    password: "",
+    category: "school" as Category
   });
+  const formIsCenter = formData.category === "learning_center";
+  const visibleSchools = schools.filter((s) =>
+    listFilter === "all" ? true : listFilter === "learning_center" ? isCenter(s) : !isCenter(s)
+  );
+  const centerCount = schools.filter(isCenter).length;
   const [createStatus, setCreateStatus] = useState<{
     loading: boolean;
     error: string | null;
@@ -66,19 +78,20 @@ export default function SuperAdminPage() {
 
     try {
       if (!formData.customSchoolId) {
-        setCreateStatus({ loading: false, error: "School ID is required.", success: false, schoolId: null });
+        setCreateStatus({ loading: false, error: "Login ID is required.", success: false, schoolId: null });
         return;
       }
 
       const result = await createSchoolAndAdmin(
         formData.schoolName,
         formData.customSchoolId,
-        formData.password
+        formData.password,
+        formData.category
       );
 
       if (result.success && result.data) {
         setCreateStatus({ loading: false, error: null, success: true, schoolId: result.data.schoolId });
-        setFormData({ schoolName: "", customSchoolId: "", password: "" });
+        setFormData(prev => ({ schoolName: "", customSchoolId: "", password: "", category: prev.category }));
         await fetchSchools();
       } else {
         setCreateStatus({ loading: false, error: result.message, success: false, schoolId: null });
@@ -110,7 +123,7 @@ export default function SuperAdminPage() {
   };
 
   return (
-    <div className="min-h-screen bg-zinc-950 text-zinc-100 font-sans selection:bg-emerald-500/30">
+    <div className="min-h-screen bg-zinc-950 text-zinc-100 font-sans selection:bg-brand-500/30">
 
       {/* Floating Glass Navigation — matches landing page */}
       <style>{`
@@ -127,18 +140,21 @@ export default function SuperAdminPage() {
       `}</style>
       <div className="fixed top-4 md:top-8 left-0 w-full z-50 px-4 md:px-0 pointer-events-none adaptive-nav-parent">
           <nav className="adaptive-nav-core items-center justify-between max-w-full md:max-w-[95%] px-5 md:px-8 py-3 md:py-4 gap-4 md:gap-6 rounded-[28px] border border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.3)] pointer-events-auto mx-auto" style={{ background: 'rgba(15, 23, 42, 0.4)', backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)' }}>
-            <Link href="/" className="text-blue-400 font-black text-sm uppercase tracking-tighter hover:opacity-80 transition-opacity shrink-0">Radix</Link>
+            <Link href="/" className="text-brand-400 font-black text-sm uppercase tracking-tighter hover:opacity-80 transition-opacity shrink-0">Radix</Link>
             
             <div className="adaptive-desktop-only items-center gap-6">
                 <div className="w-px h-6 bg-white/10" />
                 <Link href="/" className="text-[10px] font-bold uppercase tracking-widest text-white/60 hover:text-white transition-colors">Home</Link>
+                <Link href="/erp" className="text-[10px] font-bold uppercase tracking-widest text-white/60 hover:text-white transition-colors">ERP</Link>
+                <Link href="/erp/inventory" className="text-[10px] font-bold uppercase tracking-widest text-white/60 hover:text-white transition-colors">Inventory</Link>
                 
                 <div className="flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)] animate-pulse" />
-                  <span className="text-[10px] font-bold tracking-widest uppercase text-emerald-400">Super Admin</span>
+                  <span className="w-2 h-2 rounded-full bg-brand-500 shadow-[0_0_8px_rgba(255,84,0,0.8)] animate-pulse" />
+                  <span className="text-[10px] font-bold tracking-widest uppercase text-brand-400">Super Admin</span>
                 </div>
 
                 <Link href="/super-admin/projects" className="text-[10px] font-bold uppercase tracking-widest text-white/60 hover:text-white transition-colors">Projects</Link>
+                <Link href="/kits" className="text-[10px] font-bold uppercase tracking-widest text-white/60 hover:text-white transition-colors">Kits</Link>
                 <div className="w-px h-6 bg-white/10" />
             </div>
 
@@ -146,10 +162,10 @@ export default function SuperAdminPage() {
                 {view === "list" ? (
                   <button
                     onClick={() => { setView("create"); setCreateStatus({ loading: false, error: null, success: false, schoolId: null }); }}
-                    className="flex items-center gap-2 bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30 px-5 py-2 rounded-full text-[10px] font-bold uppercase tracking-widest transition-all"
+                    className="flex items-center gap-2 bg-brand-500/20 text-brand-400 hover:bg-brand-500/30 px-5 py-2 rounded-full text-[10px] font-bold uppercase tracking-widest transition-all"
                   >
                     <Plus className="w-3.5 h-3.5" />
-                    <span className="whitespace-nowrap">New School</span>
+                    <span className="whitespace-nowrap">New School / Center</span>
                   </button>
                 ) : (
                   <button
@@ -176,17 +192,19 @@ export default function SuperAdminPage() {
       {/* Mobile Menu Overlay */}
       {isMobileMenuOpen && (
           <div className="fixed inset-0 z-[40] bg-slate-950/95 backdrop-blur-xl flex flex-col items-center justify-center gap-8 md:hidden animate-in fade-in duration-300 pt-20">
-              <Link href="/" onClick={() => setIsMobileMenuOpen(false)} className="text-xl uppercase tracking-widest text-white hover:text-emerald-400 transition-colors">Home</Link>
-              <Link href="/super-admin/projects" onClick={() => setIsMobileMenuOpen(false)} className="text-xl uppercase tracking-widest text-white hover:text-emerald-400 transition-colors">Projects</Link>
+              <Link href="/" onClick={() => setIsMobileMenuOpen(false)} className="text-xl uppercase tracking-widest text-white hover:text-brand-400 transition-colors">Home</Link>
+              <Link href="/super-admin/projects" onClick={() => setIsMobileMenuOpen(false)} className="text-xl uppercase tracking-widest text-white hover:text-brand-400 transition-colors">Projects</Link>
+              <Link href="/kits" onClick={() => setIsMobileMenuOpen(false)} className="text-xl uppercase tracking-widest text-white hover:text-brand-400 transition-colors">Kits</Link>
+              <Link href="/erp/inventory" onClick={() => setIsMobileMenuOpen(false)} className="text-xl uppercase tracking-widest text-white hover:text-brand-400 transition-colors">Inventory</Link>
               
               <div className="w-24 h-px bg-white/20 my-2"></div>
 
               {view === "list" ? (
                   <button
                     onClick={() => { setView("create"); setCreateStatus({ loading: false, error: null, success: false, schoolId: null }); setIsMobileMenuOpen(false); }}
-                    className="text-lg uppercase tracking-widest text-emerald-400 border border-emerald-500/50 px-6 py-2 rounded-full flex items-center gap-2"
+                    className="text-lg uppercase tracking-widest text-brand-400 border border-brand-500/50 px-6 py-2 rounded-full flex items-center gap-2"
                   >
-                    <Plus className="w-5 h-5" /> New School
+                    <Plus className="w-5 h-5" /> New School / Center
                   </button>
               ) : (
                   <button
@@ -207,21 +225,21 @@ export default function SuperAdminPage() {
             {/* Stats Bar */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-10">
               <div className="bg-zinc-900/50 border border-zinc-800/50 rounded-2xl p-5 flex items-center gap-4">
-                <div className="w-12 h-12 rounded-xl bg-emerald-500/10 flex items-center justify-center">
-                  <Building2 className="w-6 h-6 text-emerald-500" />
+                <div className="w-12 h-12 rounded-xl bg-brand-500/10 flex items-center justify-center">
+                  <Building2 className="w-6 h-6 text-brand-500" />
                 </div>
                 <div>
-                  <p className="text-2xl font-black text-white">{schools.length}</p>
-                  <p className="text-xs text-zinc-500 font-medium">Active Schools</p>
+                  <p className="text-2xl font-black text-white">{schools.length - centerCount}</p>
+                  <p className="text-xs text-zinc-500 font-medium">Schools</p>
                 </div>
               </div>
               <div className="bg-zinc-900/50 border border-zinc-800/50 rounded-2xl p-5 flex items-center gap-4">
-                <div className="w-12 h-12 rounded-xl bg-blue-500/10 flex items-center justify-center">
-                  <Users className="w-6 h-6 text-blue-500" />
+                <div className="w-12 h-12 rounded-xl bg-violet-500/10 flex items-center justify-center">
+                  <Users className="w-6 h-6 text-violet-400" />
                 </div>
                 <div>
-                  <p className="text-2xl font-black text-white">{schools.length}</p>
-                  <p className="text-xs text-zinc-500 font-medium">School Admins</p>
+                  <p className="text-2xl font-black text-white">{centerCount}</p>
+                  <p className="text-xs text-zinc-500 font-medium">Radix Learning Centers</p>
                 </div>
               </div>
               <div className="bg-zinc-900/50 border border-zinc-800/50 rounded-2xl p-5 flex items-center gap-4">
@@ -235,31 +253,49 @@ export default function SuperAdminPage() {
               </div>
             </div>
 
-            <h2 className="text-2xl font-bold mb-6">Registered Schools</h2>
+            <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
+              <h2 className="text-2xl font-bold">Schools &amp; Learning Centers</h2>
+              <div role="radiogroup" aria-label="Show" className="inline-flex rounded-xl border border-zinc-800 bg-zinc-900/60 p-1 text-xs font-bold">
+                {([["all", "All"], ["school", "Schools"], ["learning_center", "Learning Centers"]] as const).map(([value, label]) => (
+                  <button
+                    key={value}
+                    type="button"
+                    role="radio"
+                    aria-checked={listFilter === value}
+                    onClick={() => setListFilter(value)}
+                    className={`px-3 py-1.5 rounded-lg transition-colors ${listFilter === value
+                      ? value === "school" ? "bg-sky-500/15 text-sky-300" : value === "learning_center" ? "bg-violet-500/15 text-violet-300" : "bg-brand-500/15 text-brand-400"
+                      : "text-zinc-500 hover:text-zinc-200"}`}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </div>
 
             {loadingSchools ? (
               <div className="flex items-center justify-center py-20">
-                <Loader2 className="w-8 h-8 text-emerald-500 animate-spin" />
+                <Loader2 className="w-8 h-8 text-brand-500 animate-spin" />
               </div>
-            ) : schools.length === 0 ? (
+            ) : visibleSchools.length === 0 ? (
               <div className="text-center py-20 border border-dashed border-zinc-800 rounded-2xl">
                 <Building2 className="w-12 h-12 text-zinc-700 mx-auto mb-4" />
-                <p className="text-zinc-500 font-medium mb-2">No schools provisioned yet.</p>
-                <button onClick={() => setView("create")} className="text-emerald-500 hover:text-emerald-400 text-sm font-bold transition-colors">
-                  + Create your first school
+                <p className="text-zinc-500 font-medium mb-2">{listFilter === "learning_center" ? "No learning centers yet." : listFilter === "school" ? "No schools yet." : "No schools or centers provisioned yet."}</p>
+                <button onClick={() => { setFormData(prev => ({ ...prev, category: listFilter === "learning_center" ? "learning_center" : "school" })); setView("create"); }} className="text-brand-500 hover:text-brand-400 text-sm font-bold transition-colors">
+                  + Add {listFilter === "learning_center" ? "a learning center" : "a school"}
                 </button>
               </div>
             ) : (
               <div className="space-y-3">
-                {schools.map((school) => (
+                {visibleSchools.map((school) => (
                   <div
                     key={school.custom_id}
                     className="bg-zinc-900/60 border border-zinc-800/50 rounded-2xl p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 hover:border-zinc-700/50 transition-colors group"
                   >
                     {/* Left: Info */}
                     <div className="flex items-center gap-4 flex-1 min-w-0">
-                      <div className="w-11 h-11 rounded-xl bg-emerald-500/10 flex items-center justify-center shrink-0">
-                        <School className="w-5 h-5 text-emerald-500" />
+                      <div className={`w-11 h-11 rounded-xl flex items-center justify-center shrink-0 ${isCenter(school) ? "bg-violet-500/10" : "bg-sky-500/10"}`}>
+                        {isCenter(school) ? <Building2 className="w-5 h-5 text-violet-400" /> : <School className="w-5 h-5 text-sky-400" />}
                       </div>
                       <div className="min-w-0">
                         {editingId === school.custom_id ? (
@@ -268,11 +304,11 @@ export default function SuperAdminPage() {
                               type="text"
                               value={editName}
                               onChange={(e) => setEditName(e.target.value)}
-                              className="bg-zinc-950 border border-emerald-500/50 rounded-lg px-3 py-1.5 text-sm text-white focus:outline-none focus:ring-1 focus:ring-emerald-500 w-full max-w-[280px]"
+                              className="bg-zinc-950 border border-brand-500/50 rounded-lg px-3 py-1.5 text-sm text-white focus:outline-none focus:ring-1 focus:ring-brand-500 w-full max-w-[280px]"
                               autoFocus
                               onKeyDown={(e) => { if (e.key === 'Enter') handleUpdate(school.custom_id); if (e.key === 'Escape') setEditingId(null); }}
                             />
-                            <button onClick={() => handleUpdate(school.custom_id)} disabled={editLoading} className="text-emerald-500 hover:text-emerald-400 p-1">
+                            <button onClick={() => handleUpdate(school.custom_id)} disabled={editLoading} className="text-brand-500 hover:text-brand-400 p-1">
                               {editLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
                             </button>
                             <button onClick={() => setEditingId(null)} className="text-zinc-500 hover:text-zinc-300 p-1">
@@ -282,7 +318,12 @@ export default function SuperAdminPage() {
                         ) : (
                           <>
                             <p className="text-white font-bold text-sm truncate">{school.school_name}</p>
-                            <p className="text-emerald-500/80 text-xs font-mono font-bold tracking-wider">{school.custom_id}</p>
+                            <p className="flex items-center gap-2 text-xs">
+                              <span className="text-brand-500/80 font-mono font-bold tracking-wider">{school.custom_id}</span>
+                              <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${isCenter(school) ? "bg-violet-500/10 text-violet-300" : "bg-sky-500/10 text-sky-300"}`}>
+                                {isCenter(school) ? "Learning Center" : "School"}
+                              </span>
+                            </p>
                           </>
                         )}
                       </div>
@@ -312,7 +353,7 @@ export default function SuperAdminPage() {
                           <>
                             <Link
                               href={`/school-admin/${school.custom_id}`}
-                              className="flex items-center gap-1.5 p-2.5 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 hover:text-emerald-300 transition-all text-xs font-bold no-underline"
+                              className="flex items-center gap-1.5 p-2.5 rounded-xl bg-brand-500/10 hover:bg-brand-500/20 text-brand-400 hover:text-brand-300 transition-all text-xs font-bold no-underline"
                               title="Manage Students"
                             >
                               <Users className="w-4 h-4" />
@@ -320,7 +361,7 @@ export default function SuperAdminPage() {
                             </Link>
                             <Link
                               href={`/curriculum/${school.custom_id}`}
-                              className="flex items-center gap-1.5 p-2.5 rounded-xl bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 hover:text-blue-300 transition-all text-xs font-bold no-underline"
+                              className="flex items-center gap-1.5 p-2.5 rounded-xl bg-brand-500/10 hover:bg-brand-500/20 text-brand-400 hover:text-brand-300 transition-all text-xs font-bold no-underline"
                               title="View Curriculum"
                             >
                               <BookOpen className="w-4 h-4" />
@@ -329,14 +370,14 @@ export default function SuperAdminPage() {
                             <button
                               onClick={() => { setEditingId(school.custom_id); setEditName(school.school_name); }}
                               className="p-2.5 rounded-xl bg-zinc-800/50 hover:bg-zinc-800 text-zinc-400 hover:text-white transition-all"
-                              title="Edit school name"
+                              title="Edit name"
                             >
                               <Pencil className="w-4 h-4" />
                             </button>
                             <button
                               onClick={() => setDeleteConfirm(school.custom_id)}
                               className="p-2.5 rounded-xl bg-zinc-800/50 hover:bg-red-500/10 text-zinc-400 hover:text-red-400 transition-all"
-                              title="Delete school"
+                              title="Delete"
                             >
                               <Trash2 className="w-4 h-4" />
                             </button>
@@ -356,51 +397,75 @@ export default function SuperAdminPage() {
           <div className="max-w-xl mx-auto">
             <div className="bg-zinc-900/50 backdrop-blur-2xl p-8 rounded-[2rem] border border-white/5 shadow-2xl relative overflow-hidden">
               {/* Decorative glow */}
-              <div className="absolute top-0 right-0 -mr-16 -mt-16 w-32 h-32 bg-emerald-500/20 rounded-full blur-[60px] pointer-events-none" />
+              <div className="absolute top-0 right-0 -mr-16 -mt-16 w-32 h-32 bg-brand-500/20 rounded-full blur-[60px] pointer-events-none" />
 
               {createStatus.success ? (
                 <div className="space-y-6 py-12 text-center">
-                  <div className="w-20 h-20 bg-emerald-500/10 rounded-full flex items-center justify-center mx-auto mb-6">
-                    <CheckCircle className="w-10 h-10 text-emerald-500" />
+                  <div className="w-20 h-20 bg-brand-500/10 rounded-full flex items-center justify-center mx-auto mb-6">
+                    <CheckCircle className="w-10 h-10 text-brand-500" />
                   </div>
                   <h2 className="text-2xl font-bold text-white mb-2">Tenant Created!</h2>
                   <p className="text-zinc-400 mb-8 max-w-[280px] mx-auto">
-                    School ID: <strong className="text-white">{createStatus.schoolId}</strong> has been fully initialized.
+                    Login ID: <strong className="text-white">{createStatus.schoolId}</strong> has been fully initialized. It signs in on the School tab of the login page.
                   </p>
                   <div className="space-y-3">
                     <button
                       onClick={() => { setView("list"); setCreateStatus({ loading: false, error: null, success: false, schoolId: null }); }}
                       className="w-full flex items-center justify-center gap-2 bg-white text-zinc-950 py-3.5 rounded-xl font-bold tracking-wide hover:bg-zinc-200 transition-colors"
                     >
-                      View All Schools
+                      View All
                     </button>
                     <button
                       onClick={() => setCreateStatus({ loading: false, error: null, success: false, schoolId: null })}
                       className="w-full text-zinc-500 hover:text-zinc-300 font-medium py-3 transition-colors"
                     >
-                      Provision Another School
+                      Add Another
                     </button>
                   </div>
                 </div>
               ) : (
                 <form onSubmit={handleCreate} className="space-y-5">
                   <div className="border-b border-white/10 pb-6 mb-6">
-                    <h2 className="text-xl font-bold mb-1">New School Tenant</h2>
-                    <p className="text-zinc-500 text-sm">Fill out all fields to provision a new school and its admin account.</p>
+                    <h2 className="text-xl font-bold mb-1">{formIsCenter ? "New Radix Learning Center" : "New School"}</h2>
+                    <p className="text-zinc-500 text-sm">Fill out all fields to provision a new {formIsCenter ? "learning center" : "school"} and its admin login.</p>
+                  </div>
+
+                  {/* Category */}
+                  <div className="space-y-2">
+                    <span className="text-[11px] font-bold uppercase tracking-widest text-zinc-500">Category</span>
+                    <div role="radiogroup" aria-label="Category" className="grid grid-cols-2 gap-2">
+                      {([["school", "School", School], ["learning_center", "Radix Learning Center", Building2]] as const).map(([value, label, Icon]) => {
+                        const active = formData.category === value;
+                        return (
+                          <button
+                            key={value}
+                            type="button"
+                            role="radio"
+                            aria-checked={active}
+                            onClick={() => setFormData(prev => ({ ...prev, category: value }))}
+                            className={`flex items-center justify-center gap-2 rounded-xl border py-3 text-sm font-bold transition-all ${active
+                              ? value === "school" ? "border-sky-500/50 bg-sky-500/10 text-sky-300" : "border-violet-500/50 bg-violet-500/10 text-violet-300"
+                              : "border-zinc-800 bg-zinc-950/50 text-zinc-500 hover:text-zinc-300"}`}
+                          >
+                            <Icon className="w-4 h-4" /> {label}
+                          </button>
+                        );
+                      })}
+                    </div>
                   </div>
 
                   {/* School Name */}
                   <div className="space-y-2 group">
-                    <label className="text-[11px] font-bold uppercase tracking-widest text-zinc-500 group-focus-within:text-emerald-400 transition-colors">School Name</label>
+                    <label className="text-[11px] font-bold uppercase tracking-widest text-zinc-500 group-focus-within:text-brand-400 transition-colors">{formIsCenter ? "Center Name" : "School Name"}</label>
                     <div className="relative">
                       <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
-                        <School className="w-4 h-4 text-zinc-500 group-focus-within:text-emerald-400 transition-colors" />
+                        <School className="w-4 h-4 text-zinc-500 group-focus-within:text-brand-400 transition-colors" />
                       </div>
                       <input
                         type="text"
                         required
-                        placeholder="E.g. Central Robotics High"
-                        className="w-full bg-zinc-950/50 border border-zinc-800 rounded-xl py-3.5 pl-10 pr-4 text-sm text-white placeholder-zinc-600 focus:outline-none focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/50 transition-all font-medium"
+                        placeholder={formIsCenter ? "E.g. Radix Learning Center, Guwahati" : "E.g. Central Robotics High"}
+                        className="w-full bg-zinc-950/50 border border-zinc-800 rounded-xl py-3.5 pl-10 pr-4 text-sm text-white placeholder-zinc-600 focus:outline-none focus:border-brand-500/50 focus:ring-1 focus:ring-brand-500/50 transition-all font-medium"
                         value={formData.schoolName}
                         onChange={e => setFormData(prev => ({ ...prev, schoolName: e.target.value }))}
                       />
@@ -409,21 +474,21 @@ export default function SuperAdminPage() {
 
                   {/* Custom School ID */}
                   <div className="space-y-2 group">
-                    <label className="text-[11px] font-bold uppercase tracking-widest text-zinc-500 group-focus-within:text-emerald-400 transition-colors flex justify-between">
-                      <span>Custom School ID</span>
-                      <button type="button" onClick={generateRandomId} className="hover:text-emerald-300 text-emerald-500 flex items-center gap-1">
+                    <label className="text-[11px] font-bold uppercase tracking-widest text-zinc-500 group-focus-within:text-brand-400 transition-colors flex justify-between">
+                      <span>Login ID</span>
+                      <button type="button" onClick={generateRandomId} className="hover:text-brand-300 text-brand-500 flex items-center gap-1">
                         <Copy className="w-3 h-3" /> Auto
                       </button>
                     </label>
                     <div className="relative">
                       <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
-                        <Hash className="w-4 h-4 text-zinc-500 group-focus-within:text-emerald-400 transition-colors" />
+                        <Hash className="w-4 h-4 text-zinc-500 group-focus-within:text-brand-400 transition-colors" />
                       </div>
                       <input
                         type="text"
                         required
                         placeholder="RADIX-XXXX"
-                        className="w-full bg-zinc-950/50 border border-zinc-800 rounded-xl py-3.5 pl-10 pr-4 text-sm text-emerald-400 placeholder-zinc-600 focus:outline-none focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/50 transition-all font-bold tracking-wider"
+                        className="w-full bg-zinc-950/50 border border-zinc-800 rounded-xl py-3.5 pl-10 pr-4 text-sm text-brand-400 placeholder-zinc-600 focus:outline-none focus:border-brand-500/50 focus:ring-1 focus:ring-brand-500/50 transition-all font-bold tracking-wider"
                         value={formData.customSchoolId}
                         onChange={e => setFormData(prev => ({ ...prev, customSchoolId: e.target.value }))}
                       />
@@ -434,17 +499,17 @@ export default function SuperAdminPage() {
 
                   {/* Admin Password */}
                   <div className="space-y-2 group">
-                    <label className="text-[11px] font-bold uppercase tracking-widest text-zinc-500 group-focus-within:text-emerald-400 transition-colors">Admin Password</label>
+                    <label className="text-[11px] font-bold uppercase tracking-widest text-zinc-500 group-focus-within:text-brand-400 transition-colors">Admin Password</label>
                     <div className="relative">
                       <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
-                        <Key className="w-4 h-4 text-zinc-500 group-focus-within:text-emerald-400 transition-colors" />
+                        <Key className="w-4 h-4 text-zinc-500 group-focus-within:text-brand-400 transition-colors" />
                       </div>
                       <input
                         type="text"
                         required
                         minLength={6}
                         placeholder="Generated string..."
-                        className="w-full bg-zinc-950/50 border border-zinc-800 rounded-xl py-3.5 pl-10 pr-4 text-sm text-white placeholder-zinc-600 focus:outline-none focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/50 transition-all font-mono"
+                        className="w-full bg-zinc-950/50 border border-zinc-800 rounded-xl py-3.5 pl-10 pr-4 text-sm text-white placeholder-zinc-600 focus:outline-none focus:border-brand-500/50 focus:ring-1 focus:ring-brand-500/50 transition-all font-mono"
                         value={formData.password}
                         onChange={e => setFormData(prev => ({ ...prev, password: e.target.value }))}
                       />
@@ -461,7 +526,7 @@ export default function SuperAdminPage() {
                   <button
                     type="submit"
                     disabled={createStatus.loading}
-                    className="w-full bg-emerald-500 hover:bg-emerald-400 disabled:bg-zinc-800 disabled:text-zinc-600 text-zinc-950 py-3.5 rounded-xl font-bold tracking-wide transition-all flex items-center justify-center gap-2 mt-2 shadow-[0_0_20px_rgba(16,185,129,0.15)] hover:shadow-[0_0_25px_rgba(16,185,129,0.25)]"
+                    className="w-full bg-brand-500 hover:bg-brand-400 disabled:bg-zinc-800 disabled:text-zinc-600 text-zinc-950 py-3.5 rounded-xl font-bold tracking-wide transition-all flex items-center justify-center gap-2 mt-2 shadow-[0_0_20px_rgba(255,84,0,0.15)] hover:shadow-[0_0_25px_rgba(255,84,0,0.25)]"
                   >
                     {createStatus.loading ? (
                       <>

@@ -1,0 +1,2189 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Radix Pi Lab</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700;800&family=Barlow:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600;700&display=swap">
+<style>
+/* Layout: one-screen workbench on a blueprint grid — icon rail | header (brand, progress, clock) /
+   breadboard stage with floating tool dock | side panel (project, Build/Parts/Overview/Quiz tabs, Try it yourself) /
+   project strip along the bottom. Quick reference opens as a drawer. Stacks on small screens. */
+:root{
+  --paper:#F6EDDD; --paper-2:#EFE3CC; --card:#FBF6EC; --card-2:#F2E8D5;
+  --ink:#1E2B45; --ink-2:#3A4560; --muted:#7A7262; --line:#E0D3BA; --line-2:#CFC0A2;
+  --teal:#1F7A80; --teal-soft:rgba(31,122,128,.12);
+  --orange:#FF6A13; --orange-ink:#B84300; --orange-soft:#FFE7D4; --on-orange:#0C0C0D;
+  --plus:#D7372A; --good:#2E8B57; --good-soft:rgba(46,139,87,.12); --bad-soft:rgba(215,55,42,.09);
+  --tile:#EFE4CF;
+  --display:"Barlow Condensed","Arial Narrow",Arial,sans-serif;
+  --body:"Barlow","Segoe UI",system-ui,sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,Menlo,Consolas,monospace;
+  color-scheme:light;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{
+  background-color:var(--paper);
+  background-image:
+    linear-gradient(rgba(30,43,69,.055) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(30,43,69,.055) 1px,transparent 1px),
+    linear-gradient(rgba(30,43,69,.025) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(30,43,69,.025) 1px,transparent 1px);
+  background-size:120px 120px,120px 120px,24px 24px,24px 24px;
+  color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased;
+}
+h1,h2,h3,h4,p{margin:0}
+button,select,input{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--teal);outline-offset:2px}
+[hidden]{display:none!important}
+.kicker{font-family:var(--display);font-size:14px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--ink)}
+.tile{background:var(--tile);border-radius:10px;display:grid;place-items:center}
+
+/* ---------- frame ---------- */
+.app{display:grid;grid-template-columns:68px minmax(0,1fr);min-height:100dvh}
+.rail{position:sticky;top:0;height:100dvh;display:flex;flex-direction:column;align-items:center;gap:10px;padding:16px 0;border-right:1px solid var(--line);background:rgba(239,227,204,.55);backdrop-filter:blur(6px);z-index:20}
+.rbtn{width:46px;height:46px;border-radius:12px;border:0;background:none;color:var(--ink);display:grid;place-items:center;position:relative;transition:background .15s}
+.rbtn svg{width:24px;height:24px}
+.rbtn:hover{background:var(--card-2)}
+.rbtn[aria-pressed="true"]{background:var(--card);box-shadow:inset 0 0 0 1.5px var(--ink)}
+.rbtn .rtip{position:absolute;left:56px;top:50%;transform:translateY(-50%);white-space:nowrap;background:var(--ink);color:var(--paper);font-family:var(--display);font-size:13px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;padding:4px 9px;border-radius:6px;opacity:0;pointer-events:none;transition:opacity .15s}
+.rbtn:hover .rtip,.rbtn:focus-visible .rtip{opacity:1}
+.rail .sep{width:28px;height:1px;background:var(--line-2);margin:4px 0}
+.credit{margin-top:auto;writing-mode:vertical-rl;transform:rotate(180deg);font-family:var(--mono);font-size:10px;font-weight:700;letter-spacing:.24em;color:var(--muted);text-transform:uppercase;padding:10px 0;border-top:1px solid var(--line-2)}
+
+.shell{
+  display:grid;min-width:0;gap:14px 18px;padding:18px 22px 18px;
+  grid-template-columns:minmax(0,1fr) 430px;
+  grid-template-rows:auto minmax(0,1fr) auto;
+  grid-template-areas:"top top" "stage panel" "strip panel";
+  height:max(100dvh,780px);
+}
+@media (max-width:1280px){.shell{grid-template-columns:minmax(0,1fr) 380px}}
+
+/* ---------- header ---------- */
+.top{grid-area:top;display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:14px}
+.brand{display:flex;align-items:center;gap:16px;min-width:0}
+.mark{width:64px;height:40px;flex:none}
+.brand h1{font-family:var(--display);font-weight:600;font-size:38px;line-height:.95;letter-spacing:.16em;text-transform:uppercase;position:relative}
+.brand h1 b{font-weight:800;color:var(--orange)}
+.brand p{margin-top:6px;font-family:var(--display);font-size:16px;font-weight:600;letter-spacing:.32em;text-transform:uppercase;color:var(--muted)}
+.brand p i{font-style:normal;color:var(--line-2);margin:0 .35em}
+.topright{display:flex;align-items:stretch;gap:12px;flex-wrap:wrap}
+.progcard{display:grid;grid-template-columns:auto minmax(0,1fr);align-items:center;gap:4px 14px;border:1.5px solid var(--line-2);border-radius:12px;padding:10px 16px;background:var(--card);min-width:250px}
+.progcard svg{grid-row:1/3;width:34px;height:34px}
+.progcard .lbl{font-family:var(--display);font-size:15px;font-weight:700;letter-spacing:.1em;text-transform:uppercase}
+.progrow{display:flex;align-items:center;gap:12px}
+.pbar{flex:1;height:8px;border-radius:8px;background:var(--paper-2);overflow:hidden;box-shadow:inset 0 0 0 1px var(--line)}
+.pbar span{display:block;height:100%;width:0;background:var(--teal);border-radius:8px;transition:width .6s cubic-bezier(.2,.8,.2,1)}
+#count{font-family:var(--display);font-size:18px;font-weight:800;font-variant-numeric:tabular-nums}
+.clock{display:flex;flex-direction:column;justify-content:center;padding:6px 16px;border:1.5px solid var(--line-2);border-radius:12px;background:var(--card);font-family:var(--mono);font-size:14px;font-weight:500;letter-spacing:.14em;color:var(--muted);text-transform:uppercase;line-height:1.55;font-variant-numeric:tabular-nums}
+
+/* ---------- stage ---------- */
+.stage{grid-area:stage;position:relative;display:flex;flex-direction:column;min-height:0;min-width:0;border:1.5px solid var(--line-2);border-radius:18px;background:rgba(251,246,236,.45);padding:12px 14px 14px}
+.stage::before,.stage::after{content:"";position:absolute;width:14px;height:14px;border:2px solid var(--ink);opacity:.35;pointer-events:none}
+.stage::before{top:8px;left:8px;border-right:0;border-bottom:0}
+.stage::after{bottom:8px;right:8px;border-left:0;border-top:0}
+.stagebar{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:10px;padding-left:10px}
+.mode{display:inline-flex;align-items:center;gap:8px;font-family:var(--display);font-size:14px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ink)}
+.mode i{width:8px;height:8px;border-radius:50%;background:var(--line-2);box-shadow:0 0 0 3px var(--paper-2)}
+.mode.run i{background:var(--orange);animation:pulse 1.6s infinite}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(255,106,19,.55)}70%{box-shadow:0 0 0 9px rgba(255,106,19,0)}100%{box-shadow:0 0 0 0 rgba(255,106,19,0)}}
+.stage-view{position:relative;flex:1;min-height:0;display:grid;place-items:center;overflow:hidden;container-type:size}
+#svgwrap{perspective:1400px;width:min(100cqw,calc(100cqh * 520 / 436))}
+#svgwrap svg{width:100%;height:auto;display:block;user-select:none;-webkit-user-select:none;touch-action:manipulation;transition:transform .55s cubic-bezier(.2,.8,.2,1);transform-origin:50% 55%}
+#svgwrap.tilt svg{transform:rotateX(38deg) rotateZ(-10deg) scale(.86)}
+#svgwrap.zoomed svg{cursor:grab}
+#svgwrap.panning svg{cursor:grabbing}
+#view3d{position:absolute;inset:0;border-radius:12px;cursor:grab;touch-action:none}
+#view3d:active{cursor:grabbing}
+#view3d.over-part{cursor:pointer}
+#view3d canvas{display:block;width:100%;height:100%;outline:none;border-radius:12px}
+#view3d canvas:focus-visible{box-shadow:inset 0 0 0 2px var(--teal)}
+.loading3d{position:absolute;inset:auto 0 12px;margin:auto;width:max-content;padding:6px 14px;border-radius:99px;background:var(--ink);color:var(--paper);font-family:var(--display);font-size:14px;font-weight:600;letter-spacing:.08em;text-transform:uppercase}
+.legend{display:flex;flex-wrap:wrap;justify-content:center;gap:14px;font-family:var(--mono);font-size:11.5px;color:var(--ink-2);margin-bottom:6px}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.legend i{width:11px;height:11px;border-radius:3px;display:inline-block}
+.dockwrap{display:flex;flex-direction:column;align-items:center;gap:8px}
+.hintpill{background:var(--ink-2);color:#F6EDDD;font-size:11.5px;font-weight:600;padding:3px 12px;border-radius:99px;opacity:.85}
+.dock{display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:4px;padding:5px;border-radius:14px;border:1.5px solid var(--line-2);background:var(--card);box-shadow:0 10px 24px -14px rgba(30,43,69,.45)}
+.dock .div{width:1px;height:22px;background:var(--line-2);margin:0 4px}
+.seg{display:inline-flex;gap:2px}
+.seg button{border:0;background:none;color:var(--ink-2);height:34px;min-width:34px;padding:0 11px;border-radius:9px;font-family:var(--display);font-weight:700;font-size:14px;letter-spacing:.06em;text-transform:uppercase;display:inline-flex;align-items:center;justify-content:center;gap:6px;transition:background .15s}
+.seg button:hover:not(:disabled){background:var(--card-2)}
+.seg button[aria-pressed="true"]{background:var(--teal-soft);color:var(--teal);box-shadow:inset 0 0 0 1.5px rgba(31,122,128,.45)}
+.seg button:disabled{opacity:.35;cursor:default}
+.seg svg{width:16px;height:16px}
+#vtabs .seg{background:var(--card);border:1.5px solid var(--line-2);border-radius:12px;padding:3px}
+.tipbox{position:absolute;pointer-events:none;background:var(--ink);color:#F6EDDD;font-size:13px;font-weight:600;padding:8px 11px;border-radius:9px;box-shadow:0 12px 28px rgba(30,43,69,.35);max-width:260px;z-index:5;line-height:1.35}
+.tipbox small{display:block;font-weight:500;color:#C9C1AE;margin-top:2px;font-size:11.5px}
+.hit{cursor:pointer}
+.spot{filter:drop-shadow(0 0 3px #FF6A13) drop-shadow(0 0 9px rgba(255,106,19,.8))}
+.ring2{fill:none;stroke:#FF6A13;stroke-width:2;animation:ring .8s ease-out infinite;transform-box:fill-box;transform-origin:center}
+@keyframes ring{from{opacity:.9;transform:scale(.75)}to{opacity:0;transform:scale(1.4)}}
+.flowline{fill:none;stroke:#FFF3E6;stroke-width:1.5;stroke-linecap:round;stroke-dasharray:1.5 9;animation:flow .9s linear infinite}
+@keyframes flow{to{stroke-dashoffset:-10.5}}
+.newring{fill:none;stroke:#FF6A13;stroke-width:1.6;animation:blink 1.2s ease-in-out infinite}
+@keyframes blink{50%{opacity:.25}}
+.xr .part{opacity:.5}
+
+/* ---------- side panel ---------- */
+.panel{grid-area:panel;display:flex;flex-direction:column;gap:12px;min-height:0;min-width:0}
+.phead{display:grid;grid-template-columns:60px minmax(0,1fr);gap:4px 14px;align-items:center;border:1.5px solid var(--line-2);border-radius:14px;background:var(--card);padding:14px}
+.phead .tile{width:60px;height:60px;grid-row:1/3;border-radius:12px}
+.phead .tile svg{width:46px;height:46px}
+.phtop{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.pnum{font-family:var(--mono);font-size:12px;font-weight:700;color:var(--orange-ink)}
+.phead h2{font-family:var(--display);font-size:28px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;line-height:1.05}
+.phead p{grid-column:1/-1;margin-top:6px;color:var(--ink-2);font-size:14.5px}
+.pill{display:inline-flex;align-items:center;gap:5px;font-family:var(--mono);font-size:10.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);border:1px solid var(--line-2);border-radius:99px;padding:2px 9px}
+.pill i{width:6px;height:6px;border-radius:2px;background:var(--line-2)}
+.pill i.on{background:var(--orange)}
+.builtbtn{grid-column:1/-1;margin-top:8px;display:inline-flex;align-items:center;justify-content:center;gap:8px;border:1.5px solid var(--ink);border-radius:10px;padding:9px 16px;min-height:42px;font-family:var(--display);font-size:15px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;background:transparent;color:var(--ink);transition:background .15s,color .15s}
+.builtbtn:hover{background:var(--ink);color:var(--paper)}
+.builtbtn[aria-pressed="true"]{background:var(--teal);border-color:var(--teal);color:#fff}
+
+.tabs{display:flex;gap:2px;border-bottom:1.5px solid var(--line-2);overflow-x:auto;scrollbar-width:none}
+.tab{border:0;background:none;padding:8px 12px 10px;font-family:var(--display);font-size:16px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);white-space:nowrap;position:relative}
+.tab:hover{color:var(--ink)}
+.tab[aria-selected="true"]{color:var(--ink);font-weight:700}
+.tab[aria-selected="true"]::after{content:"";position:absolute;left:8px;right:8px;bottom:-1.5px;height:3px;border-radius:3px;background:var(--ink)}
+.tabpanel{flex:1;min-height:0;overflow:auto;border:1.5px solid var(--line-2);border-radius:14px;background:var(--card);padding:14px 16px;scrollbar-width:thin}
+
+/* build guide */
+.ghead{display:flex;justify-content:space-between;align-items:center;font-family:var(--display);font-size:14px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:8px}
+.gprog{height:4px;background:var(--paper-2);border-radius:4px;overflow:hidden;margin-bottom:8px}
+.gprog span{display:block;height:100%;background:var(--teal);transition:width .35s ease}
+.glist{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:2px}
+.gbtn{display:grid;grid-template-columns:28px minmax(0,1fr);gap:12px;align-items:start;text-align:left;width:100%;border:0;background:none;padding:9px 8px;border-radius:10px;color:var(--ink-2);font-size:14.5px;line-height:1.45}
+.gbtn:hover{background:var(--card-2)}
+.gbtn .b{width:26px;height:26px;border-radius:50%;display:grid;place-items:center;font-family:var(--mono);font-size:12px;font-weight:700;border:1.5px solid var(--line-2);color:var(--muted);background:var(--card)}
+.gbtn.done .b{border-color:var(--teal);color:var(--teal)}
+.gbtn[aria-current="step"]{background:var(--teal-soft);color:var(--ink)}
+.gbtn[aria-current="step"] .b{background:var(--teal);border-color:var(--teal);color:#fff}
+.gbtn .t b{color:var(--ink);font-weight:700;font-family:var(--mono);font-size:13px}
+#tp-build:not([hidden]){display:flex;flex-direction:column;overflow:hidden;padding-bottom:0}
+#tp-build .glist{flex:1;min-height:0;overflow:auto;scrollbar-width:thin}
+.gctl{display:flex;align-items:center;gap:8px;padding:10px 0 12px;margin-top:6px;border-top:1.5px solid var(--line)}
+.ibtn{width:42px;height:42px;border-radius:50%;border:1.5px solid var(--line-2);background:var(--card);color:var(--ink);display:grid;place-items:center}
+.ibtn:hover:not(:disabled){border-color:var(--ink)}
+.ibtn:disabled{opacity:.35;cursor:default}
+.ibtn.play{background:var(--ink);border-color:var(--ink);color:var(--paper)}
+.ibtn svg{width:16px;height:16px}
+.gctl .hint{margin-left:auto;font-family:var(--mono);font-size:11px;color:var(--muted)}
+
+/* parts tray */
+.trayhead{display:flex;flex-direction:column;gap:2px;margin-bottom:12px}
+.trayhead span{font-size:13.5px;color:var(--muted)}
+.trayhead b{color:var(--ink)}
+.traygrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(118px,1fr));gap:10px}
+.pcard{background:var(--paper);border:1.5px solid var(--line);border-radius:12px;padding:8px 8px 10px;display:flex;flex-direction:column;gap:6px;position:relative;transition:transform .15s,border-color .15s}
+.pcard:hover,.pcard:focus-within{border-color:var(--teal);transform:translateY(-2px)}
+.pcard .tile{aspect-ratio:4/3;border-radius:9px;background:var(--card)}
+.pcard .tile svg{width:58%;height:auto}
+.pcard .pn{font-weight:700;font-size:13.5px;line-height:1.2;padding:0 2px}
+.pcard .pq{font-family:var(--mono);font-size:11px;color:var(--muted);padding:0 2px}
+.got{border:1.5px solid var(--line-2);background:var(--card);border-radius:99px;padding:5px 10px;font-size:12.5px;font-weight:700;min-height:32px;display:inline-flex;align-items:center;justify-content:center;gap:6px}
+.got[aria-pressed="true"]{background:var(--teal);border-color:var(--teal);color:#fff}
+.pcard.ok::after{content:"";position:absolute;top:12px;right:12px;width:20px;height:20px;border-radius:50%;background:var(--teal) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'%3E%3Cpath d='M2 5.2 4.2 7.4 8 3' fill='none' stroke='%23fff' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/11px no-repeat}
+
+/* overview + quiz */
+.info{display:flex;flex-direction:column;gap:12px}
+.icard{border:1.5px solid var(--line);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:8px;background:var(--paper)}
+.icard p{color:var(--ink-2)}
+.icard.ink{background:var(--ink);border-color:var(--ink)}
+.icard.ink .kicker{color:#FFB27A}
+.icard.ink p{color:#F6EDDD}
+.tipcard{background:var(--orange-soft);border-color:#F6CBA8}
+.flowbox{display:flex;flex-direction:column;gap:12px;overflow-x:auto}
+.flowlabel{font-size:12.5px;font-weight:700;color:var(--muted);margin-bottom:4px}
+.flow{display:flex;flex-wrap:wrap;align-items:center;gap:6px}
+.node{font-family:var(--mono);font-size:12px;padding:4px 9px;border-radius:7px;border:1.5px solid var(--line-2);background:var(--card);display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+.node.pos{background:var(--plus);color:#fff;border-color:transparent}
+.node.neg{background:var(--ink);color:var(--paper);border-color:transparent}
+.node.res{border-color:var(--orange)}
+.node .led{width:9px;height:9px;border-radius:50%;border:1px solid rgba(0,0,0,.25)}
+.arrow{color:var(--muted);font-family:var(--mono);font-size:13px}
+.quiz{display:flex;flex-direction:column;gap:12px}
+.quiz .q{font-family:var(--display);font-weight:700;font-size:22px;line-height:1.15}
+.opts{display:grid;gap:8px}
+.opt{text-align:left;border:1.5px solid var(--line-2);background:var(--paper);border-radius:12px;padding:11px 12px;font-weight:600;min-height:46px;display:flex;gap:10px;align-items:flex-start}
+.opt .k{font-family:var(--mono);font-size:12px;width:22px;height:22px;flex:none;border-radius:6px;border:1.5px solid var(--line-2);display:grid;place-items:center;background:var(--card)}
+.opt:hover:not(:disabled){border-color:var(--ink)}
+.opt.right{border-color:var(--good);background:var(--good-soft)}
+.opt.right .k{background:var(--good);border-color:var(--good);color:#fff}
+.opt.wrong{border-color:var(--plus);background:var(--bad-soft)}
+.opt:disabled{cursor:default}
+.qfeed{font-size:14.5px;color:var(--ink-2)}
+.qfeed b{color:var(--good)}
+.qfeed b.no{color:var(--plus)}
+
+/* try it yourself */
+.try{border:1.5px solid var(--line-2);border-radius:14px;background:var(--card);overflow:hidden}
+.tryhead{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;border-bottom:1.5px solid var(--line)}
+.runpanel{display:flex;flex-direction:column;gap:12px;padding:12px 14px 14px}
+.rp-row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.rp-label{display:none}
+.ctl{display:inline-flex;align-items:center;gap:10px;border:1.5px solid var(--line-2);background:var(--paper);color:var(--ink);border-radius:10px;padding:8px 14px;min-height:42px;font-weight:700;user-select:none;-webkit-user-select:none;touch-action:none;transition:background .12s,transform .08s}
+.ctl small{font-family:var(--mono);font-size:10px;font-weight:700;letter-spacing:.12em;color:var(--muted)}
+.ctl[aria-pressed="true"]{background:var(--orange);border-color:var(--orange);color:var(--on-orange);transform:translateY(1px)}
+.ctl[aria-pressed="true"] small{color:#3A1A05}
+.tog{width:30px;height:18px;border-radius:99px;background:var(--line-2);position:relative;flex:none}
+.tog::after{content:"";position:absolute;top:3px;left:3px;width:12px;height:12px;border-radius:50%;background:#fff;transition:left .15s}
+.ctl[aria-pressed="true"] .tog{background:var(--ink)}
+.ctl[aria-pressed="true"] .tog::after{left:15px;background:var(--orange)}
+.rng{display:flex;flex-direction:column;gap:6px;font-size:14px;font-weight:700;flex:1 1 220px;min-width:0;background:var(--paper);border:1.5px solid var(--line-2);border-radius:10px;padding:8px 12px}
+.rng span{display:flex;justify-content:space-between}
+.rng b{font-family:var(--mono);font-weight:700;color:var(--orange-ink)}
+.rng input{width:100%;accent-color:var(--orange)}
+.outs{display:flex;flex-wrap:wrap;gap:6px;padding:10px;border-radius:10px;background:var(--ink);min-height:44px;align-items:center}
+.outs:empty::before{content:"Outputs appear here";font-family:var(--mono);font-size:12px;color:#8E97AB}
+.out{display:inline-flex;align-items:center;gap:8px;font-family:var(--mono);font-size:12px;border:1px solid #33405E;border-radius:99px;padding:4px 10px;color:#AEB6C8}
+.out i{width:9px;height:9px;border-radius:50%;background:#3A3A40}
+.out.on{color:#fff;border-color:#55638A}
+.snd{display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--muted);margin-left:auto}
+.snd input{accent-color:var(--orange);width:16px;height:16px}
+.cta{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;color:var(--ink-2);font-size:14px}
+.cta button{border:0;border-radius:10px;background:var(--ink);color:var(--paper);font-family:var(--display);font-size:15px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:10px 16px;min-height:42px;display:inline-flex;align-items:center;gap:8px}
+.cta button:hover{background:var(--teal)}
+.playsq{width:34px;height:34px;border-radius:9px;border:0;background:var(--ink);color:var(--paper);display:grid;place-items:center}
+.playsq:hover{background:var(--teal)}
+.playsq svg{width:14px;height:14px}
+
+/* ---------- project strip ---------- */
+.strip{grid-area:strip;display:flex;flex-direction:column;gap:8px;min-width:0}
+.striphead{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.striphead select{background:var(--card);border:1.5px solid var(--line-2);border-radius:9px;padding:5px 10px;font-size:13.5px;min-height:34px}
+.striphead label{font-size:13px;color:var(--muted);display:flex;align-items:center;gap:8px;margin-left:auto}
+.stripnav{display:flex;gap:6px}
+.stripnav button{width:34px;height:34px;border-radius:50%;border:1.5px solid var(--line-2);background:var(--card);display:grid;place-items:center;color:var(--ink)}
+.stripnav button:hover{border-color:var(--ink)}
+.stripnav svg{width:14px;height:14px}
+#navlist{position:relative;display:flex;gap:10px;overflow-x:auto;scroll-snap-type:x proximity;padding:2px 2px 6px;scrollbar-width:thin;scroll-behavior:smooth}
+.item{flex:0 0 auto;scroll-snap-align:start;display:flex;align-items:center;gap:10px;min-width:210px;max-width:260px;padding:8px 12px 8px 8px;border:1.5px solid var(--line-2);border-radius:12px;background:var(--card);text-align:left;position:relative;transition:border-color .15s,transform .15s,box-shadow .15s}
+.item:hover{border-color:var(--ink-2);transform:translateY(-2px)}
+.item .tile{width:56px;height:56px;flex:none;background:var(--paper)}
+.item .tile svg{width:44px;height:44px}
+.item .tx{display:flex;flex-direction:column;min-width:0;flex:1}
+.item .no{font-family:var(--mono);font-size:10.5px;font-weight:700;color:var(--muted);letter-spacing:.06em}
+.item .nm{font-family:var(--display);font-weight:700;font-size:16px;letter-spacing:.06em;text-transform:uppercase;line-height:1.1}
+.item .chev{width:16px;height:16px;color:var(--muted);flex:none}
+.item[aria-current="true"]{border:2px solid var(--teal);background:#FFFBF3;box-shadow:0 8px 20px -12px rgba(31,122,128,.6)}
+.item[aria-current="true"] .chev{color:var(--teal)}
+.item.dim{opacity:.35}
+.check{position:absolute;top:-7px;right:-7px;width:20px;height:20px;border-radius:50%;background:var(--teal);display:grid;place-items:center;box-shadow:0 0 0 2px var(--paper)}
+.check svg{width:10px;height:10px}
+
+/* ---------- reference drawer ---------- */
+.scrim{position:fixed;inset:0;background:rgba(30,43,69,.35);opacity:0;visibility:hidden;transition:opacity .25s,visibility .25s;z-index:40}
+.scrim.open{opacity:1;visibility:visible}
+.drawer{position:fixed;top:0;right:0;bottom:0;width:min(760px,100%);background:var(--paper);border-left:1.5px solid var(--line-2);box-shadow:-30px 0 60px -30px rgba(30,43,69,.5);transform:translateX(100%);transition:transform .35s cubic-bezier(.2,.8,.2,1);z-index:50;display:flex;flex-direction:column}
+.drawer.open{transform:none}
+.drawerhead{display:flex;justify-content:space-between;align-items:center;padding:18px 22px;border-bottom:1.5px solid var(--line-2)}
+.drawerhead h2{font-family:var(--display);font-size:28px;font-weight:700;letter-spacing:.12em;text-transform:uppercase}
+.drawerbody{overflow:auto;padding:18px 22px 28px}
+.refgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px}
+.rcard{background:var(--card);border:1.5px solid var(--line-2);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:10px;min-width:0}
+.rcard h3{font-family:var(--display);font-size:19px;font-weight:700;letter-spacing:.08em;text-transform:uppercase}
+.rcard p,.rcard ul{margin:0;color:var(--ink-2);font-size:14.5px}
+.rcard ul{padding-left:18px;display:flex;flex-direction:column;gap:5px}
+.rcard svg{max-width:100%;height:auto}
+.rtable{width:100%;border-collapse:collapse;font-size:14px}
+.rtable td{padding:7px 0;border-bottom:1px solid var(--line)}
+.rtable td:last-child{text-align:right;font-family:var(--mono);font-variant-numeric:tabular-nums;color:var(--orange-ink);font-weight:700}
+.decoder{grid-column:1/-1}
+.dec-body{display:flex;flex-wrap:wrap;gap:20px;align-items:center}
+.selects{display:flex;flex-wrap:wrap;gap:12px}
+.sel{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--muted)}
+.sel select{background:var(--paper);border:1.5px solid var(--line-2);border-radius:9px;padding:7px 10px;min-height:40px}
+.value{font-family:var(--display);font-size:42px;font-weight:800;font-variant-numeric:tabular-nums}
+.presets{display:flex;flex-wrap:wrap;gap:6px}
+.chip{border:1.5px solid var(--line-2);background:var(--paper);border-radius:99px;padding:5px 13px;font-size:14px;font-weight:700;min-height:36px}
+.chip:hover{border-color:var(--ink)}
+.svgink{fill:none;stroke:var(--ink);stroke-width:2;stroke-linecap:round}
+.svgtext{fill:var(--ink);font-family:var(--mono);font-size:13px}
+.svgbody{fill:var(--ink)}
+
+.burst{position:fixed;width:8px;height:8px;border-radius:2px;pointer-events:none;z-index:60;animation:burst .95s cubic-bezier(.15,.7,.3,1) forwards}
+@keyframes burst{to{transform:translate(var(--dx),var(--dy)) rotate(var(--r));opacity:0}}
+
+.apptabs{display:inline-flex;gap:2px;padding:4px;border-radius:12px;border:1.5px solid var(--line-2);background:var(--card);margin-left:8px}
+.apptabs a{display:inline-flex;align-items:center;gap:8px;padding:7px 14px;border-radius:9px;font-family:var(--display);font-size:15px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);text-decoration:none;transition:background .15s,color .15s}
+.apptabs a:hover{color:var(--ink);background:var(--card-2)}
+.apptabs a[aria-current="page"]{background:var(--ink);color:var(--paper)}
+.apptabs svg{width:16px;height:16px}
+@media (max-width:1020px){.apptabs{margin-left:0}}
+
+/* ---------- small screens: stack, rail becomes a bottom tab bar ---------- */
+@media (max-width:1020px){
+  .app{grid-template-columns:minmax(0,1fr)}
+  .rail{position:fixed;top:auto;bottom:0;left:0;right:0;height:auto;flex-direction:row;justify-content:space-around;padding:6px 8px calc(6px + env(safe-area-inset-bottom,0px));border-right:0;border-top:1px solid var(--line-2);background:rgba(246,237,221,.95)}
+  .rail .sep,.credit,.rbtn .rtip{display:none}
+  .shell{height:auto;align-content:start;grid-template-columns:minmax(0,1fr);grid-template-rows:none;grid-template-areas:"top" "stage" "strip" "panel";padding:14px 14px 90px}
+  .stage-view{container-type:normal}
+  .stage-view.is3d{aspect-ratio:1/1;min-height:320px}
+  #svgwrap{width:100%}
+  #tp-build:not([hidden]){display:block;overflow:visible;padding-bottom:4px}
+  #tp-build .glist{overflow:visible}
+  .stage-view{padding:6px 0}
+  .tabpanel{max-height:none;overflow:visible}
+  .brand h1{font-size:28px}
+  .brand p{font-size:13px;letter-spacing:.24em}
+  .mark{width:48px;height:30px}
+  .progcard{flex:1;min-width:0}
+  .topright{width:100%}
+  .top .brand{flex-wrap:wrap}
+  .apptabs{width:100%}
+  .apptabs a{flex:1;justify-content:center}
+}
+@media (max-width:520px){
+  .clock{display:none}
+  .item{min-width:190px}
+  .dock .div{display:none}
+}
+@media (prefers-reduced-motion:reduce){.flowline,.ring2,.newring,.mode.run i{animation:none}#svgwrap svg,.gprog span,.pbar span,.drawer{transition:none}.burst{display:none}}
+
+/* ---------- Arduino lab additions ---------- */
+.apptabs{display:inline-flex;gap:2px;padding:4px;border-radius:12px;border:1.5px solid var(--line-2);background:var(--card);margin-left:8px}
+.apptabs a{display:inline-flex;align-items:center;gap:8px;padding:7px 14px;border-radius:9px;font-family:var(--display);font-size:15px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);text-decoration:none;transition:background .15s,color .15s}
+.apptabs a:hover{color:var(--ink);background:var(--card-2)}
+.apptabs a[aria-current="page"]{background:var(--ink);color:var(--paper)}
+.apptabs svg{width:16px;height:16px}
+@media (max-width:1020px){.apptabs{margin-left:0}}
+
+.panel{overflow-y:auto;scrollbar-width:thin;padding-right:2px}
+.panel>*{flex-shrink:0}
+.panel .tabpanel{flex:none;max-height:300px}
+.keypoints{display:grid;gap:8px;margin-top:4px}
+.keypoints li{display:flex;gap:10px;align-items:flex-start;list-style:none;padding:9px 10px;border-radius:10px;background:var(--paper);border:1.5px solid var(--line)}
+.keypoints ul{margin:0;padding:0;display:grid;gap:8px}
+.kpi{width:28px;height:28px;flex:none;border-radius:8px;display:grid;place-items:center;background:var(--teal-soft);color:var(--teal)}
+.kpi svg{width:16px;height:16px}
+.ov p{color:var(--ink-2)}
+.ov h3{font-family:var(--display);font-size:24px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;margin-bottom:4px}
+.pintable{width:100%;border-collapse:collapse;font-size:14px}
+.pintable th{text-align:left;font-family:var(--display);font-size:13px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);padding:6px 6px;border-bottom:1.5px solid var(--line-2)}
+.pintable td{padding:8px 6px;border-bottom:1px solid var(--line);vertical-align:top;color:var(--ink-2)}
+.pintable tr{cursor:default;transition:background .15s}
+.pintable tbody tr:hover{background:var(--teal-soft)}
+.pinchip{display:inline-block;font-family:var(--mono);font-size:12px;font-weight:700;padding:2px 8px;border-radius:6px;background:var(--ink);color:var(--paper);white-space:nowrap}
+.steps{margin:0;padding:0;list-style:none;display:grid;gap:8px;counter-reset:st}
+.steps li{display:grid;grid-template-columns:28px minmax(0,1fr);gap:10px;font-size:14.5px;color:var(--ink-2);counter-increment:st}
+.steps li::before{content:counter(st);width:26px;height:26px;border-radius:50%;display:grid;place-items:center;font-family:var(--mono);font-size:12px;font-weight:700;background:var(--teal);color:#fff}
+.how{margin-top:14px;padding:12px;border-radius:12px;background:var(--orange-soft);border:1.5px solid #F6CBA8}
+.how ul{margin:6px 0 0;padding-left:18px;display:grid;gap:4px;font-size:14px;color:var(--ink-2)}
+.how code,.steps code,.ov code{font-family:var(--mono);font-size:12.5px;background:var(--card);border:1px solid var(--line);border-radius:5px;padding:0 4px;color:var(--orange-ink)}
+.specgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
+.spec{padding:10px 12px;border-radius:10px;background:var(--paper);border:1.5px solid var(--line)}
+.spec small{display:block;font-family:var(--display);font-size:12px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.spec b{font-family:var(--mono);font-size:14px;color:var(--ink)}
+
+/* code editor */
+.tryhead .tools2{display:flex;gap:6px}
+.sqbtn{width:34px;height:34px;border-radius:9px;border:1.5px solid var(--line-2);background:var(--card);display:grid;place-items:center;color:var(--ink)}
+.sqbtn:hover{border-color:var(--ink)}
+.sqbtn svg{width:15px;height:15px}
+.sqbtn.run{background:var(--ink);border-color:var(--ink);color:var(--paper)}
+.sqbtn.run:hover{background:var(--teal);border-color:var(--teal)}
+.sqbtn.run.stop{background:var(--plus);border-color:var(--plus)}
+.editor{font-variant-ligatures:none;display:grid;grid-template-columns:38px minmax(0,1fr);height:230px;margin:10px 14px 0;border:1.5px solid var(--line-2);border-radius:10px;background:#FFFDF8;overflow:hidden;font-family:var(--mono);font-size:13px;line-height:1.6}
+.gutter{padding:10px 0;text-align:right;color:#B3A98F;background:var(--paper);border-right:1px solid var(--line);overflow:hidden;user-select:none}
+.gutter div{padding-right:8px}
+.gutter .err{color:#fff;background:var(--plus)}
+.codebox{position:relative;overflow:hidden}
+.codebox pre,.codebox textarea{position:absolute;inset:0;margin:0;padding:10px 12px;font:inherit;line-height:inherit;white-space:pre;tab-size:2;overflow:auto;border:0}
+.codebox pre{pointer-events:none;color:var(--ink);overflow:hidden}
+.codebox textarea{resize:none;background:transparent;color:transparent;caret-color:var(--ink);outline:none}
+.codebox textarea::selection{background:rgba(31,122,128,.25);color:transparent}
+.tk-kw{color:#7C3AED}.tk-ty{color:#1F7A80;font-weight:600}.tk-fn{color:#C2410C}.tk-k{color:#1D4ED8;font-weight:600}.tk-n{color:#0E7490}.tk-s{color:#15803D}.tk-c{color:#A0937A;font-style:italic}.tk-pp{color:#B45309}
+.inputsrow{display:flex;flex-wrap:wrap;gap:8px;padding:10px 14px 0}
+.inputsrow:empty{display:none}
+.serial{margin:10px 14px 14px;border-radius:10px;background:var(--ink);overflow:hidden}
+.serialhead{display:flex;align-items:center;gap:10px;padding:8px 12px;border-bottom:1px solid #33405E}
+.serialhead .kicker{color:#E9E0CC;font-size:13px}
+.sstat{display:inline-flex;align-items:center;gap:6px;font-family:var(--mono);font-size:11px;color:#AEB6C8;margin-left:auto}
+.sstat i{width:8px;height:8px;border-radius:50%;background:#55638A}
+.sstat.on i{background:#3DDC84;box-shadow:0 0 8px #3DDC84}
+.sstat.err i{background:#FF5A5F}
+.serialhead button{border:0;background:none;color:#AEB6C8;font-size:12px;font-weight:600}
+.serialhead button:hover{color:#fff}
+#serial{margin:0;height:104px;overflow:auto;padding:8px 12px;font-family:var(--mono);font-size:12.5px;line-height:1.5;color:#D8E2F5;white-space:pre-wrap;word-break:break-word}
+#serial .e{color:#FF8A8D}
+#serial .s{color:#7F8BA8}
+
+/* 3D hotspots */
+.hotspots{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+.hs{position:absolute;left:0;top:0;transform:translate(-50%,-50%);pointer-events:auto}
+.hs .pin{width:11px;height:11px;border-radius:50%;background:var(--teal);box-shadow:0 0 0 4px rgba(31,122,128,.25);display:block;margin:auto;animation:hsp 2s ease-in-out infinite}
+@keyframes hsp{50%{box-shadow:0 0 0 9px rgba(31,122,128,.08)}}
+.hs .card{position:absolute;left:16px;top:-6px;width:max-content;max-width:190px;padding:4px 9px;border-radius:10px;background:rgba(251,246,236,.95);border:1.5px solid var(--line-2);box-shadow:0 8px 20px -10px rgba(30,43,69,.5)}
+.hs .card b{display:block;font-family:var(--display);font-size:12.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--ink)}
+.hs .card span{display:none;font-size:12px;color:var(--ink-2);line-height:1.35;margin-top:2px}
+.hs:hover,.hs:focus{z-index:2}
+.hs.left .card{left:auto;right:18px}
+.hs:hover .card span,.hs:focus .card span{display:block}
+.bench-note{position:absolute;left:12px;top:44px;max-width:280px;padding:8px 12px;border-radius:10px;background:rgba(30,43,69,.9);color:#F6EDDD;font-size:12.5px;line-height:1.4;pointer-events:none}
+.bench-note:empty{display:none}
+.item .tile svg{width:44px;height:44px}
+.donebadge{display:inline-flex;align-items:center;gap:6px}
+@media (max-width:1020px){
+  #stageview{aspect-ratio:1/1;min-height:320px;flex:none}
+  .top .brand{flex-wrap:wrap}
+  .apptabs{width:100%}
+  .apptabs a{flex:1;justify-content:center}
+  .panel{overflow:visible}
+  .panel .tabpanel{max-height:none}
+}
+
+/* ---------- ESP lab additions ---------- */
+.boardpick{display:inline-flex;align-items:center;gap:8px;font-family:var(--display);font-size:14px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.boardpick select{font-family:var(--body);font-size:14px;font-weight:600;letter-spacing:0;text-transform:none;color:var(--ink);background:var(--card);border:1.5px solid var(--line-2);border-radius:10px;padding:5px 10px;min-height:34px}
+.phone{position:absolute;right:14px;top:10px;width:230px;height:min(400px,calc(100% - 24px));border-radius:26px;background:#14161C;padding:10px 8px 14px;box-shadow:0 24px 48px -18px rgba(30,43,69,.6);display:flex;flex-direction:column;z-index:3;animation:phoneIn .45s cubic-bezier(.2,.8,.2,1) both}
+@keyframes phoneIn{from{opacity:0;transform:translateY(16px) scale(.96)}to{opacity:1;transform:none}}
+.phone::before{content:"";display:block;width:60px;height:6px;border-radius:6px;background:#2A2D36;margin:0 auto 8px}
+.phonebar{display:flex;align-items:center;gap:6px;padding:6px 8px;border-radius:10px 10px 0 0;background:#E9E4D8;font-family:var(--mono);font-size:11px;color:#3A4560}
+.phonebar #purl{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.phonebar .lock{width:8px;height:8px;border-radius:50%;background:#2FB36A}
+.phonebar button{border:0;background:none;font-size:14px;color:#3A4560;padding:0 2px}
+.phonebody{flex:1;overflow:auto;background:#fff;border-radius:0 0 12px 12px;padding:12px;font-family:-apple-system,"Segoe UI",Roboto,sans-serif;font-size:14px;color:#111;line-height:1.45}
+.phonebody h1{font-size:20px;margin:0 0 8px}
+.phonebody p{margin:0 0 8px}
+.phonebody a{display:inline-block;margin:2px 4px 2px 0;padding:6px 12px;border-radius:8px;background:#1F7A80;color:#fff;text-decoration:none;font-weight:600}
+.phonebody a:nth-of-type(2n){background:#1E2B45}
+.phonebody form{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:0 0 8px}
+.phonebody input[type=range]{flex:1 1 100%;accent-color:#1F7A80}
+.phonebody input[type=number]{width:84px;padding:6px 8px;border:1px solid #CBD2DC;border-radius:8px;font:inherit}
+.phonebody input[type=submit]{padding:6px 14px;border:0;border-radius:8px;background:#FF6A13;color:#fff;font:inherit;font-weight:600;cursor:pointer}
+.phonebody .err{color:#B42318;font-family:var(--mono);font-size:12px}
+.phonebody .wait{color:#667085;font-size:13px}
+@media (max-width:1020px){.phone{width:190px;height:min(330px,calc(100% - 20px))}}
+.wifichip{display:flex;flex-wrap:wrap;align-items:center;gap:8px;width:100%;padding:8px 12px;border-radius:10px;background:var(--paper);border:1.5px solid var(--line-2);font-size:13px;color:var(--ink-2)}
+.wifichip b{font-family:var(--mono);color:var(--ink)}
+.wifidot{width:9px;height:9px;border-radius:50%;background:var(--line-2);flex:none}
+.wifidot.connecting{background:#F5A524;animation:hsp 1s infinite}
+.wifidot.connected{background:#2FB36A}
+.wifidot.failed{background:#E5484D}
+.wifidot.scan{background:#3E8EF7}
+.unavail{padding:12px 14px;border-radius:12px;background:#FFF1E6;border:1.5px solid #F6CBA8;color:#7A3A0B;font-size:14px;margin-bottom:10px}
+.unavail b{color:#5A2A05}
+.item.na{opacity:.45}
+.item.na .no::after{content:" · not on this board";color:var(--plus)}
+.drawerlede{color:var(--ink-2);margin-bottom:12px}
+.boardgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px}
+.bcard{display:flex;flex-direction:column;gap:6px;text-align:left;padding:12px;border-radius:14px;border:1.5px solid var(--line-2);background:var(--card);transition:border-color .15s,transform .15s}
+.bcard:hover{transform:translateY(-2px);border-color:var(--ink-2)}
+.bcard[aria-pressed="true"]{border:2px solid var(--teal);background:#FFFBF3}
+.bcard b{font-family:var(--display);font-size:18px;font-weight:700;letter-spacing:.06em;text-transform:uppercase}
+.bcard small{font-family:var(--mono);font-size:11px;color:var(--orange-ink)}
+.bcard span{font-size:13px;color:var(--ink-2);line-height:1.4}
+.bcard .tags{display:flex;flex-wrap:wrap;gap:4px}
+.bcard .tags i{font-style:normal;font-family:var(--mono);font-size:10.5px;padding:2px 7px;border-radius:99px;background:var(--paper-2);color:var(--ink-2)}
+.famh{margin:22px 0 10px;font-family:var(--display);font-size:22px;font-weight:700;letter-spacing:.08em;text-transform:uppercase}
+.famwrap{overflow-x:auto;border:1.5px solid var(--line-2);border-radius:14px;background:var(--card)}
+.famtable{border-collapse:collapse;width:100%;min-width:760px;font-size:13px}
+.famtable th{text-align:left;font-family:var(--display);font-size:12.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);background:var(--paper);padding:8px 10px;border-bottom:1.5px solid var(--line-2);white-space:nowrap}
+.famtable td{padding:8px 10px;border-bottom:1px solid var(--line);color:var(--ink-2);white-space:nowrap}
+.famtable td:first-child{font-weight:700;color:var(--ink);font-family:var(--mono)}
+.famtable td:last-child{white-space:normal;min-width:200px}
+.famtable tr.cur td{background:var(--teal-soft)}
+.famnote{margin-top:8px;font-size:12.5px;color:var(--muted)}
+.fullpins{display:grid;grid-template-columns:1fr 1fr;gap:4px 10px;margin-top:12px}
+.fullpins span{display:flex;justify-content:space-between;gap:6px;font-family:var(--mono);font-size:12px;padding:3px 8px;border-radius:6px;background:var(--paper);border:1px solid var(--line);cursor:default}
+.fullpins span:hover{border-color:var(--teal);background:var(--teal-soft)}
+.fullpins em{font-style:normal;color:var(--muted)}
+/* ---------- Pi lab additions ---------- */
+.fullpins span b{font-weight:700;color:var(--ink)}
+.fullpins span b em{font-weight:500}
+.fullpins span[data-k="pwr"]{background:#FDECEA;border-color:#F3C3BD}
+.fullpins span[data-k="gnd"]{background:#ECEDEF;border-color:#D3D6DB}
+.inputsrow[hidden]{display:none}
+</style>
+</head>
+<body>
+<div class="app">
+  <nav class="rail" aria-label="Lab">
+    <button class="rbtn" data-go="overview" aria-pressed="true" aria-label="Overview"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5.5C5.5 4 8.5 4 12 6c3.5-2 6.5-2 9-.5V19c-2.5-1.5-5.5-1.5-9 .5-3.5-2-6.5-2-9-.5z"/><path d="M12 6v13.5"/></svg><span class="rtip">Overview</span></button>
+    <button class="rbtn" data-go="pinout" aria-pressed="false" aria-label="Pinout"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="7" width="10" height="10" rx="1.5"/><path d="M10 3v4M14 3v4M10 17v4M14 17v4M3 10h4M3 14h4M17 10h4M17 14h4"/></svg><span class="rtip">Pinout</span></button>
+    <button class="rbtn" data-go="example" aria-pressed="false" aria-label="Wiring example"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M7 9h.01M10 9h.01M13 9h.01M16 9h.01M7 15h.01M10 15h.01M13 15h.01M16 15h.01M3 12h18"/></svg><span class="rtip">Example</span></button>
+    <button class="rbtn" data-go="specs" aria-pressed="false" aria-label="Specifications"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg><span class="rtip">Specifications</span></button>
+    <span class="sep" aria-hidden="true"></span>
+    <button class="rbtn" data-go="run" aria-label="Run the code"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2.5"/><path d="M10 9v6l5-3z" fill="currentColor"/></svg><span class="rtip">Run</span></button>
+    <button class="rbtn" data-go="components" aria-label="Raspberry Pi models" aria-controls="drawer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 3 8l9 5 9-5z"/><path d="m3 13 9 5 9-5"/></svg><span class="rtip">Pi models</span></button>
+    <a class="rbtn" href="/kits/arduino" target="_top" aria-label="Arduino lab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M9 9h6v6H9zM9 1v3M15 1v3M9 20v3M15 20v3M1 9h3M1 15h3M20 9h3M20 15h3"/></svg><span class="rtip">Arduino</span></a>
+    <a class="rbtn" href="/kits/esp" target="_top" aria-label="ESP lab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 9a15 15 0 0 1 20 0M5.5 12.5a10 10 0 0 1 13 0M9 16a5 5 0 0 1 6 0"/><circle cx="12" cy="19.5" r="1"/></svg><span class="rtip">ESP</span></a>
+    <a class="rbtn" href="/kits" target="_top" aria-label="Starter Kit Lab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10 14 21 3M15 3h6v6"/><path d="M19 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h6"/></svg><span class="rtip">Starter Kit</span></a>
+    <span class="credit">Radix Robotics</span>
+  </nav>
+
+  <div class="shell studio">
+    <header class="top">
+      <div class="brand">
+        <svg class="mark" viewBox="0 0 64 40" aria-hidden="true"><rect x="3" y="3" width="58" height="34" rx="17" fill="none" stroke="#1E2B45" stroke-width="5"/><path d="M16 20h12" stroke="#1E2B45" stroke-width="5" stroke-linecap="round"/><path d="M42 14v12M36 20h12" stroke="#8B6CF6" stroke-width="5" stroke-linecap="round"/></svg>
+        <div>
+          <h1><b>Radix</b> Pi Lab</h1>
+          <p>Python<i>·</i>Linux<i>·</i>GPIO</p>
+        </div>
+        <nav class="apptabs" aria-label="Labs">
+          <a href="/kits" target="_top"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 12h18"/></svg>Starter Kit</a>
+          <a href="/kits/arduino" target="_top"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M9 9h6v6H9zM9 1v3M15 1v3M9 20v3M15 20v3M1 9h3M1 15h3M20 9h3M20 15h3"/></svg>Arduino</a>
+          <a href="/kits/esp" target="_top"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 9a15 15 0 0 1 20 0M5.5 12.5a10 10 0 0 1 13 0M9 16a5 5 0 0 1 6 0"/><circle cx="12" cy="19.5" r="1"/></svg>ESP</a>
+          <a href="/kits/pi" target="_top" aria-current="page"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21.5c-3.6 0-6-2.4-6-5.4 0-2.6 1.8-4.3 3.4-5.1-1-.6-1.6-1.4-1.6-2.4C7.8 7 9.6 6 12 6s4.2 1 4.2 2.6c0 1-.6 1.8-1.6 2.4 1.6.8 3.4 2.5 3.4 5.1 0 3-2.4 5.4-6 5.4z"/><path d="M12 6c-1.4-2.4-4-3.4-6-2.6.6 2 2.8 3.2 5 3.2M12 6c1.4-2.4 4-3.4 6-2.6-.6 2-2.8 3.2-5 3.2"/></svg>Pi</a>
+        </nav>
+      </div>
+      <div class="topright">
+        <div class="progcard" aria-live="polite">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#1E2B45" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 5.5C5.5 4 8.5 4 12 6c3.5-2 6.5-2 9-.5V19c-2.5-1.5-5.5-1.5-9 .5-3.5-2-6.5-2-9-.5z"/><path d="M12 6v13.5"/></svg>
+          <span class="lbl">Pi basics</span>
+          <span class="progrow"><span class="pbar"><span id="pbar"></span></span><span id="count">0/12</span></span>
+        </div>
+        <div class="clock" aria-hidden="true"><span id="cdate"></span><span id="ctime"></span></div>
+      </div>
+    </header>
+
+    <section class="stage" id="stage" aria-label="3D Raspberry Pi bench">
+      <div class="stagebar">
+        <span class="mode" id="mode"><i></i><span id="modetext">Board · ready</span></span>
+        <label class="boardpick" for="boardsel"><span>Board</span><select id="boardsel"></select></label>
+      </div>
+      <div class="stage-view" id="stageview">
+        <div id="view3d"></div>
+        <div class="phone" id="phone" hidden>
+          <div class="phonebar"><span class="lock" aria-hidden="true"></span><span id="purl">http://192.168.1.50:5000/</span><button id="preload" aria-label="Reload the page">↻</button></div>
+          <div class="phonebody" id="pbody"></div>
+        </div>
+        <div class="bench-note" id="benchnote"></div>
+        <div class="loading3d" id="loading3d">Building the 3D bench…</div>
+      </div>
+      <div class="dockwrap">
+        <span class="hintpill" id="hint">Drag to rotate · right-drag or WASD to pan · Q/E to turn · scroll to zoom</span>
+        <div class="dock" role="toolbar" aria-label="Board view">
+          <span class="seg"><button id="v-phone" aria-pressed="true" title="Show the phone browser in Flask lessons"><svg viewBox="0 0 16 16"><rect x="4" y="1.5" width="8" height="13" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M7 12.5h2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>Phone</button><button id="v-sound" aria-pressed="true" title="Hear the buzzer"><svg viewBox="0 0 16 16"><path d="M2 6h3l4-3v10L5 10H2z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M11.5 5.5a3.5 3.5 0 0 1 0 5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>Sound</button></span>
+          <span class="div" aria-hidden="true"></span>
+          <span class="seg"><button id="v-flow" aria-pressed="true" title="Show current flowing through active wires"><svg viewBox="0 0 16 16"><path d="M9 1 3 9h5l-1 6 6-8H8z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>Current</button></span>
+          <span class="div" aria-hidden="true"></span>
+          <span class="seg" role="group" aria-label="Zoom">
+            <button id="z-out" aria-label="Zoom out"><svg viewBox="0 0 16 16"><path d="M4 8h8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
+            <button id="z-in" aria-label="Zoom in"><svg viewBox="0 0 16 16"><path d="M4 8h8M8 4v8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
+            <button id="z-fit" aria-label="Reset the view"><svg viewBox="0 0 16 16"><path d="M2 6V2h4M10 2h4v4M14 10v4h-4M6 14H2v-4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+          </span>
+        </div>
+      </div>
+      <div class="tipbox" id="tipbox" hidden></div>
+    </section>
+
+    <aside class="panel" aria-label="Lesson">
+      <div id="phead" class="phead"></div>
+      <div class="tabs" role="tablist" aria-label="Lesson sections">
+        <button class="tab" role="tab" id="tab-overview" aria-controls="tp-overview" aria-selected="true">Overview</button>
+        <button class="tab" role="tab" id="tab-pinout" aria-controls="tp-pinout" aria-selected="false" tabindex="-1">Pinout</button>
+        <button class="tab" role="tab" id="tab-example" aria-controls="tp-example" aria-selected="false" tabindex="-1">Example</button>
+        <button class="tab" role="tab" id="tab-specs" aria-controls="tp-specs" aria-selected="false" tabindex="-1">Specifications</button>
+      </div>
+      <div class="tabpanel" role="tabpanel" id="tp-overview" aria-labelledby="tab-overview"></div>
+      <div class="tabpanel" role="tabpanel" id="tp-pinout" aria-labelledby="tab-pinout" hidden></div>
+      <div class="tabpanel" role="tabpanel" id="tp-example" aria-labelledby="tab-example" hidden></div>
+      <div class="tabpanel" role="tabpanel" id="tp-specs" aria-labelledby="tab-specs" hidden></div>
+      <section class="try" aria-label="Try it yourself">
+        <div class="tryhead">
+          <span class="kicker">Try it yourself</span>
+          <span class="tools2">
+            <button class="sqbtn" id="creset" title="Restore the lesson's code" aria-label="Restore the lesson's code"><svg viewBox="0 0 16 16"><path d="M3 8a5 5 0 1 0 1.6-3.7M3 2v3h3" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+            <button class="sqbtn" id="ccopy" title="Copy the code" aria-label="Copy the code"><svg viewBox="0 0 16 16"><rect x="5" y="5" width="9" height="9" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M3 11V3a1 1 0 0 1 1-1h7" fill="none" stroke="currentColor" stroke-width="1.6"/></svg></button>
+            <button class="sqbtn run" id="crun" title="Run" aria-label="Run"><svg viewBox="0 0 16 16" id="runicon"><path d="M4 2.5v11l9.5-5.5z" fill="currentColor"/></svg></button>
+          </span>
+        </div>
+        <div class="editor">
+          <div class="gutter" id="gutter" aria-hidden="true"></div>
+          <div class="codebox"><pre id="hl" aria-hidden="true"></pre><textarea id="code" spellcheck="false" autocapitalize="off" autocomplete="off" aria-label="Python code. Edit it, then press Run."></textarea></div>
+        </div>
+        <div class="inputsrow" id="inputs"></div>
+        <div class="serial">
+          <div class="serialhead"><span class="kicker">Terminal</span><span class="sstat" id="sstat"><i></i><span id="sstattext">Stopped</span></span><button id="sclear">Clear</button></div>
+          <pre id="serial" aria-live="polite"></pre>
+        </div>
+      </section>
+    </aside>
+
+    <section class="strip" aria-label="Lessons">
+      <div class="striphead">
+        <span class="kicker">Lessons</span>
+        <span class="stripnav" style="margin-left:auto">
+          <button id="sleft" aria-label="Scroll lessons left"><svg viewBox="0 0 16 16"><path d="M10 3 5 8l5 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+          <button id="sright" aria-label="Scroll lessons right"><svg viewBox="0 0 16 16"><path d="M6 3l5 5-5 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+        </span>
+      </div>
+      <div id="navlist"></div>
+    </section>
+  </div>
+</div>
+
+<div class="scrim" id="scrim"></div>
+<aside class="drawer" id="drawer" aria-labelledby="refh" aria-hidden="true">
+  <div class="drawerhead">
+    <h2 id="refh">Raspberry Pi models</h2>
+    <button class="ibtn" id="refclose" aria-label="Close Raspberry Pi models"><svg viewBox="0 0 16 16"><path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
+  </div>
+  <div class="drawerbody">
+    <p class="drawerlede">Pick the Pi on your desk. Every model shares the same 40-pin header, so the wiring and code stay the same; the 3D board and specs change.</p>
+    <div class="boardgrid" id="boardlist"></div>
+    <h3 class="famh">The Raspberry Pi family at a glance</h3>
+    <div class="famwrap"><table class="famtable" id="famtable"></table></div>
+    <p class="famnote">Typical launch values. * The Pi 3 B+ Ethernet shares USB 2.0, so it tops out near 300 Mbit/s. Pico boards are microcontrollers that run MicroPython with no operating system, closer to the ESP lab than this one.</p>
+  </div>
+</aside>
+
+<script>
+(function(){
+/* ---------- illustrations for lesson cards (48×48) ---------- */
+const ICONS={
+ pi:`<path d="M24 44c-7 0-12-5-12-11 0-5 3-8 6-10-2-1-3-3-3-5 0-3 3-5 9-5s9 2 9 5c0 2-1 4-3 5 3 2 6 5 6 10 0 6-5 11-12 11z" fill="#C51A4A"/><circle cx="19" cy="31" r="3" fill="#E8486F"/><circle cx="29" cy="31" r="3" fill="#E8486F"/><circle cx="24" cy="37" r="3" fill="#E8486F"/><circle cx="24" cy="25" r="3" fill="#E8486F"/><path d="M24 13c-3-5-9-7-13-5 1 4 6 7 11 7M24 13c3-5 9-7 13-5-1 4-6 7-11 7" fill="#2FB36A"/>`,
+ led:`<circle cx="24" cy="19" r="14" fill="#E5484D" opacity=".16"/><path d="M17 27V17a7 7 0 0 1 14 0v10z" fill="#E5484D"/><rect x="15" y="26" width="18" height="4" rx="1.5" fill="#B83A3E"/><ellipse cx="21" cy="16" rx="2" ry="3.2" fill="#fff" opacity=".65"/><path d="M20 30v13M28 30v9" stroke="#9A9DA4" stroke-width="2.2" stroke-linecap="round"/>`,
+ btn:`<rect x="10" y="13" width="28" height="27" rx="5" fill="#1F1F23"/><circle cx="24" cy="26" r="9" fill="#FF6A13"/><circle cx="21" cy="23" r="3" fill="#fff" opacity=".35"/><path d="M13 40v5M35 40v5" stroke="#9A9DA4" stroke-width="2.2" stroke-linecap="round"/>`,
+ events:`<rect x="6" y="22" width="20" height="18" rx="4" fill="#1F1F23"/><circle cx="16" cy="31" r="5.5" fill="#FF6A13"/><path d="M30 18h8a4 4 0 0 1 4 4v4M36 12l-6 6 6 6" fill="none" stroke="#1F7A80" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/><circle cx="38" cy="34" r="6" fill="#F7C619"/><circle cx="38" cy="34" r="10" fill="#F7C619" opacity=".25"/>`,
+ fade:`<circle cx="12" cy="24" r="7" fill="#3E63DD" opacity=".2"/><circle cx="24" cy="24" r="7" fill="#3E63DD" opacity=".5"/><circle cx="36" cy="24" r="7" fill="#3E63DD"/><circle cx="36" cy="24" r="11" fill="#3E63DD" opacity=".2"/><path d="M6 40h36" stroke="#1E2B45" stroke-width="2.4" stroke-linecap="round"/>`,
+ traffic:`<rect x="15" y="4" width="18" height="40" rx="6" fill="#1F1F23"/><circle cx="24" cy="13" r="4.6" fill="#E5484D"/><circle cx="24" cy="24" r="4.6" fill="#F7C619"/><circle cx="24" cy="35" r="4.6" fill="#2FB36A"/>`,
+ buz:`<path d="M19 35v9M29 35v9" stroke="#9A9DA4" stroke-width="2.2" stroke-linecap="round"/><circle cx="22" cy="22" r="14" fill="#1A1A1D"/><circle cx="22" cy="22" r="9.5" fill="none" stroke="#38383E"/><circle cx="22" cy="22" r="3.5" fill="#FF6A13"/><path d="M38 14a12 12 0 0 1 0 16M42 10a18 18 0 0 1 0 24" fill="none" stroke="#FF6A13" stroke-width="2" stroke-linecap="round"/>`,
+ morse:`<rect x="5" y="20" width="6" height="6" rx="3" fill="#1E2B45"/><rect x="15" y="20" width="16" height="6" rx="3" fill="#1E2B45"/><rect x="35" y="20" width="6" height="6" rx="3" fill="#1E2B45"/><path d="M8 34h32" stroke="#FF6A13" stroke-width="2.4" stroke-linecap="round" stroke-dasharray="3 5"/><circle cx="24" cy="11" r="4" fill="#F7C619"/>`,
+ react:`<circle cx="24" cy="26" r="15" fill="#FAFAF7" stroke="#1E2B45" stroke-width="2.6"/><path d="M24 26V16" stroke="#FF6A13" stroke-width="2.8" stroke-linecap="round"/><path d="M20 6h8M24 6v5" stroke="#1E2B45" stroke-width="2.6" stroke-linecap="round"/><path d="M36 12l3-3" stroke="#1E2B45" stroke-width="2.6" stroke-linecap="round"/>`,
+ dht:`<rect x="12" y="6" width="24" height="30" rx="3" fill="#F2F2EE" stroke="#A3A8B3"/>${[0,1,2,3].map(i=>`<rect x="16" y="${10+i*6}" width="16" height="3" rx="1" fill="#C9CCD2"/>`).join('')}<path d="M18 36v8M24 36v8M30 36v8" stroke="#9A9DA4" stroke-width="2.2" stroke-linecap="round"/>`,
+ web:`<rect x="13" y="4" width="22" height="40" rx="4" fill="#1E2B45"/><rect x="16" y="9" width="16" height="28" rx="1.5" fill="#F6EDDD"/><circle cx="24" cy="18" r="4" fill="#F7C619"/><rect x="18" y="26" width="12" height="3" rx="1.5" fill="#1F7A80"/><rect x="18" y="31" width="12" height="3" rx="1.5" fill="#FF6A13"/>`,
+ weather:`<circle cx="18" cy="18" r="8" fill="#F7C619"/><path d="M14 36h20a7 7 0 0 0 0-14 10 10 0 0 0-19 3 6 6 0 0 0-1 11z" fill="#E8EEF7" stroke="#1E2B45" stroke-width="2"/>`,
+};
+
+/* ---------- the 40-pin header: [physical pin, name, BCM GPIO number | null, alternate use] ---------- */
+const HEADER=[[1,'3V3',null],[2,'5V',null],[3,'GPIO2',2,'SDA'],[4,'5V',null],[5,'GPIO3',3,'SCL'],[6,'GND',null],[7,'GPIO4',4,'GPCLK0'],[8,'GPIO14',14,'TXD'],
+ [9,'GND',null],[10,'GPIO15',15,'RXD'],[11,'GPIO17',17],[12,'GPIO18',18,'PWM0'],[13,'GPIO27',27],[14,'GND',null],[15,'GPIO22',22],[16,'GPIO23',23],
+ [17,'3V3',null],[18,'GPIO24',24],[19,'GPIO10',10,'MOSI'],[20,'GND',null],[21,'GPIO9',9,'MISO'],[22,'GPIO25',25],[23,'GPIO11',11,'SCLK'],[24,'GPIO8',8,'CE0'],
+ [25,'GND',null],[26,'GPIO7',7,'CE1'],[27,'GPIO0',0,'ID_SD'],[28,'GPIO1',1,'ID_SC'],[29,'GPIO5',5],[30,'GND',null],[31,'GPIO6',6],[32,'GPIO12',12,'PWM0'],
+ [33,'GPIO13',13,'PWM1'],[34,'GND',null],[35,'GPIO19',19,'PWM1'],[36,'GPIO16',16],[37,'GPIO26',26],[38,'GPIO20',20],[39,'GND',null],[40,'GPIO21',21]];
+const physOf=g=>{const h=HEADER.find(x=>x[2]===g);return h?h[0]:null;};
+const pinName=g=>`GPIO ${g} (pin ${physOf(g)})`;
+
+/* ---------- Raspberry Pi boards ----------
+   Every model here has the same 40-pin header, so wiring and code stay the same; the 3D board and specs change. */
+const BOARDS=[
+ {id:'pi5',name:'Pi 5',full:'Raspberry Pi 5',soc:'BCM2712',form:'b',w:85,d:56,ports:['usb2','usb3','eth'],power:'usbc',hdmi:'micro',audio:false,rp1:true,silk:'Raspberry Pi 5',
+  blurb:'The fastest Pi yet: a 2.4 GHz quad-core that’s two to three times quicker than the Pi 4, with PCIe for fast storage.',
+  specs:[['SoC','Broadcom BCM2712'],['CPU','4× Cortex-A76, 2.4 GHz'],['RAM','1, 2, 4, 8 or 16 GB'],['Wi-Fi','Dual-band 802.11ac (Wi-Fi 5)'],['Bluetooth','5.0 / BLE'],['USB','2× USB 3.0, 2× USB 2.0'],['Video','2× micro-HDMI, 4K at 60 Hz'],['Ethernet','Gigabit'],['Power','USB-C, 5 V / 5 A'],['GPIO','40-pin header, via the RP1 chip']],
+  notes:['GPIO now runs through the RP1 chip: gpiozero works, the old RPi.GPIO library does not','Use the official 27 W (5 V / 5 A) supply for full USB power','Has a power button and a real-time clock built in']},
+ {id:'pi4',name:'Pi 4',full:'Raspberry Pi 4 Model B',soc:'BCM2711',form:'b',w:85,d:56,ports:['eth','usb3','usb2'],power:'usbc',hdmi:'micro',audio:true,silk:'Raspberry Pi 4 Model B',
+  blurb:'The classroom workhorse: fast enough for a desktop, with USB 3, Gigabit Ethernet and two 4K screens.',
+  specs:[['SoC','Broadcom BCM2711'],['CPU','4× Cortex-A72, 1.5–1.8 GHz'],['RAM','1, 2, 4 or 8 GB'],['Wi-Fi','Dual-band 802.11ac (Wi-Fi 5)'],['Bluetooth','5.0 / BLE'],['USB','2× USB 3.0, 2× USB 2.0'],['Video','2× micro-HDMI, up to 4K'],['Ethernet','Gigabit'],['Power','USB-C, 5 V / 3 A'],['Size','85 × 56 mm']],
+  notes:['Every lesson here works on it, including the older RPi.GPIO library','Gets warm under load: a small heatsink or fan helps','Plug your screen into HDMI0, the port next to the USB-C']},
+ {id:'pi3',name:'Pi 3 B+',full:'Raspberry Pi 3 Model B+',soc:'BCM2837B0',form:'b',w:85,d:56,ports:['usb2','usb2','eth'],power:'micro',hdmi:'full',audio:true,silk:'Raspberry Pi 3 Model B+',
+  blurb:'Still in thousands of classrooms. Slower than the Pi 4, but the same 40 pins and the same Python.',
+  specs:[['SoC','Broadcom BCM2837B0'],['CPU','4× Cortex-A53, 1.4 GHz'],['RAM','1 GB'],['Wi-Fi','Dual-band 802.11ac'],['Bluetooth','4.2 / BLE'],['USB','4× USB 2.0'],['Video','Full-size HDMI'],['Ethernet','Gigabit over USB 2.0 (about 300 Mbit/s)'],['Power','Micro-USB, 5 V / 2.5 A'],['Size','85 × 56 mm']],
+  notes:['Same 40-pin header, so the same wiring and code','Full-size HDMI: any TV cable fits','Plenty for Python, GPIO and small web servers']},
+ {id:'zero2',name:'Zero 2 W',full:'Raspberry Pi Zero 2 W',soc:'RP3A0',form:'zero',w:65,d:30,ports:[],power:'micro',hdmi:'mini',audio:false,silk:'Raspberry Pi Zero 2 W',
+  blurb:'A quad-core Pi the size of a stick of gum, with Wi-Fi and Bluetooth. Made for robots and wearables.',
+  specs:[['SoC','RP3A0 (BCM2710A1 + 512 MB)'],['CPU','4× Cortex-A53, 1 GHz'],['RAM','512 MB'],['Wi-Fi','2.4 GHz 802.11 b/g/n'],['Bluetooth','4.2 / BLE'],['USB','1× micro-USB OTG'],['Video','Mini-HDMI'],['Ethernet','None'],['Power','Micro-USB, 5 V / 2.5 A'],['Size','65 × 30 mm']],
+  notes:['The header holes come empty: solder on a header or buy the “WH” version','Power goes in the port marked PWR; the one marked USB is for devices','Same GPIO numbers as the big boards']},
+];
+
+/* The whole family, for the comparison chart (typical values). */
+const FAMILY=[
+ ['Pi 1 B+','2014','BCM2835','1× ARM11','700 MHz','512 MB','—','—','4× 2.0','100 Mbit','Where it all began'],
+ ['Pi 2 B','2015','BCM2836','4× Cortex-A7','900 MHz','1 GB','—','—','4× 2.0','100 Mbit','The first quad-core Pi'],
+ ['Pi 3 B+','2018','BCM2837B0','4× Cortex-A53','1.4 GHz','1 GB','Wi-Fi 5','4.2','4× 2.0','Gigabit*','Classroom favourite'],
+ ['Pi 4 B','2019','BCM2711','4× Cortex-A72','1.5–1.8 GHz','1–8 GB','Wi-Fi 5','5.0','2× 3.0 + 2× 2.0','Gigabit','A real desktop, two 4K screens'],
+ ['Pi 5','2023','BCM2712','4× Cortex-A76','2.4 GHz','1–16 GB','Wi-Fi 5','5.0','2× 3.0 + 2× 2.0','Gigabit','Fastest; PCIe for NVMe drives'],
+ ['Zero 2 W','2021','RP3A0','4× Cortex-A53','1 GHz','512 MB','Wi-Fi 4','4.2','1× micro OTG','—','Small robots and wearables'],
+ ['Pico 2 W','2024','RP2350','2× Cortex-M33','150 MHz','520 KB','Wi-Fi 4','5.2','1× micro','—','A microcontroller, not a computer: runs MicroPython'],
+];
+
+/* ---------- lessons ----------
+   parts: what sits on the breadboard (BCM pin numbers): led {pin,color} · btn {pin} · buz {pin} · dht {pin} */
+const LESSONS=[
+ {n:1,icon:'pi',title:'Meet your Pi',file:'hello.py',lede:'A whole computer the size of a credit card. It runs Linux, and you program it in Python.',
+  parts:[],
+  overview:b=>`The ${b.full} runs Raspberry Pi OS, a version of Linux, from a microSD card. Unlike an Arduino or ESP it’s a full computer: a desktop, a web browser and Python, plus 40 GPIO pins along one edge for your electronics.`,
+  points:()=>['Python runs line by line, top to bottom','Indentation (4 spaces) shows which lines belong to a loop','print() writes to the terminal below'],
+  pins:()=>[['Pin 1','3.3 V power','The square pad, nearest the corner'],['Pin 2','5 V power','Straight from the power supply'],['Pin 6','Ground','0 V']],
+  steps:()=>['Flash Raspberry Pi OS onto a microSD card with Raspberry Pi Imager.','Plug in a screen, keyboard and mouse, then the power supply.','Open <b>Thonny</b> from the Programming menu, type the code and press <b>Run</b>.'],
+  how:()=>['<code>from time import sleep</code> borrows sleep() from a library','<code>for count in range(1, 6):</code> repeats with count = 1, 2, 3, 4, 5','<code>sleep(0.5)</code> waits half a second'],
+  code:`# Your Raspberry Pi is a full computer that runs Python.
+from time import sleep
+
+print("Hello from your Raspberry Pi!")
+
+for count in range(1, 6):
+    print("Counting:", count)
+    sleep(0.5)
+
+print("Done. Now let's wire something up!")`},
+ {n:2,icon:'led',title:'Blink an LED',file:'blink.py',lede:'Your first circuit: switch an LED on and off from Python.',
+  parts:[{t:'led',pin:17,color:'red'}],
+  overview:()=>'gpiozero is the friendly GPIO library that comes with Raspberry Pi OS. LED(17) means “the LED on GPIO 17”. Note that GPIO 17 is physical pin 11: gpiozero always uses the GPIO (BCM) numbers.',
+  points:()=>['GPIO pins give 3.3 V: never connect 5 V to them','Always use a resistor (330 Ω) with an LED','Older tutorials use RPi.GPIO, which doesn’t work on the Pi 5. gpiozero works on every model'],
+  pins:()=>[[pinName(17),'LED long leg (via 330 Ω)','Output'],['GND (pin 9)','LED short leg','Ground']],
+  steps:()=>['Push an LED into the breadboard.',`Wire ${pinName(17)} to a 330 Ω resistor, and the resistor to the LED’s long leg.`,'Wire the short leg to a <b>GND</b> pin, such as pin 9.'],
+  how:()=>['<code>led = LED(17)</code> sets up the pin','<code>led.on()</code> and <code>led.off()</code> switch it','<code>while True:</code> repeats forever, until you press Stop'],
+  code:`from gpiozero import LED
+from time import sleep
+
+led = LED(17)          # GPIO 17 is physical pin 11
+
+while True:
+    led.on()
+    sleep(1)
+    led.off()
+    sleep(1)`},
+ {n:3,icon:'btn',title:'Read a button',file:'button.py',lede:'Inputs let your Pi sense the world. Hold the button to light the LED.',
+  parts:[{t:'btn',pin:2},{t:'led',pin:17,color:'green'}],
+  overview:()=>'Button(2) turns on the pin’s pull-up resistor, so the pin reads HIGH until the button connects it to ground. gpiozero hides that detail: button.is_pressed is simply True or False.',
+  points:()=>['One button leg to the GPIO pin, the other to GND','No extra resistor needed','Hold the button in 3D or with the control below'],
+  pins:()=>[[pinName(2),'Push button','Input with pull-up'],[pinName(17),'LED (via 330 Ω)','Output'],['GND','Button and LED','Ground']],
+  steps:()=>[`Wire one button leg to ${pinName(2)} and the other to <b>GND</b>.`,`Wire an LED to ${pinName(17)} through 330 Ω.`,'Run it and hold the button.'],
+  how:()=>['<code>button = Button(2)</code> sets up the input','<code>if button.is_pressed:</code> checks it right now','<code>sleep(0.01)</code> checks 100 times a second'],
+  code:`from gpiozero import LED, Button
+from time import sleep
+
+led = LED(17)
+button = Button(2)     # the other leg goes to GND
+
+while True:
+    if button.is_pressed:
+        led.on()
+    else:
+        led.off()
+    sleep(0.01)`,inputs:true},
+ {n:4,icon:'events',title:'Button events',file:'events.py',lede:'Don’t keep asking. Tell the button what to do when it’s pressed, and wait.',
+  parts:[{t:'btn',pin:2},{t:'led',pin:17,color:'yellow'}],
+  overview:()=>'Instead of checking the button in a loop, give gpiozero your own functions to call. when_pressed runs one the moment the button goes down, when_released when it comes back up. pause() keeps the program alive while the events do the work.',
+  points:()=>['Write the function name without (): when_pressed = pressed','def makes your own function','The program sleeps until something happens'],
+  pins:()=>[[pinName(2),'Push button','Input with pull-up'],[pinName(17),'LED (via 330 Ω)','Output']],
+  steps:()=>['Keep the button and LED from the last lesson.','Run the program.','Press and release the button and watch the terminal.'],
+  how:()=>['<code>def pressed():</code> defines what happens on a press','<code>button.when_pressed = pressed</code> connects it','<code>pause()</code> waits forever'],
+  code:`from gpiozero import LED, Button
+from signal import pause
+
+led = LED(17)
+button = Button(2)
+
+def pressed():
+    print("Pressed!")
+    led.on()
+
+def released():
+    print("Released")
+    led.off()
+
+button.when_pressed = pressed     # no () here
+button.when_released = released
+
+pause()   # wait here; the events do the work`,inputs:true},
+ {n:5,icon:'fade',title:'Fade with PWM',file:'fade.py',lede:'Switch a pin on and off so fast that the LED looks dimmed.',
+  parts:[{t:'led',pin:18,color:'blue'}],
+  overview:()=>'A PWMLED takes a brightness from 0.0 (off) to 1.0 (full). Behind the scenes the pin flicks on and off hundreds of times a second; the longer it stays on, the brighter the LED looks. GPIO 18 even has a hardware PWM timer.',
+  points:()=>['led.value takes any number from 0.0 to 1.0','range(0, 101, 5) counts 0, 5, 10 … 100','led.pulse() does the same in the background'],
+  pins:()=>[[pinName(18),'LED long leg (via 330 Ω)','PWM output'],['GND','LED short leg','Ground']],
+  steps:()=>[`Move the LED wire to ${pinName(18)}.`,'Keep the 330 Ω resistor in line.','Run it and watch the LED breathe.'],
+  how:()=>['<code>led = PWMLED(18)</code> sets up a dimmable LED','<code>led.value = step / 100</code> turns 0–100 into 0.0–1.0','The second loop counts back down'],
+  code:`from gpiozero import PWMLED
+from time import sleep
+
+led = PWMLED(18)
+
+while True:
+    for step in range(0, 101, 5):      # brighter
+        led.value = step / 100
+        sleep(0.03)
+    for step in range(100, -1, -5):    # dimmer
+        led.value = step / 100
+        sleep(0.03)`},
+ {n:6,icon:'traffic',title:'Traffic lights',file:'traffic.py',lede:'Three LEDs and careful timing make a working traffic light.',
+  parts:[{t:'led',pin:22,color:'red'},{t:'led',pin:27,color:'yellow'},{t:'led',pin:17,color:'green'}],
+  overview:()=>'Each LED gets its own name and its own pin. The loop walks through the sequence: green, amber, red, then red and amber together before green again.',
+  points:()=>['Give each LED a clear name: red, amber, green','The sleep() times set the rhythm','Try adding a button for a pedestrian crossing'],
+  pins:()=>[[pinName(22),'Red LED (via 330 Ω)','Output'],[pinName(27),'Amber LED (via 330 Ω)','Output'],[pinName(17),'Green LED (via 330 Ω)','Output']],
+  steps:()=>[`Wire the red LED to ${pinName(22)}.`,`Wire the amber LED to ${pinName(27)}.`,`Wire the green LED to ${pinName(17)}, each through its own 330 Ω.`],
+  how:()=>['Three <code>LED()</code> objects, one per colour','Switch one on, wait, switch it off','The whole sequence repeats forever'],
+  code:`from gpiozero import LED
+from time import sleep
+
+red = LED(22)
+amber = LED(27)
+green = LED(17)
+
+while True:
+    green.on()
+    sleep(3)
+    green.off()
+    amber.on()
+    sleep(1)
+    amber.off()
+    red.on()
+    sleep(3)
+    amber.on()          # red and amber together: get ready
+    sleep(1)
+    red.off()
+    amber.off()`},
+ {n:7,icon:'buz',title:'Buzzer doorbell',file:'doorbell.py',lede:'An active buzzer beeps on its own. Press the button to ring it.',
+  parts:[{t:'btn',pin:2},{t:'buz',pin:23}],
+  overview:()=>'An active buzzer has its own oscillator, so you just switch it on and off like an LED. Here it beeps three times to say hello, then gpiozero connects the button straight to the buzzer: no function of your own needed.',
+  points:()=>['Buzzer has on(), off() and beep()','You can connect events to another device’s method','Turn on Sound in the dock to hear it'],
+  pins:()=>[[pinName(23),'Buzzer + (long leg)','Output'],[pinName(2),'Push button','Input with pull-up'],['GND','Buzzer − and button','Ground']],
+  steps:()=>[`Wire the buzzer’s + leg to ${pinName(23)} and its − leg to <b>GND</b>.`,`Wire the button to ${pinName(2)} and <b>GND</b>.`,'Run it, then press the button.'],
+  how:()=>['<code>buzzer = Buzzer(23)</code> sets up the output','<code>for i in range(3):</code> beeps three times','<code>button.when_pressed = buzzer.on</code> links them'],
+  code:`from gpiozero import Buzzer, Button
+from time import sleep
+from signal import pause
+
+buzzer = Buzzer(23)
+button = Button(2)
+
+# Three short beeps to say hello
+for i in range(3):
+    buzzer.on()
+    sleep(0.1)
+    buzzer.off()
+    sleep(0.2)
+
+print("Ready! Press the button to ring.")
+button.when_pressed = buzzer.on
+button.when_released = buzzer.off
+pause()`,inputs:true},
+ {n:8,icon:'morse',title:'Morse code',file:'morse.py',lede:'Teach your Pi a secret language: any message, flashed and beeped in Morse.',
+  parts:[{t:'led',pin:17,color:'white'},{t:'buz',pin:23}],
+  overview:()=>'A dictionary looks up each letter’s dots and dashes. A dash lasts three dots, gaps separate letters and words. Your own function flash() switches the LED and buzzer together, so the rest of the program stays short.',
+  points:()=>['MORSE["S"] looks up "..."','for letter in message: visits each letter','Change MESSAGE to send your own words'],
+  pins:()=>[[pinName(17),'LED (via 330 Ω)','Output'],[pinName(23),'Buzzer +','Output']],
+  steps:()=>[`Wire an LED to ${pinName(17)} through 330 Ω.`,`Wire the buzzer to ${pinName(23)} and <b>GND</b>.`,'Run it, then change the message.'],
+  how:()=>['<code>MORSE = {...}</code> is a dictionary of letters','<code>if letter in MORSE:</code> skips anything it doesn’t know','<code>flash(DOT * 3)</code> makes a dash'],
+  code:`from gpiozero import LED, Buzzer
+from time import sleep
+
+led = LED(17)
+buzzer = Buzzer(23)
+DOT = 0.12
+MESSAGE = "SOS"
+
+MORSE = {
+    "A": ".-", "B": "-...", "C": "-.-.", "D": "-..", "E": ".",
+    "F": "..-.", "G": "--.", "H": "....", "I": "..", "J": ".---",
+    "K": "-.-", "L": ".-..", "M": "--", "N": "-.", "O": "---",
+    "P": ".--.", "Q": "--.-", "R": ".-.", "S": "...", "T": "-",
+    "U": "..-", "V": "...-", "W": ".--", "X": "-..-", "Y": "-.--",
+    "Z": "--..",
+}
+
+def flash(duration):
+    led.on()
+    buzzer.on()
+    sleep(duration)
+    led.off()
+    buzzer.off()
+    sleep(DOT)
+
+def send(text):
+    for letter in text.upper():
+        if letter == " ":
+            sleep(DOT * 7)
+        elif letter in MORSE:
+            code = MORSE[letter]
+            print(letter, code)
+            for mark in code:
+                if mark == ".":
+                    flash(DOT)
+                else:
+                    flash(DOT * 3)
+            sleep(DOT * 2)
+
+while True:
+    send(MESSAGE)
+    sleep(2)`},
+ {n:9,icon:'react',title:'Reaction game',file:'reaction.py',lede:'How fast are you? The LED lights at a random moment; press as quickly as you can.',
+  parts:[{t:'btn',pin:2},{t:'led',pin:17,color:'red'}],
+  overview:()=>'uniform(2, 5) picks a random wait so you can’t guess. time() reads the clock in seconds; subtracting the start time from the time of the press gives your reaction time. An f-string prints it to three decimal places.',
+  points:()=>['wait_for_press() pauses until the button goes down','f"{reaction:.3f}" shows 3 decimal places','Most people manage about 0.25 seconds'],
+  pins:()=>[[pinName(2),'Push button','Input with pull-up'],[pinName(17),'LED (via 330 Ω)','Output']],
+  steps:()=>['Keep the button and LED wired.','Run it and watch the LED.','Press the button the moment it lights. Three rounds!'],
+  how:()=>['<code>sleep(uniform(2, 5))</code> waits 2 to 5 seconds','<code>start = time()</code> notes when the LED lit','<code>if best is None or reaction < best:</code> keeps your best'],
+  code:`from gpiozero import LED, Button
+from time import sleep, time
+from random import uniform
+
+led = LED(17)
+button = Button(2)
+
+print("Press the button as soon as the LED lights!")
+best = None
+
+for round_no in range(1, 4):
+    sleep(uniform(2, 5))       # a random wait, so you can't guess
+    led.on()
+    start = time()
+    button.wait_for_press()
+    reaction = time() - start
+    led.off()
+    print(f"Round {round_no}: {reaction:.3f} seconds")
+    if best is None or reaction < best:
+        best = reaction
+    button.wait_for_release()
+    sleep(1)
+
+print(f"Your best time: {best:.3f} seconds")`,inputs:true},
+ {n:10,icon:'dht',title:'Temperature & humidity',file:'dht.py',lede:'The DHT22 measures the air around it. Two numbers, one wire.',
+  parts:[{t:'dht',pin:4}],
+  overview:()=>'The adafruit_dht library talks to the sensor’s single data wire. Now and then a reading fails a checksum, so the code catches the RuntimeError with try/except and simply tries again two seconds later.',
+  points:()=>['Install it with: pip3 install adafruit-circuitpython-dht','board.D4 means GPIO 4','Slide the temperature and humidity below to test'],
+  pins:()=>[[pinName(4),'DHT22 data','One-wire data'],['3V3 (pin 1)','DHT22 VCC','Power'],['GND','DHT22 GND','Ground']],
+  steps:()=>['Place the DHT22 with its grille facing you.',`Left pin to <b>3V3</b>, data to ${pinName(4)}, right pin to <b>GND</b>.`,'Add a 10 kΩ resistor from data to 3V3 (most modules have one already).'],
+  how:()=>['<code>dht = adafruit_dht.DHT22(board.D4)</code> sets up the sensor','<code>try:</code> … <code>except RuntimeError:</code> survives a bad read','<code>f"{t:.1f}"</code> shows one decimal place'],
+  code:`import time
+import board
+import adafruit_dht
+
+dht = adafruit_dht.DHT22(board.D4)
+
+while True:
+    try:
+        t = dht.temperature
+        h = dht.humidity
+        print(f"Temperature: {t:.1f} C   Humidity: {h:.1f} %")
+    except RuntimeError as error:
+        print("Reading failed, trying again:", error.args[0])
+    time.sleep(2.0)`,inputs:true},
+ {n:11,icon:'web',title:'Web-controlled LED',file:'web_led.py',lede:'Your Pi becomes a website. Tap links on your phone to switch an LED.',
+  parts:[{t:'led',pin:17,color:'yellow'}],web:true,
+  overview:()=>'Flask is a tiny web framework for Python. Each @app.route connects a web address to a function, and whatever the function returns is the page. host="0.0.0.0" lets other devices on the network reach the Pi, not just the Pi itself.',
+  points:()=>['Open http://<your Pi’s IP>:5000 on a phone on the same Wi-Fi','Find the IP with: hostname -I','Try host="127.0.0.1" and see the phone get locked out'],
+  pins:()=>[[pinName(17),'LED (via 330 Ω)','Output'],['Wi-Fi','Built into the Pi','Web server on port 5000']],
+  steps:()=>[`Wire an LED to ${pinName(17)} through 330 Ω.`,'Install Flask if needed: <b>pip3 install flask</b>.','Run it and open the address from the terminal on your phone.'],
+  how:()=>['<code>@app.route("/on")</code> runs turn_on() for /on','<code>"ON" if led.is_lit else "OFF"</code> picks a word','<code>app.run(host="0.0.0.0", port=5000)</code> starts the server'],
+  code:`from flask import Flask
+from gpiozero import LED
+
+app = Flask(__name__)
+led = LED(17)
+
+def page():
+    state = "ON" if led.is_lit else "OFF"
+    html = "<h1>Radix Pi</h1>"
+    html += f"<p>The LED is <b>{state}</b></p>"
+    html += "<p><a href='/on'>Turn on</a> <a href='/off'>Turn off</a></p>"
+    return html
+
+@app.route("/")
+def index():
+    return page()
+
+@app.route("/on")
+def turn_on():
+    led.on()
+    return page()
+
+@app.route("/off")
+def turn_off():
+    led.off()
+    return page()
+
+app.run(host="0.0.0.0", port=5000)`},
+ {n:12,icon:'weather',title:'Weather dashboard',file:'weather.py',lede:'Put it together: a live web dashboard, a JSON API and a too-hot warning light.',
+  parts:[{t:'dht',pin:4},{t:'led',pin:17,color:'red'}],web:true,inputs:true,
+  overview:()=>'Every time the page loads, the Pi reads the DHT22, updates the warning LED and builds the page. A second route, /api, returns a dictionary: Flask turns it into JSON that other programs, or another Pi, can read.',
+  points:()=>['A dictionary keeps the last good reading','Returning a dict from Flask sends JSON','Slide the temperature past 28 °C to trigger the warning'],
+  pins:()=>[[pinName(4),'DHT22 data','One-wire data'],[pinName(17),'Red LED (via 330 Ω)','Warning light'],['Wi-Fi','Built into the Pi','Web server on port 5000']],
+  steps:()=>['Wire the DHT22 as in lesson 10.',`Wire a red LED to ${pinName(17)} through 330 Ω.`,'Run it, open the page, then try the <b>/api</b> link.'],
+  how:()=>['<code>read_sensor()</code> keeps the last good values in <code>last</code>','<code>return {...}</code> in a route sends JSON','<code>&lt;meta http-equiv="refresh"&gt;</code> reloads every 5 s'],
+  code:`from flask import Flask
+from gpiozero import LED
+import board
+import adafruit_dht
+
+app = Flask(__name__)
+dht = adafruit_dht.DHT22(board.D4)
+warning = LED(17)
+TOO_HOT = 28
+
+last = {"temperature": 0, "humidity": 0}
+
+def read_sensor():
+    try:
+        last["temperature"] = dht.temperature
+        last["humidity"] = dht.humidity
+    except RuntimeError:
+        pass                    # keep the last good reading
+    if last["temperature"] > TOO_HOT:
+        warning.on()
+    else:
+        warning.off()
+
+@app.route("/")
+def index():
+    read_sensor()
+    html = "<meta http-equiv='refresh' content='5'>"
+    html += "<h1>Radix Pi Weather</h1>"
+    html += f"<p>Temperature: <b>{last['temperature']:.1f} &deg;C</b></p>"
+    html += f"<p>Humidity: <b>{last['humidity']:.1f} %</b></p>"
+    if last["temperature"] > TOO_HOT:
+        html += "<p><b>Too hot!</b> The warning light is on.</p>"
+    html += "<p><a href='/api'>View as JSON</a></p>"
+    return html
+
+@app.route("/api")
+def api():
+    read_sensor()
+    return last
+
+app.run(host="0.0.0.0", port=5000)`},
+];
+
+/* ---------- Python mini-interpreter ----------
+   Compiles a beginner-sized subset of Python 3 into JavaScript generator functions, so sleep()
+   can pause without freezing the page. Covers what the lessons use plus lists, dicts, f-strings,
+   try/except, your own functions, gpiozero, RPi.GPIO, adafruit_dht and Flask routes. */
+class PyErr extends Error{constructor(type,msg,line){super(msg);this.pyType=type;this.line=line||0;this.args=[msg];}}
+const pyErr=(type,msg,line)=>new PyErr(type,msg,line);
+const PY_KEYWORDS=new Set('False None True and as assert async await break class continue def del elif else except finally for from global if import in is lambda nonlocal not or pass raise return try while with yield'.split(' '));
+const JS_RESERVED=new Set('new var let const function default delete this switch case typeof instanceof void do catch throw enum export extends super debugger arguments eval static implements interface package private protected public'.split(' '));
+const jsName=n=>JS_RESERVED.has(n)?n+'_':n;
+/* Library calls that wait, so they run as generators: (yield* sleep(1)). */
+const PY_BLOCKING=new Set(['sleep','pause','wait_for_press','wait_for_release','run']);
+/* What each module offers, so a typo is caught before the program starts. */
+const PY_MODULES={
+ gpiozero:['LED','PWMLED','Button','Buzzer','TrafficLights'],
+ time:['sleep','time','monotonic','perf_counter','strftime'],
+ random:['randint','uniform','random','choice','shuffle'],
+ signal:['pause'],
+ math:['pi','sqrt','floor','ceil','sin','cos','tan','log','log10','exp','fabs'],
+ flask:['Flask','request','jsonify'],
+ board:Array.from({length:28},(_,i)=>'D'+i),
+ adafruit_dht:['DHT22','DHT11'],
+ 'RPi.GPIO':['BCM','BOARD','OUT','IN','HIGH','LOW','PUD_UP','PUD_DOWN','PUD_OFF','setmode','getmode','setwarnings','setup','output','input','cleanup','PWM'],
+ RPi:['GPIO'],
+};
+const GPIOZERO_MISSING=['MotionSensor','DistanceSensor','LightSensor','Servo','AngularServo','Motor','Robot','RGBLED','LineSensor','MCP3008','TonalBuzzer','LEDBoard','LEDBarGraph'];
+
+function pyTokenize(text,ln){
+  const toks=[];let i=0;
+  while(i<text.length){
+    const c=text[i],rest=text.slice(i);
+    if(c===' '||c==='\t'){i++;continue;}
+    if(c==='#')break;
+    let m=/^([rRbBfFuU]{0,2})(["'])/.exec(rest);
+    if(m){
+      const pre=m[1].toLowerCase(),q=m[2];let j=i+m[0].length;
+      if(text[j]===q&&text[j+1]===q)throw pyErr('SyntaxError','triple-quoted strings aren’t supported here: use # comments or ordinary "strings"',ln);
+      let s='';while(j<text.length&&text[j]!==q){if(text[j]==='\\'){s+=text[j]+(text[j+1]??'');j+=2;continue;}s+=text[j++];}
+      if(j>=text.length)throw pyErr('SyntaxError','unterminated string literal (a quote is missing)',ln);
+      toks.push({t:pre.includes('f')?'fstr':'str',v:s,raw:pre.includes('r'),q});i=j+1;continue;}
+    m=/^(?:0[xX][0-9a-fA-F_]+|(?:\d[\d_]*(?:\.[\d_]*)?|\.\d[\d_]*)(?:[eE][+-]?\d+)?)/.exec(rest);
+    if(m&&m[0]){toks.push({t:'num',v:m[0].replace(/_/g,'')});i+=m[0].length;continue;}
+    m=/^[A-Za-z_]\w*/.exec(rest);
+    if(m){toks.push({t:'name',v:m[0]});i+=m[0].length;continue;}
+    m=/^(?:\*\*=|\/\/=|>>=|<<=|==|!=|<=|>=|\+=|-=|\*=|\/=|%=|&=|\|=|\^=|\*\*|\/\/|->|<<|>>|:=|[-+*\/%<>=.,:;~&|^@!])/.exec(rest);
+    if(m){toks.push({t:'op',v:m[0]});i+=m[0].length;continue;}
+    if('([{'.includes(c)){toks.push({t:'open',v:c});i++;continue;}
+    if(')]}'.includes(c)){toks.push({t:'close',v:c});i++;continue;}
+    throw pyErr('SyntaxError',`invalid character '${c}'`,ln);
+  }
+  return toks;
+}
+function pyGroup(toks,ln){
+  const root={items:[]},stack=[root],PAIR={'(':')','[':']','{':'}'};
+  for(const t of toks){
+    if(t.t==='open'){const g={t:'group',open:t.v,items:[]};stack[stack.length-1].items.push(g);stack.push(g);}
+    else if(t.t==='close'){const g=stack.pop();if(!g.open||PAIR[g.open]!==t.v)throw pyErr('SyntaxError',`unmatched '${t.v}'`,ln);}
+    else stack[stack.length-1].items.push(t);
+  }
+  if(stack.length>1)throw pyErr('SyntaxError',`'${stack[stack.length-1].open}' was never closed`,ln);
+  return root.items;
+}
+const isName=(t,v)=>!!t&&t.t==='name'&&(v===undefined||t.v===v);
+const isOp=(t,v)=>!!t&&t.t==='op'&&t.v===v;
+function splitTop(items,pred){const parts=[[]];items.forEach(t=>{if(pred(t))parts.push([]);else parts[parts.length-1].push(t);});return parts;}
+const isComma=t=>isOp(t,',');
+
+/* Expressions, lowest precedence first: x if c else y → or → and → not → comparisons → arithmetic → postfix. */
+function emitExpr(items,cx){
+  if(!items.length)throw pyErr('SyntaxError','invalid syntax (something is missing here)',cx.ln);
+  if(isName(items[0],'lambda'))throw pyErr('SyntaxError','lambda isn’t supported here: write a small def function instead',cx.ln);
+  const iIf=items.findIndex(t=>isName(t,'if'));
+  if(iIf>0){const iElse=items.findIndex((t,k)=>k>iIf&&isName(t,'else'));
+    if(iElse<0)throw pyErr('SyntaxError','expected “else” after “if” in this expression',cx.ln);
+    return `(__truth(${emitExpr(items.slice(iIf+1,iElse),cx)}) ? (${emitExpr(items.slice(0,iIf),cx)}) : (${emitExpr(items.slice(iElse+1),cx)}))`;}
+  return emitOr(items,cx);
+}
+function emitOr(items,cx){const p=splitTop(items,t=>isName(t,'or'));return p.length>1?p.map(x=>`(${emitAnd(x,cx)})`).join(' || '):emitAnd(items,cx);}
+function emitAnd(items,cx){const p=splitTop(items,t=>isName(t,'and'));return p.length>1?p.map(x=>`(${emitNot(x,cx)})`).join(' && '):emitNot(items,cx);}
+function emitNot(items,cx){return isName(items[0],'not')?`!__truth(${emitNot(items.slice(1),cx)})`:emitCmp(items,cx);}
+function emitCmp(items,cx){
+  const operands=[[]],ops=[];
+  for(let k=0;k<items.length;k++){const t=items[k];
+    if(t.t==='op'&&['<','>','<=','>=','==','!='].includes(t.v)){ops.push(t.v);operands.push([]);continue;}
+    if(isName(t,'in')){ops.push('in');operands.push([]);continue;}
+    if(isName(t,'not')&&isName(items[k+1],'in')){ops.push('not in');operands.push([]);k++;continue;}
+    if(isName(t,'is')){if(isName(items[k+1],'not')){ops.push('is not');k++;}else ops.push('is');operands.push([]);continue;}
+    operands[operands.length-1].push(t);}
+  if(!ops.length)return emitArith(items,cx,0);
+  const e=operands.map(o=>emitArith(o,cx,0));
+  const pair=(a,op,b)=>op==='in'?`__in(${a}, ${b})`:op==='not in'?`!__in(${a}, ${b})`:op==='is'?`(${a} === ${b})`:op==='is not'?`(${a} !== ${b})`:op==='=='?`__eq(${a}, ${b})`:op==='!='?`!__eq(${a}, ${b})`:`(${a} ${op} ${b})`;
+  return ops.map((op,i)=>pair(e[i],op,e[i+1])).join(' && ');
+}
+const ARITH=[['|'],['^'],['&'],['<<','>>'],['+','-'],['*','/','%','//']];
+const OPERAND_KW=new Set(['True','False','None']);
+const endsOperand=t=>!!t&&(t.t==='name'&&(!PY_KEYWORDS.has(t.v)||OPERAND_KW.has(t.v))||t.t==='num'||t.t==='str'||t.t==='fstr'||t.t==='group');
+function emitArith(items,cx,lv){
+  if(lv>=ARITH.length)return emitUnary(items,cx);
+  for(let k=items.length-1;k>0;k--){const t=items[k];
+    if(t.t==='op'&&ARITH[lv].includes(t.v)&&endsOperand(items[k-1])){
+      const a=emitArith(items.slice(0,k),cx,lv),b=emitArith(items.slice(k+1),cx,lv+1);
+      const fn={'+':'__add','*':'__mul','/':'__div','//':'__fdiv','%':'__mod'}[t.v];
+      return fn?`${fn}(${a}, ${b})`:`(${a} ${t.v} ${b})`;}}
+  return emitArith(items,cx,lv+1);
+}
+function emitUnary(items,cx){
+  const t=items[0];
+  if(t&&t.t==='op'&&['-','+','~'].includes(t.v))return `(${t.v}${emitUnary(items.slice(1),cx)})`;
+  const k=items.findIndex((x,i)=>i>0&&isOp(x,'**'));
+  if(k>0)return `(${emitPostfix(items.slice(0,k),cx)} ** ${emitUnary(items.slice(k+1),cx)})`;
+  return emitPostfix(items,cx);
+}
+function emitPostfix(items,cx){
+  const syn=m=>pyErr('SyntaxError',m||'invalid syntax',cx.ln);
+  if(!items.length)throw syn('invalid syntax (something is missing here)');
+  let t=items[0],s,callee=null,bare=false;
+  if(t.t==='name'){
+    if(t.v==='True')s='true';else if(t.v==='False')s='false';else if(t.v==='None')s='null';
+    else if(t.v==='for')throw syn('comprehensions aren’t supported here: build the list with a for loop');
+    else if(PY_KEYWORDS.has(t.v))throw syn(`invalid syntax near “${t.v}”`);
+    else{s=jsName(t.v);callee=t.v;bare=true;}}
+  else if(t.t==='num')s=t.v;
+  else if(t.t==='str')s=jsStr(t);
+  else if(t.t==='fstr')s=emitF(t,cx);
+  else if(t.t==='group')s=emitLiteral(t,cx);
+  else if(isOp(t,'='))throw syn('invalid syntax. Maybe you meant == instead of =?');
+  else if(isOp(t,'!'))throw syn('invalid syntax: Python uses “not” instead of !');
+  else throw syn(`invalid syntax near “${t.v}”`);
+  for(let k=1;k<items.length;k++){t=items[k];
+    if(isOp(t,'.')){const nx=items[++k];if(!nx||nx.t!=='name')throw syn();s+='.'+nx.v;callee=nx.v;bare=false;continue;}
+    if(t.t==='group'&&t.open==='('){const args=emitArgs(t.items,cx);
+      s=callee&&((bare&&cx.userFns.has(callee))||PY_BLOCKING.has(callee))?`(yield* ${s}(${args}))`:`${s}(${args})`;callee=null;bare=false;continue;}
+    if(t.t==='group'&&t.open==='['){
+      if(t.items.some(x=>isOp(x,':')))throw syn('slices like [1:3] aren’t supported here');
+      const idx=emitExpr(t.items,cx);s=cx.lvalue&&k===items.length-1?`${s}[${idx}]`:`__get(${s}, ${idx})`;callee=null;bare=false;continue;}
+    if((t.t==='str'||t.t==='fstr')&&(items[k-1].t==='str'||items[k-1].t==='fstr')){s=`(${s} + ${t.t==='str'?jsStr(t):emitF(t,cx)})`;continue;}
+    if(isOp(t,'='))throw syn('invalid syntax. Maybe you meant == instead of =?');
+    throw syn(t.t==='name'?`invalid syntax near “${t.v}” (a comma or operator may be missing)`:'invalid syntax');
+  }
+  return s;
+}
+function emitLiteral(g,cx){
+  const parts=splitTop(g.items,isComma).filter(p=>p.length);
+  if(g.items.some(x=>isName(x,'for')))throw pyErr('SyntaxError','comprehensions aren’t supported here: build the list with a for loop',cx.ln);
+  if(g.open==='('){if(!g.items.length)return '[]';const tuple=g.items.some(isComma);return tuple?`[${parts.map(p=>emitExpr(p,cx)).join(', ')}]`:`(${emitExpr(g.items,cx)})`;}
+  if(g.open==='[')return `[${parts.map(p=>emitExpr(p,cx)).join(', ')}]`;
+  return `__dict([${parts.map(p=>{const i=p.findIndex(x=>isOp(x,':'));if(i<1)throw pyErr('SyntaxError','sets aren’t supported here; a dictionary needs key: value pairs',cx.ln);
+    return `[${emitExpr(p.slice(0,i),cx)}, ${emitExpr(p.slice(i+1),cx)}]`;}).join(', ')}])`;
+}
+function emitArgs(items,cx){
+  const pos=[],kw=[];
+  splitTop(items,isComma).filter(p=>p.length).forEach(p=>{
+    if(p[0].t==='name'&&isOp(p[1],'='))kw.push(`${JSON.stringify(p[0].v)}: ${emitExpr(p.slice(2),cx)}`);
+    else if(isOp(p[0],'**'))throw pyErr('SyntaxError','**kwargs isn’t supported here',cx.ln);
+    else if(isOp(p[0],'*'))pos.push(`...__iter(${emitExpr(p.slice(1),cx)})`);
+    else{if(kw.length)throw pyErr('SyntaxError','positional argument follows keyword argument',cx.ln);pos.push(emitExpr(p,cx));}});
+  if(kw.length)pos.push(`__kw({${kw.join(', ')}})`);
+  return pos.join(', ');
+}
+const jsStr=t=>t.raw?JSON.stringify(t.v):t.q+t.v+t.q;
+function emitF(t,cx){
+  const s=t.v,parts=[],lit=x=>t.raw?JSON.stringify(x):t.q+x+t.q;let buf='',i=0;
+  while(i<s.length){const c=s[i];
+    if(c==='{'&&s[i+1]==='{'){buf+='{';i+=2;continue;}
+    if(c==='}'&&s[i+1]==='}'){buf+='}';i+=2;continue;}
+    if(c==='\\'){buf+=c+(s[i+1]??'');i+=2;continue;}
+    if(c==='}')throw pyErr('SyntaxError',"f-string: single '}' is not allowed",cx.ln);
+    if(c!=='{'){buf+=c;i++;continue;}
+    let d=0,q=null,j=i+1;
+    for(;j<s.length;j++){const ch=s[j];if(q){if(ch===q)q=null;continue;}if(ch==='"'||ch==="'"){q=ch;continue;}
+      if('([{'.includes(ch))d++;else if(')]}'.includes(ch)){if(ch==='}'&&d===0)break;d--;}}
+    if(j>=s.length)throw pyErr('SyntaxError',"f-string: expecting '}'",cx.ln);
+    let inner=s.slice(i+1,j),spec=null,conv=null;
+    for(let k=0,d2=0,q2=null;k<inner.length;k++){const ch=inner[k];if(q2){if(ch===q2)q2=null;continue;}if(ch==='"'||ch==="'"){q2=ch;continue;}
+      if('([{'.includes(ch))d2++;else if(')]}'.includes(ch))d2--;
+      else if(d2===0&&ch==='!'&&inner[k+1]!=='='){conv=inner[k+1];spec=inner[k+2]===':'?inner.slice(k+3):null;inner=inner.slice(0,k);break;}
+      else if(d2===0&&ch===':'){spec=inner.slice(k+1);inner=inner.slice(0,k);break;}}
+    if(!inner.trim())throw pyErr('SyntaxError','f-string: empty expression not allowed',cx.ln);
+    if(buf){parts.push(lit(buf));buf='';}
+    const e=emitExpr(pyGroup(pyTokenize(inner,cx.ln),cx.ln),cx);
+    const v=conv==='r'?`__repr(${e})`:e;
+    parts.push(spec!=null?`__fmt(${v}, ${JSON.stringify(spec)})`:`__str(${v})`);
+    i=j+1;}
+  if(buf)parts.push(lit(buf));
+  return parts.length?`(${parts.join(' + ')})`:'""';
+}
+
+/** Turns a Python program into the body of a JavaScript generator. Errors carry the line number. */
+function compilePython(src){
+  // 1. physical lines → logical lines (open brackets and a trailing \ continue a line)
+  const phys=src.replace(/\r\n?/g,'\n').split('\n'),logical=[];
+  let buf='',start=0,depth=0,openLn=0;
+  for(let i=0;i<phys.length;i++){
+    const line=phys[i];if(!buf)start=i+1;
+    let code='',q=null;
+    for(let j=0;j<line.length;j++){const c=line[j];
+      if(q){code+=c;if(c==='\\'){code+=line[j+1]??'';j++;}else if(c===q)q=null;continue;}
+      if(c==='#')break;
+      if(c==='"'||c==="'")q=c;
+      else if('([{'.includes(c)){if(!depth)openLn=i+1;depth++;}
+      else if(')]}'.includes(c))depth=Math.max(0,depth-1);
+      code+=c;}
+    buf+=buf?' '+code.trim():code.replace(/\s+$/,'');
+    if(depth>0)continue;
+    if(/\\$/.test(buf)){buf=buf.slice(0,-1);continue;}
+    if(buf.trim()){const ws=/^[ \t]*/.exec(buf)[0];logical.push({ln:start,ind:ws.replace(/\t/g,'    ').length,text:buf.trim()});}
+    buf='';}
+  if(depth>0)throw pyErr('SyntaxError','a bracket opened here was never closed',openLn);
+
+  const cx={ln:0,userFns:new Set(),lvalue:false};
+  logical.forEach(L=>{const m=/^def\s+([A-Za-z_]\w*)/.exec(L.text);if(m)cx.userFns.add(m[1]);});
+  const out=[''];
+  const moduleScope={vars:new Set(),params:new Set(),globals:new Set(),slot:0,fn:null};
+  const scopes=[moduleScope],scope=()=>scopes[scopes.length-1];
+  const declare=n=>{const s=scope();if(s.params.has(n))return;if(s.globals.has(n)||s===moduleScope)moduleScope.vars.add(n);else s.vars.add(n);};
+  const known=n=>{const s=scope();return s===moduleScope||s.vars.has(n)||s.params.has(n)||s.globals.has(n);};
+  const fillSlot=s=>{const v=[...s.vars].filter(n=>!s.params.has(n));out[s.slot]=v.length?`var ${v.map(jsName).join(', ')};`:'';};
+  const stack=[{ind:0,type:'module'}];
+  let pending=null,lastClosed=null,tryN=0;
+  const closeBlock=next=>{const b=stack.pop();
+    if(b.type==='except'){const more=next&&next.ind===b.tryInd&&/^except\b/.test(next.text);out.push(more?'}':`} else { throw ${b.ev}; } }`);}
+    else if(b.type==='def'){out.push(`}\n${b.name}.__req = ${b.req};`);fillSlot(scopes.pop());}
+    else out.push('}');
+    lastClosed=b;};
+  const toksOf=(s,ln)=>pyGroup(pyTokenize(s,ln),ln);
+  const exprOf=(s,ln)=>emitExpr(toksOf(s,ln),cx);
+  const target=(items,ln)=>{ // the left side of an assignment
+    if(items.length===1&&items[0].t==='name'){if(PY_KEYWORDS.has(items[0].v))throw pyErr('SyntaxError',`cannot assign to ${items[0].v}`,ln);declare(items[0].v);return jsName(items[0].v);}
+    const names=splitTop(items,isComma).filter(p=>p.length);
+    const one=items.length===1&&items[0].t==='group'&&items[0].open!=='{'?splitTop(items[0].items,isComma).filter(p=>p.length):null;
+    const list=names.length>1?names:one&&one.length>1?one:null;
+    if(list)return `[${list.map(p=>target(p,ln)).join(', ')}]`;
+    if(items[0].t!=='name'&&items[0].t!=='group')throw pyErr('SyntaxError','cannot assign to this',ln);
+    cx.lvalue=true;try{return emitPostfix(items,cx);}finally{cx.lvalue=false;}};
+
+  for(let li=0;li<logical.length;li++){
+    const L=logical[li],ln=L.ln;cx.ln=ln;
+    const top=stack[stack.length-1];
+    if(pending){
+      if(L.ind<=top.ind)throw pyErr('IndentationError',`expected an indented block after the “${pending.kw}” on line ${pending.ln}`,ln);
+      stack.push(Object.assign({ind:L.ind},pending.block));pending=null;lastClosed=null;}
+    else{
+      if(L.ind>top.ind)throw pyErr('IndentationError','unexpected indent',ln);
+      lastClosed=null;
+      while(L.ind<stack[stack.length-1].ind)closeBlock(L);
+      if(L.ind!==stack[stack.length-1].ind)throw pyErr('IndentationError','unindent does not match any outer indentation level',ln);}
+    const text=L.text,kw=(/^[A-Za-z_]\w*/.exec(text)||[''])[0],at=`__ln = ${ln}; `;
+    const opener=['if','elif','else','while','for','def','try','except','finally','class','with'];
+    if(opener.includes(kw)&&!text.endsWith(':')){
+      if(kw==='class'||kw==='with')throw pyErr('SyntaxError',`“${kw}” isn’t supported in this simulator`,ln);
+      throw pyErr('SyntaxError',text.includes(':')?'put the code after the : on its own, indented line':`expected ':' at the end of the line`,ln);}
+    const head=k=>text.slice(k.length,-1).trim();
+    const open=(k,block,js)=>{out.push(js);pending={kw:k,ln,block};};
+    if(text.startsWith('@')){
+      let k=li+1;while(k<logical.length&&logical[k].text.startsWith('@'))k++;
+      const m=k<logical.length&&/^def\s+([A-Za-z_]\w*)/.exec(logical[k].text);
+      if(!m)throw pyErr('SyntaxError','a decorator must sit on the line just above a def',ln);
+      out.push(`${at}(${exprOf(text.slice(1),ln)})(${jsName(m[1])});`);continue;}
+    switch(kw){
+      case 'if':open('if',{type:'if'},`${at}if (__truth(${exprOf(head('if'),ln)})) {`);continue;
+      case 'elif':
+        if(!lastClosed||!['if','elif'].includes(lastClosed.type))throw pyErr('SyntaxError','“elif” needs an “if” just above it, at the same indent',ln);
+        open('elif',{type:'elif'},`else if (__truth(${exprOf(head('elif'),ln)})) {`);continue;
+      case 'else':
+        if(text!=='else:')throw pyErr('SyntaxError','invalid syntax',ln);
+        if(lastClosed&&['if','elif'].includes(lastClosed.type)){open('else',{type:'else'},'else {');continue;}
+        if(lastClosed&&['for','while','try','except'].includes(lastClosed.type))throw pyErr('SyntaxError',`“else” after “${lastClosed.type}” isn’t supported here`,ln);
+        throw pyErr('SyntaxError','“else” needs an “if” just above it, at the same indent',ln);
+      case 'while':open('while',{type:'while'},`${at}while (__truth(${exprOf(head('while'),ln)})) { if (++__ops > 2000) { __ops = 0; yield 0; }`);continue;
+      case 'for':{
+        const items=toksOf(head('for'),ln),k=items.findIndex(t=>isName(t,'in'));
+        if(k<1)throw pyErr('SyntaxError','a for loop needs “in”: for item in things:',ln);
+        open('for',{type:'for'},`${at}for (${target(items.slice(0,k),ln)} of __iter(${emitExpr(items.slice(k+1),cx)})) { if (++__ops > 2000) { __ops = 0; yield 0; }`);continue;}
+      case 'def':{
+        const m=/^def\s+([A-Za-z_]\w*)\s*\((.*)\)\s*(?:->.*)?:$/.exec(text);
+        if(!m)throw pyErr('SyntaxError','a function looks like: def name(things):',ln);
+        const names=[],defs=[];let rest=-1;
+        splitTop(toksOf(m[2],ln),isComma).filter(p=>p.length).forEach((p,i)=>{
+          if(isOp(p[0],'**'))throw pyErr('SyntaxError','**kwargs isn’t supported here',ln);
+          if(isOp(p[0],'*')){rest=i;names.push(p[1].v);defs.push('null');return;}
+          if(p[0].t!=='name')throw pyErr('SyntaxError','invalid parameter',ln);
+          let r=p.slice(1);if(isOp(r[0],':')){const e=r.findIndex(x=>isOp(x,'='));r=e<0?[]:r.slice(e);}
+          names.push(p[0].v);defs.push(r.length?(isOp(r[0],'=')?`() => (${emitExpr(r.slice(1),cx)})`:(()=>{throw pyErr('SyntaxError','invalid parameter',ln);})()):'null');});
+        const req=defs.filter((d,i)=>d==='null'&&i!==rest).length;
+        out.push(`${at}function* ${jsName(m[1])}(...__a) { var [${names.map(jsName).join(', ')}] = __params(__a, ${JSON.stringify(names)}, [${defs.join(', ')}], ${JSON.stringify(m[1])}, ${rest});`);
+        scopes.push({vars:new Set(),params:new Set(names),globals:new Set(),slot:out.length,fn:m[1]});out.push('');
+        open('def',{type:'def',name:jsName(m[1]),req},'');out.pop();continue;}
+      case 'return':{const r=text.slice(6).trim();if(scope()===moduleScope)throw pyErr('SyntaxError','“return” outside a function',ln);
+        out.push(`${at}return ${r?(splitTop(toksOf(r,ln),isComma).filter(p=>p.length).length>1?`[${splitTop(toksOf(r,ln),isComma).filter(p=>p.length).map(p=>emitExpr(p,cx)).join(', ')}]`:exprOf(r,ln)):'null'};`);continue;}
+      case 'pass':out.push(';');continue;
+      case 'break':case 'continue':out.push(`${at}${kw};`);continue;
+      case 'global':case 'nonlocal':text.slice(kw.length).split(',').map(s=>s.trim()).filter(Boolean).forEach(n=>{scope().globals.add(n);moduleScope.vars.add(n);});continue;
+      case 'import':{
+        text.slice(6).split(',').map(s=>s.trim()).forEach(part=>{const m=/^([\w.]+)(?:\s+as\s+(\w+))?$/.exec(part);if(!m)throw pyErr('SyntaxError','invalid import',ln);
+          if(!PY_MODULES[m[1]])throw pyErr('ModuleNotFoundError',`No module named '${m[1]}'`,ln);
+          if(m[2]){declare(m[2]);out.push(`${at}${jsName(m[2])} = __import(${JSON.stringify(m[1])});`);}
+          else{const root=m[1].split('.')[0];declare(root);out.push(`${at}${jsName(root)} = __import(${JSON.stringify(root)});`);}});continue;}
+      case 'from':{
+        const m=/^from\s+([\w.]+)\s+import\s+(.+)$/.exec(text);if(!m)throw pyErr('SyntaxError','invalid import: from module import name',ln);
+        const mod=m[1],names=PY_MODULES[mod];if(!names)throw pyErr('ModuleNotFoundError',`No module named '${mod}'`,ln);
+        const list=m[2].replace(/^\(|\)$/g,'').trim()==='*'?names.map(n=>n):m[2].replace(/^\(|\)$/g,'').split(',').map(s=>s.trim()).filter(Boolean);
+        list.forEach(part=>{const p=/^(\w+)(?:\s+as\s+(\w+))?$/.exec(part);if(!p)throw pyErr('SyntaxError','invalid import',ln);
+          if(!names.includes(p[1]))throw pyErr('ImportError',mod==='gpiozero'&&GPIOZERO_MISSING.includes(p[1])?`${p[1]} isn’t in this simulator yet. It has: ${names.join(', ')}`:`cannot import name '${p[1]}' from '${mod}'`,ln);
+          const as=p[2]||p[1];declare(as);out.push(`${at}${jsName(as)} = __import(${JSON.stringify(mod)}).${p[1]};`);});continue;}
+      case 'try':if(text!=='try:')throw pyErr('SyntaxError','invalid syntax',ln);open('try',{type:'try'},`${at}try {`);continue;
+      case 'except':{
+        if(!lastClosed||!['try','except'].includes(lastClosed.type))throw pyErr('SyntaxError','“except” needs a “try” just above it, at the same indent',ln);
+        const m=/^except(?:\s+(.+?))?(?:\s+as\s+(\w+))?:$/.exec(text);if(!m)throw pyErr('SyntaxError','invalid except line',ln);
+        const first=lastClosed.type==='try',ev=first?`__e${++tryN}`:lastClosed.ev;
+        const cond=m[1]?`__exc(${ev}, ${exprOf(m[1],ln)})`:'true';
+        if(m[2])declare(m[2]);
+        open('except',{type:'except',ev,tryInd:L.ind},`${first?`catch (${ev}) { ${ev} = __pyerr(${ev}); `:'else '}if (${cond}) {${m[2]?` ${jsName(m[2])} = ${ev};`:''}`);continue;}
+      case 'finally':
+        if(!lastClosed||!['try','except'].includes(lastClosed.type))throw pyErr('SyntaxError','“finally” needs a “try” just above it',ln);
+        open('finally',{type:'finally'},'finally {');continue;
+      case 'raise':{const r=text.slice(5).trim();
+        if(!r){const e=[...stack].reverse().find(b=>b.type==='except');if(!e)throw pyErr('RuntimeError','No active exception to re-raise',ln);out.push(`${at}throw ${e.ev};`);continue;}
+        out.push(`${at}throw __raise(${exprOf(r,ln)});`);continue;}
+      case 'assert':{const p=splitTop(toksOf(text.slice(6),ln),isComma);out.push(`${at}if (!__truth(${emitExpr(p[0],cx)})) throw AssertionError(${p[1]?emitExpr(p[1],cx):'""'});`);continue;}
+      case 'del':{cx.lvalue=true;try{out.push(`${at}delete ${emitPostfix(toksOf(text.slice(3),ln),cx)};`);}finally{cx.lvalue=false;}continue;}
+      case 'class':case 'with':case 'lambda':case 'yield':case 'async':case 'await':throw pyErr('SyntaxError',`“${kw}” isn’t supported in this simulator`,ln);
+    }
+    // assignment, augmented assignment or a plain expression
+    let items=toksOf(text,ln);
+    if(items[0]&&items[0].t==='name'&&isOp(items[1],':')){const e=items.findIndex(x=>isOp(x,'='));items=e<0?[]:[items[0],...items.slice(e)];if(!items.length){out.push(';');continue;}}
+    const unbound=n=>{const s=scope();return s!==moduleScope&&!s.vars.has(n)&&!s.params.has(n)&&!s.globals.has(n)&&moduleScope.vars.has(n);};
+    const unboundJs=n=>`${at}throw UnboundLocalError(${JSON.stringify(`cannot access local variable '${n}' where it is not associated with a value. To change a variable from outside ${scope().fn}(), add “global ${n}” as its first line.`)});`;
+    const aug=items.findIndex(t=>t.t==='op'&&/^(?:\+|-|\*|\/|%|\*\*|\/\/|&|\||\^|>>|<<)=$/.test(t.v));
+    if(aug>=0){
+      const lhs=items.slice(0,aug),op=items[aug].v.slice(0,-1),rhs=emitExpr(items.slice(aug+1),cx);
+      if(lhs.length===1&&lhs[0].t==='name'&&unbound(lhs[0].v)){out.push(unboundJs(lhs[0].v));continue;}
+      if(lhs.length===1&&lhs[0].t==='name'&&!known(lhs[0].v)){out.push(`${at}throw NameError(${JSON.stringify(`name '${lhs[0].v}' is not defined`)});`);continue;}
+      const tg=target(lhs,ln),fn={'+':'__add','*':'__mul','/':'__div','//':'__fdiv','%':'__mod'}[op];
+      out.push(`${at}${tg} = ${fn?`${fn}(${tg}, ${rhs})`:`(${tg} ${op} (${rhs}))`};`);continue;}
+    const eqs=items.map((t,i)=>isOp(t,'=')?i:-1).filter(i=>i>=0);
+    if(eqs.length){
+      const parts=[];let s0=0;eqs.forEach(i=>{parts.push(items.slice(s0,i));s0=i+1;});const rhsItems=items.slice(s0);
+      if(!rhsItems.length||parts.some(p=>!p.length))throw pyErr('SyntaxError','invalid syntax: something is missing beside the =',ln);
+      const reads=new Set(rhsItems.filter((t,i)=>t.t==='name'&&!isOp(rhsItems[i-1],'.')).map(t=>t.v));
+      const self=parts.find(p=>p.length===1&&p[0].t==='name'&&reads.has(p[0].v)&&unbound(p[0].v));
+      if(self){out.push(unboundJs(self[0].v));continue;}
+      const rhsTop=splitTop(rhsItems,isComma).filter(p=>p.length);
+      const rhs=rhsTop.length>1?`[${rhsTop.map(p=>emitExpr(p,cx)).join(', ')}]`:emitExpr(rhsItems,cx);
+      if(parts.length===1){const tg=target(parts[0],ln);out.push(`${at}${tg} = ${tg.startsWith('[')?`__unpack(${rhs}, ${tg.split(',').length})`:rhs};`);}
+      else{out.push(`${at}{ const __v = ${rhs}; ${parts.map(p=>`${target(p,ln)} = __v;`).join(' ')} }`);}
+      continue;}
+    out.push(`${at}${emitExpr(items,cx)};`);
+  }
+  if(pending)throw pyErr('IndentationError',`expected an indented block after the “${pending.kw}” on line ${pending.ln}`,pending.ln);
+  while(stack.length>1)closeBlock(null);
+  fillSlot(moduleScope);
+  return out.join('\n');
+}
+
+/* ---------- Python runtime ---------- */
+class KW{constructor(o){this.o=o;}}
+const splitKw=a=>a.length&&a[a.length-1] instanceof KW?[a.slice(0,-1),a[a.length-1].o]:[a,{}];
+const DICT=Object.create(null);
+const isDict=v=>v!==null&&typeof v==='object'&&Object.getPrototypeOf(v)===DICT;
+Object.assign(DICT,{
+  get(k,...r){const [a,kw]=splitKw(r);let v=Object.prototype.hasOwnProperty.call(this,k)?this[k]:(a.length?a[0]:kw.default!==undefined?kw.default:null);
+    if(kw.type&&v!=null&&Object.prototype.hasOwnProperty.call(this,k)){try{v=kw.type(v);}catch(e){v=a.length?a[0]:kw.default??null;}}return v;},
+  keys(){return Object.keys(this);},values(){return Object.keys(this).map(k=>this[k]);},items(){return Object.keys(this).map(k=>[k,this[k]]);},
+  update(o){Object.assign(this,o);return null;},pop(k,d){if(k in this){const v=this[k];delete this[k];return v;}if(d!==undefined)return d;throw pyErr('KeyError',__repr(k));},
+  setdefault(k,d=null){if(!(k in this))this[k]=d;return this[k];},
+});
+Object.keys(DICT).forEach(k=>Object.defineProperty(DICT,k,{enumerable:false}));
+function __dict(pairs){const d=Object.create(DICT);pairs.forEach(([k,v])=>{d[k]=v;});return d;}
+const pyType=v=>v===null||v===undefined?'NoneType':typeof v==='boolean'?'bool':typeof v==='number'?(Number.isInteger(v)?'int':'float'):typeof v==='string'?'str':Array.isArray(v)?'list':isDict(v)?'dict':typeof v==='function'?'function':(v.__type||'object');
+function __repr(v){return typeof v==='string'?`'${v.replace(/\\/g,'\\\\').replace(/'/g,"\\'")}'`:__str(v);}
+function __str(v){
+  if(v===null||v===undefined)return 'None';if(v===true)return 'True';if(v===false)return 'False';
+  if(typeof v==='number'){if(Number.isNaN(v))return 'nan';if(!Number.isFinite(v))return v>0?'inf':'-inf';return String(v);}
+  if(typeof v==='string')return v;
+  if(Array.isArray(v))return '['+v.map(__repr).join(', ')+']';
+  if(v instanceof PyErr)return v.message;
+  if(isDict(v))return '{'+Object.keys(v).map(k=>`${__repr(k)}: ${__repr(v[k])}`).join(', ')+'}';
+  if(typeof v==='function')return `<function ${v.name||'?'}>`;
+  if(typeof v.__str==='function')return v.__str();
+  return String(v);
+}
+function __truth(v){if(v===null||v===undefined||v===false||v===0||v==='')return false;if(Array.isArray(v))return v.length>0;if(isDict(v))return Object.keys(v).length>0;return true;}
+function __eq(a,b){if(a===undefined)a=null;if(b===undefined)b=null;
+  if((typeof a==='number'||typeof a==='boolean')&&(typeof b==='number'||typeof b==='boolean'))return Number(a)===Number(b);
+  if(Array.isArray(a)&&Array.isArray(b))return a.length===b.length&&a.every((x,i)=>__eq(x,b[i]));
+  if(isDict(a)&&isDict(b)){const ka=Object.keys(a),kb=Object.keys(b);return ka.length===kb.length&&ka.every(k=>k in b&&__eq(a[k],b[k]));}
+  return a===b;}
+const num=v=>typeof v==='number'||typeof v==='boolean';
+function opErr(op,a,b){return pyErr('TypeError',`unsupported operand type(s) for ${op}: '${pyType(a)}' and '${pyType(b)}'`);}
+function __add(a,b){
+  if(num(a)&&num(b))return a+b;
+  if(typeof a==='string'&&typeof b==='string')return a+b;
+  if(Array.isArray(a)&&Array.isArray(b))return a.concat(b);
+  if(typeof a==='string')throw pyErr('TypeError',`can only concatenate str (not "${pyType(b)}") to str. Try str(...) or an f-string`);
+  throw opErr('+',a,b);}
+function __mul(a,b){
+  if(num(a)&&num(b))return a*b;
+  if((typeof a==='string'||Array.isArray(a))&&Number.isInteger(b))return typeof a==='string'?a.repeat(Math.max(0,b)):[].concat(...Array(Math.max(0,b)).fill(a));
+  if(Number.isInteger(a)&&(typeof b==='string'||Array.isArray(b)))return __mul(b,a);
+  throw opErr('*',a,b);}
+function __div(a,b){if(!num(a)||!num(b))throw opErr('/',a,b);if(+b===0)throw pyErr('ZeroDivisionError','division by zero');return a/b;}
+function __fdiv(a,b){if(!num(a)||!num(b))throw opErr('//',a,b);if(+b===0)throw pyErr('ZeroDivisionError','integer division or modulo by zero');return Math.floor(a/b);}
+function __mod(a,b){if(!num(a)||!num(b))throw opErr('%',a,b);if(+b===0)throw pyErr('ZeroDivisionError','integer division or modulo by zero');return ((a%b)+b)%b;}
+function __get(o,k){
+  if(Array.isArray(o)||typeof o==='string'){if(!Number.isInteger(k))throw pyErr('TypeError',`${pyType(o)} indices must be integers, not ${pyType(k)}`);const i=k<0?o.length+k:k;
+    if(i<0||i>=o.length)throw pyErr('IndexError',`${pyType(o)} index out of range`);return o[i];}
+  if(isDict(o)){if(!Object.prototype.hasOwnProperty.call(o,k))throw pyErr('KeyError',__repr(k));return o[k];}
+  if(o===null||o===undefined)throw pyErr('TypeError',"'NoneType' object is not subscriptable");
+  return o[k];}
+function __in(x,c){if(typeof c==='string')return c.includes(x);if(Array.isArray(c))return c.some(y=>__eq(x,y));if(isDict(c))return Object.prototype.hasOwnProperty.call(c,x);
+  throw pyErr('TypeError',`argument of type '${pyType(c)}' is not iterable`);}
+function __iter(x){if(Array.isArray(x))return x;if(typeof x==='string')return Array.from(x);if(isDict(x))return Object.keys(x);
+  throw pyErr('TypeError',`'${pyType(x)}' object is not iterable`);}
+function __unpack(v,n){const a=__iter(v);if(a.length!==n)throw pyErr('ValueError',a.length>n?`too many values to unpack (expected ${n})`:`not enough values to unpack (expected ${n}, got ${a.length})`);return a;}
+function __params(a,names,defs,fname,rest){
+  let kw=null;if(a.length&&a[a.length-1] instanceof KW){kw=a[a.length-1].o;a=a.slice(0,-1);}
+  const vals=new Array(names.length),npos=rest>=0?rest:names.length;
+  if(rest<0&&a.length>npos)throw pyErr('TypeError',`${fname}() takes ${npos} positional argument${npos===1?'':'s'} but ${a.length} ${a.length===1?'was':'were'} given`);
+  for(let i=0;i<npos;i++)vals[i]=a[i];
+  if(rest>=0)vals[rest]=a.slice(rest);
+  if(kw)for(const k in kw){const i=names.indexOf(k);if(i<0||i===rest)throw pyErr('TypeError',`${fname}() got an unexpected keyword argument '${k}'`);vals[i]=kw[k];}
+  const miss=[];names.forEach((n,i)=>{if(i===rest||vals[i]!==undefined)return;if(defs[i])vals[i]=defs[i]();else miss.push(`'${n}'`);});
+  if(miss.length)throw pyErr('TypeError',`${fname}() missing ${miss.length} required positional argument${miss.length>1?'s':''}: ${miss.join(' and ')}`);
+  return vals;}
+const fmtNum=(v,prec,type)=>type==='e'||type==='E'?v.toExponential(prec??6).replace(/e([+-])(\d)$/,'e$10$2'):v.toFixed(prec??6);
+function __fmt(v,spec){
+  const m=/^(?:(.)?([<>^=]))?([+\- ]?)(0)?(\d+)?(,)?(?:\.(\d+))?([bcdeEfFgGnosxX%])?$/.exec(spec);
+  if(!m)throw pyErr('ValueError',`Invalid format specifier '${spec}'`);
+  const [,fill0,align0,sign,zero,width0,comma,prec0,type]=m,prec=prec0==null?null:+prec0,width=+width0||0;
+  let s;
+  if('fFeE%'.includes(type||'_')){if(!num(v))throw pyErr('ValueError',`Unknown format code '${type}' for object of type '${pyType(v)}'`);s=type==='%'?fmtNum(v*100,prec,'f')+'%':fmtNum(+v,prec,type);}
+  else if(type==='d'){if(!Number.isInteger(v))throw pyErr('ValueError',`Unknown format code 'd' for object of type '${pyType(v)}'`);s=String(v);}
+  else if(type==='x'||type==='X'||type==='b'||type==='o'){if(!Number.isInteger(v))throw pyErr('ValueError',`Unknown format code '${type}' for object of type '${pyType(v)}'`);s=v.toString({x:16,X:16,b:2,o:8}[type]);if(type==='X')s=s.toUpperCase();}
+  else if(prec!=null&&typeof v==='number')s=String(Number(v.toPrecision(Math.max(1,prec))));
+  else{s=__str(v);if(prec!=null&&typeof v==='string')s=s.slice(0,prec);}
+  if(comma)s=s.replace(/^(-?)(\d+)/,(a,sg,d)=>sg+d.replace(/\B(?=(\d{3})+(?!\d))/g,','));
+  if(sign==='+'&&num(v)&&v>=0)s='+'+s;else if(sign===' '&&num(v)&&v>=0)s=' '+s;
+  if(s.length<width){const n=width-s.length,fill=fill0||(zero?'0':' '),align=align0||(zero?'=':num(v)?'>':'<');
+    if(align==='<')s+=fill.repeat(n);else if(align==='^')s=fill.repeat(Math.floor(n/2))+s+fill.repeat(Math.ceil(n/2));
+    else if(align==='='&&/^[+\- ]/.test(s))s=s[0]+fill.repeat(n)+s.slice(1);else s=fill.repeat(n)+s;}
+  return s;}
+/* Python's str and list methods, added once. */
+const addMethods=(proto,map)=>Object.entries(map).forEach(([k,f])=>{if(!Object.prototype.hasOwnProperty.call(proto,k))Object.defineProperty(proto,k,{value:f,configurable:true,writable:true});});
+addMethods(String.prototype,{upper(){return this.toUpperCase();},lower(){return this.toLowerCase();},strip(){return this.trim();},lstrip(){return this.trimStart();},rstrip(){return this.trimEnd();},
+  startswith(p){return this.startsWith(p);},endswith(p){return this.endsWith(p);},join(it){return __iter(it).map(x=>{if(typeof x!=='string')throw pyErr('TypeError',`sequence item: expected str instance, ${pyType(x)} found`);return x;}).join(String(this));},
+  isdigit(){return /^\d+$/.test(this);},capitalize(){return this.charAt(0).toUpperCase()+this.slice(1).toLowerCase();},title(){return this.replace(/\b\w/g,c=>c.toUpperCase());},count(s){return this.split(s).length-1;}});
+addMethods(Array.prototype,{append(x){this.push(x);return null;},extend(it){this.push(...__iter(it));return null;},insert(i,x){this.splice(i,0,x);return null;},
+  remove(x){const i=this.findIndex(y=>__eq(x,y));if(i<0)throw pyErr('ValueError','list.remove(x): x not in list');this.splice(i,1);return null;},
+  index(x){const i=this.findIndex(y=>__eq(x,y));if(i<0)throw pyErr('ValueError',`${__repr(x)} is not in list`);return i;},clear(){this.length=0;return null;},copy(){return this.slice();}});
+
+const EXC_NAMES=['Exception','RuntimeError','ValueError','TypeError','KeyError','IndexError','NameError','AttributeError','ZeroDivisionError','KeyboardInterrupt','AssertionError','OSError','ImportError','UnboundLocalError'];
+const EXC={};EXC_NAMES.forEach(n=>{const f=(...a)=>pyErr(n,a.length?__str(a[0]):'');f.pyName=n;EXC[n]=f;});
+function toPy(e){
+  if(e instanceof PyErr)return e;
+  const msg=e&&e.message||String(e);let m;
+  if(e instanceof ReferenceError&&(m=/^(\w+) is not defined/.exec(msg)))return pyErr('NameError',`name '${m[1].replace(/_$/,'')}' is not defined`);
+  if(e instanceof RangeError)return pyErr('RecursionError','maximum recursion depth exceeded');
+  if(e instanceof TypeError){
+    if((m=/Cannot read propert(?:y|ies) of (null|undefined)(?: \(reading '(\w+)'\))?/.exec(msg)))return pyErr('AttributeError',`'NoneType' object has no attribute '${m[2]||'?'}'`);
+    if((m=/Cannot set propert(?:y|ies) of (null|undefined)(?: \(setting '(\w+)'\))?/.exec(msg)))return pyErr('AttributeError',`'NoneType' object has no attribute '${m[2]||'?'}'`);
+    if((m=/([\w.$]+) is not a function/.exec(msg)))return pyErr('TypeError',`'${m[1].split('.').pop()}' is not callable`);
+    if(/is not iterable/.test(msg))return pyErr('TypeError','object is not iterable');}
+  return pyErr('Error',msg);}
+function __exc(e,cls){if(Array.isArray(cls))return cls.some(c=>__exc(e,c));if(!cls||!cls.pyName)throw pyErr('TypeError','catching classes that do not inherit from BaseException is not allowed');
+  return cls.pyName==='Exception'?e.pyType!=='KeyboardInterrupt':cls.pyName===e.pyType||(cls.pyName==='OSError'&&/Error$/.test(e.pyType)&&e.pyType.startsWith('GPIO'));}
+const __raise=x=>x instanceof PyErr?x:x&&x.pyName?x():pyErr('TypeError','exceptions must derive from BaseException');
+
+/** Wraps an object so a misspelt attribute raises AttributeError, like Python (and gpiozero, which also refuses new attributes). */
+function pyObj(type,obj,str,attrMsg){
+  Object.defineProperty(obj,'__type',{value:type});if(str)Object.defineProperty(obj,'__str',{value:str});
+  const miss=k=>pyErr('AttributeError',attrMsg?attrMsg(k):`'${type}' object has no attribute '${k}'`);
+  return new Proxy(obj,{get(t,k){if(typeof k!=='string'||k in t||k.startsWith('__')||k==='then'||k==='toJSON')return t[k];throw miss(k);},
+    set(t,k,v){if(k in t){t[k]=v;return true;}throw miss(k);}});
+}
+
+/** Runs a Python program. io connects it to the bench: buttons, the DHT22, the terminal, Wi-Fi and redraws. */
+function createPySim(io,opts){
+  const st={pins:{},mode:{},pwm:{},simMs:0};
+  let tasks=[],running=false,timer=null,wall0=0,main=null,lnGet=()=>0,kicked=false;
+  let claimed={},buttons=[];
+  const now=()=>performance.now()-wall0;
+  const changed=()=>io.changed(st);
+  function out(text){const parts=String(text).split('\n');parts.forEach((p,i)=>{if(i<parts.length-1)io.print(p,true);else if(p)io.print(p,false);});}
+  function traceback(e,where){const p=toPy(e),line=p.line||lnGet();
+    return `Traceback (most recent call last):\n  File "${opts.file}", line ${line}${where?`, in ${where}`:''}\n${p.pyType}: ${p.message}`;}
+  /* ----- cooperative tasks: the program, gpiozero callbacks, background blinks and web requests ----- */
+  function spawn(gen,o){const t=Object.assign({gen,wake:now()},o||{});tasks.push(t);if(!(o&&o.quiet))kick();return t;}
+  function kick(){if(kicked||!running)return;kicked=true;clearTimeout(timer);timer=setTimeout(slice,0);}
+  function slice(){
+    kicked=false;if(!running)return;const t0=performance.now();
+    poll();
+    for(;;){const n=now();st.simMs=n;let ran=false;
+      for(const t of tasks.slice()){
+        if(t.dead||t.wake>n)continue;ran=true;
+        let r;try{r=t.gen.next();}catch(e){t.dead=true;taskError(t,e);if(!running)return;continue;}
+        if(r.done){t.dead=true;if(t.onDone)t.onDone(r.value);if(t===main){finish('done');return;}continue;}
+        t.wake=n+Math.max(0,+r.value||0);}
+      tasks=tasks.filter(t=>!t.dead);
+      if(!ran||performance.now()-t0>8)break;}
+    if(!running)return;
+    const next=tasks.reduce((m,t)=>Math.min(m,t.wake),Infinity);
+    timer=setTimeout(slice,Math.max(0,Math.min(15,next-now())));
+  }
+  function taskError(t,e){
+    if(t===main){io.status('error',Object.assign(toPy(e),{trace:traceback(e),line:toPy(e).line||lnGet()}));finish('error');return;}
+    out(traceback(e,t.where));if(t.onError)t.onError(e);}
+  function fire(fn,dev){if(fn==null)return;if(typeof fn!=='function'){out(traceback(pyErr('TypeError',`'${pyType(fn)}' object is not callable`)));return;}
+    let r;try{r=fn.__req>=1?fn(dev):fn();}catch(e){out(traceback(e));return;}
+    if(r&&typeof r.next==='function')spawn(r,{where:fn.name});}
+  function poll(){buttons.forEach(b=>{if(b.closed)return;const v=!!io.read(b.p);const d=b.dev;
+    if(v!==b.last){b.last=v;b.at=now();b.held=false;fire(v?d.when_pressed:d.when_released,b.proxy);}
+    else if(v&&!b.held&&d.when_held&&now()-b.at>=b.hold*1000){b.held=true;fire(d.when_held,b.proxy);}});}
+  /* ----- pins ----- */
+  function toBcm(p){
+    if(typeof p==='string'){const m=/^(?:GPIO|BCM)?(\d+)$/i.exec(p.trim()),bm=/^BOARD(\d+)$/i.exec(p.trim());
+      if(bm){const h=HEADER.find(x=>x[0]===+bm[1]);if(!h||h[2]==null)throw pyErr('PinInvalidPin',`physical pin ${bm[1]} is not a GPIO pin`);return h[2];}
+      if(m)p=+m[1];}
+    if(p&&typeof p==='object'&&'__pin' in p)p=p.__pin;
+    if(!Number.isInteger(p)||!HEADER.some(x=>x[2]===p))throw pyErr('PinInvalidPin',`${__str(p)} is not a GPIO pin on the 40-pin header (GPIO 0–27)`);
+    return p;}
+  function claim(p,type){p=toBcm(p);if(claimed[p])throw pyErr('GPIOPinInUse',`pin GPIO${p} is already in use by ${claimed[p]}`);claimed[p]=`<gpiozero.${type} object on pin GPIO${p}>`;return p;}
+  const release=p=>{delete claimed[p];delete st.mode[p];delete st.pins[p];delete st.pwm[p];changed();};
+  const pinObj=p=>pyObj('Pin',{__pin:p},()=>`GPIO${p}`);
+  const bg=(dev,genFn)=>{if(dev.bg)dev.bg.dead=true;dev.bg=spawn(genFn());};
+  const stopBg=dev=>{if(dev.bg){dev.bg.dead=true;dev.bg=null;}};
+  /* ----- gpiozero ----- */
+  function outputDevice(type,pin,args,pwm){
+    const [a,kw]=splitKw(args),ah=kw.active_high??a[0]??true,p=claim(pin,type);st.mode[p]=1;
+    const dev={bg:null,v:0,closed:false};
+    const write=v=>{if(dev.closed)throw pyErr('GPIODeviceClosed',`${type} is closed or uninitialized`);v=pwm?Math.max(0,Math.min(1,+v||0)):(__truth(v)?1:0);dev.v=v;
+      const lvl=ah?v:1-v;if(pwm){st.pwm[p]=Math.round(lvl*255);st.pins[p]=lvl>0?1:0;}else{st.pwm[p]=null;st.pins[p]=lvl;}changed();};
+    write(kw.initial_value??a[1]??0);
+    const blinker=(onT,offT,n,fadeIn=0,fadeOut=0)=>function*(){for(let i=0;n==null||i<n;i++){
+        if(fadeIn){for(let s=1;s<=25;s++){write(s/25);yield fadeIn*40;}}else{write(1);yield onT*1000;}
+        if(fadeOut){for(let s=24;s>=0;s--){write(s/25);yield fadeOut*40;}}else{write(0);yield offT*1000;}}};
+    const o={
+      on(){stopBg(dev);write(1);return null;},off(){stopBg(dev);write(0);return null;},
+      toggle(){stopBg(dev);write(pwm?1-dev.v:!dev.v);return null;},
+      blink(...r){const [b,k]=splitKw(r);bg(dev,blinker(k.on_time??b[0]??1,k.off_time??b[1]??1,k.n??b[pwm?4:2]??null,pwm?k.fade_in_time??b[2]??0:0,pwm?k.fade_out_time??b[3]??0:0));return null;},
+      close(){stopBg(dev);dev.closed=true;release(p);return null;},
+      get value(){return dev.v;},set value(v){stopBg(dev);write(v);},
+      get is_active(){return dev.v>0;},get pin(){return pinObj(p);},get active_high(){return !!ah;},get closed(){return dev.closed;}};
+    if(type==='Buzzer'){o.beep=(...r)=>{const [b,k]=splitKw(r);bg(dev,blinker(k.on_time??b[0]??1,k.off_time??b[1]??1,k.n??b[2]??null));return null;};}
+    else Object.defineProperty(o,'is_lit',{get(){return dev.v>0;},enumerable:true});
+    if(pwm)o.pulse=(...r)=>{const [b,k]=splitKw(r);bg(dev,blinker(0,0,k.n??b[2]??null,k.fade_in_time??b[0]??1,k.fade_out_time??b[1]??1));return null;};
+    return pyObj(type,o,()=>`<gpiozero.${type} object on pin GPIO${p}, active_high=${ah?'True':'False'}, is_active=${dev.v>0?'True':'False'}>`);}
+  function Button(pin,...args){
+    const [a,kw]=splitKw(args),pull=kw.pull_up??a[0]??true,p=claim(pin,'Button');st.mode[p]=pull?2:0;
+    const b={p,last:!!io.read(p),at:0,held:false,hold:kw.hold_time??1,closed:false};
+    const d={when_pressed:null,when_released:null,when_held:null,
+      get is_pressed(){return !!io.read(p);},get value(){return io.read(p)?1:0;},get is_held(){return !!io.read(p)&&now()-b.at>=b.hold*1000;},get pin(){return pinObj(p);},
+      wait_for_press:function*(t){const t0=now();while(!io.read(p)){if(t!=null&&now()-t0>=t*1000)return false;yield 5;}return true;},
+      wait_for_release:function*(t){const t0=now();while(io.read(p)){if(t!=null&&now()-t0>=t*1000)return false;yield 5;}return true;},
+      close(){b.closed=true;release(p);return null;}};
+    b.dev=d;b.proxy=pyObj('Button',d,()=>`<gpiozero.Button object on pin GPIO${p}, pull_up=${pull?'True':'False'}, is_active=${io.read(p)?'True':'False'}>`);
+    buttons.push(b);changed();return b.proxy;}
+  function TrafficLights(...args){const [a,kw]=splitKw(args);const r=LED(kw.red??a[0]),am=LED(kw.amber??kw.yellow??a[1]),g=LED(kw.green??a[2]);
+    return pyObj('TrafficLights',{red:r,amber:am,green:g,on(){r.on();am.on();g.on();return null;},off(){r.off();am.off();g.off();return null;},close(){r.close();am.close();g.close();return null;}});}
+  const LED=(pin,...a)=>outputDevice('LED',pin,a,false);
+  const PWMLED=(pin,...a)=>outputDevice('PWMLED',pin,a,true);
+  const Buzzer=(pin,...a)=>outputDevice('Buzzer',pin,a,false);
+  /* ----- RPi.GPIO (the classic library) ----- */
+  let gmode=null;const gpioOwned=new Set();
+  const gch=ch=>{if(opts.board.id==='pi5')throw pyErr('RuntimeError','Cannot determine SOC peripheral base address');
+    if(gmode==null)throw pyErr('RuntimeError','Please set pin numbering mode using GPIO.setmode(GPIO.BOARD) or GPIO.setmode(GPIO.BCM)');
+    if(gmode===10){const h=HEADER.find(x=>x[0]===ch);if(!h||h[2]==null)throw pyErr('ValueError','The channel sent is invalid on a Raspberry Pi');return h[2];}
+    if(!HEADER.some(x=>x[2]===ch))throw pyErr('ValueError','The channel sent is invalid on a Raspberry Pi');return ch;};
+  const GPIO={BCM:11,BOARD:10,OUT:0,IN:1,HIGH:1,LOW:0,PUD_UP:22,PUD_DOWN:21,PUD_OFF:20,
+    setmode(m){gmode=m;return null;},getmode(){return gmode;},setwarnings(){return null;},
+    setup(ch,dir,...r){const [a,kw]=splitKw(r),p=gch(ch);gpioOwned.add(p);
+      if(dir===0){st.mode[p]=1;st.pwm[p]=null;st.pins[p]=(kw.initial??0)?1:0;}else st.mode[p]=(kw.pull_up_down??a[0])===22?2:0;changed();return null;},
+    output(ch,v){const p=gch(ch);if(st.mode[p]!==1)throw pyErr('RuntimeError','The GPIO channel has not been set up as an OUTPUT');st.pwm[p]=null;st.pins[p]=__truth(v)?1:0;changed();return null;},
+    input(ch){const p=gch(ch);if(st.mode[p]===1)return st.pins[p]?1:0;if(st.mode[p]==null)throw pyErr('RuntimeError','You must setup() the GPIO channel first');
+      return st.mode[p]===2?(io.read(p)?0:1):0;},
+    cleanup(){gpioOwned.forEach(p=>{delete st.mode[p];delete st.pins[p];delete st.pwm[p];});gpioOwned.clear();changed();return null;},
+    PWM(ch,freq){const p=gch(ch);if(st.mode[p]!==1)throw pyErr('RuntimeError','You must setup() the GPIO channel as an output first');
+      const set=dc=>{dc=Math.max(0,Math.min(100,+dc||0));st.pwm[p]=Math.round(dc*2.55);st.pins[p]=dc>0?1:0;changed();};
+      return pyObj('PWM',{start(dc){set(dc);return null;},ChangeDutyCycle(dc){set(dc);return null;},ChangeFrequency(){return null;},stop(){set(0);return null;}});}};
+  /* ----- Flask ----- */
+  const request=pyObj('Request',{args:__dict([]),path:'/',method:'GET'});
+  function Flask(name){
+    const routes={};let port=5000;
+    const two=n=>String(n).padStart(2,'0'),MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    const stamp=()=>{const d=new Date();return `${two(d.getDate())}/${MON[d.getMonth()]}/${d.getFullYear()} ${two(d.getHours())}:${two(d.getMinutes())}:${two(d.getSeconds())}`;};
+    const respond=(req,path,code,type,body)=>{out(`192.168.1.23 - - [${stamp()}] "GET ${path} HTTP/1.1" ${code} -`);req.done({code,type,body});};
+    const send=(req,path,fn,v)=>{let code=200;if(Array.isArray(v)&&v.length===2&&Number.isInteger(v[1])){code=v[1];v=v[0];}
+      if(typeof v==='string')respond(req,path,code,'text/html',v);
+      else if(isDict(v)||Array.isArray(v))respond(req,path,code,'application/json',JSON.stringify(v,null,2));
+      else{out(traceback(pyErr('TypeError',`The view function for '${fn.name}' did not return a valid response. The function either returned None or ended without a return statement.`),fn.name));
+        respond(req,path,500,'text/html','<h1>Internal Server Error</h1><p>The server encountered an internal error.</p>');}};
+    const app={
+      route(path){return fn=>{if(typeof fn!=='function')throw pyErr('TypeError','@app.route must sit above a def');routes[path]=fn;return fn;};},
+      run:function*(...r){const [a,kw]=splitKw(r),host=String(kw.host??a[0]??'127.0.0.1');port=+(kw.port??a[1]??5000);
+        out(` * Serving Flask app '${name}'`);out(` * Debug mode: ${kw.debug?'on':'off'}`);
+        out(`WARNING: This is a development server. Do not use it in a production deployment.`);
+        out(` * Running on http://127.0.0.1:${port}`);if(host==='0.0.0.0')out(` * Running on http://192.168.1.50:${port}`);out('Press CTRL+C to quit');
+        io.server({port,reachable:host==='0.0.0.0',handle});io.wifi('connected');
+        for(;;)yield 1000;}};
+    function handle(path,args,req){
+      const fn=routes[path];
+      if(!fn){respond(req,path,404,'text/html','<h1>Not Found</h1><p>The requested URL was not found on the server.</p>');return;}
+      request.args=__dict(Object.entries(args));request.path=path;
+      const fail=e=>respond(req,path,500,'text/html','<h1>Internal Server Error</h1><p>The server encountered an internal error.</p>');
+      let r;try{r=fn();}catch(e){out(traceback(e,fn.name));fail();return;}
+      if(r&&typeof r.next==='function')spawn(r,{where:fn.name,onDone:v=>send(req,path,fn,v),onError:fail});else send(req,path,fn,r);}
+    return pyObj('Flask',app,()=>`<Flask '${name}'>`);}
+  /* ----- adafruit_dht ----- */
+  function dhtDevice(type,pin){const p=claim(pin,type);let reads=0;
+    const read=k=>{const v=io.dht();if(reads++>1&&Math.random()<.08)throw pyErr('RuntimeError',Math.random()<.5?'Checksum did not validate. Try again.':'A full buffer was not returned. Try again.');
+      const x=k==='t'?v.t+(Math.random()-.5)*.2:v.h+(Math.random()-.5)*.6;return type==='DHT11'?Math.round(x):Math.round(x*10)/10;};
+    return pyObj(type,{get temperature(){return read('t');},get humidity(){return read('h');},exit(){release(p);return null;}});}
+  /* ----- modules ----- */
+  const modMsg=n=>k=>`module '${n}' has no attribute '${k}'`;
+  const MODS={
+    gpiozero:{LED,PWMLED,Button,Buzzer,TrafficLights},
+    time:{sleep:function*(s){if(!num(s))throw pyErr('TypeError',`'${pyType(s)}' object cannot be interpreted as a number`);if(s<0)throw pyErr('ValueError','sleep length must be non-negative');yield s*1000;return null;},
+      time:()=>Date.now()/1000,monotonic:()=>now()/1000,perf_counter:()=>now()/1000,
+      strftime:f=>{const d=new Date(),two=n=>String(n).padStart(2,'0');return String(f).replace(/%([HMSYmd%])/g,(m,c)=>({H:two(d.getHours()),M:two(d.getMinutes()),S:two(d.getSeconds()),Y:d.getFullYear(),m:two(d.getMonth()+1),d:two(d.getDate()),'%':'%'}[c]));}},
+    random:{randint:(a,b)=>a+Math.floor(Math.random()*(b-a+1)),uniform:(a,b)=>a+Math.random()*(b-a),random:()=>Math.random(),
+      choice:s=>{const a=__iter(s);if(!a.length)throw pyErr('IndexError','Cannot choose from an empty sequence');return a[Math.floor(Math.random()*a.length)];},
+      shuffle:a=>{for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return null;}},
+    signal:{pause:function*(){for(;;)yield 1000;}},
+    math:{pi:Math.PI,sqrt:x=>{if(x<0)throw pyErr('ValueError','math domain error');return Math.sqrt(x);},floor:Math.floor,ceil:Math.ceil,sin:Math.sin,cos:Math.cos,tan:Math.tan,log:Math.log,log10:Math.log10,exp:Math.exp,fabs:Math.abs},
+    flask:{Flask,request,jsonify:v=>v},
+    board:Object.fromEntries(Array.from({length:28},(_,i)=>['D'+i,i])),
+    adafruit_dht:{DHT22:p=>dhtDevice('DHT22',p),DHT11:p=>dhtDevice('DHT11',p)},
+    'RPi.GPIO':GPIO,
+  };
+  const modCache={};
+  function __import(n){if(modCache[n])return modCache[n];
+    if(n==='RPi')return modCache[n]=pyObj('module',{GPIO:__import('RPi.GPIO')},null,modMsg('RPi'));
+    return modCache[n]=pyObj('module',Object.assign({},MODS[n]),()=>`<module '${n}'>`,modMsg(n));}
+  /* ----- builtins ----- */
+  const B={
+    print(...r){const [a,kw]=splitKw(r);out(a.map(__str).join(kw.sep==null?' ':__str(kw.sep))+(kw.end==null?'\n':__str(kw.end)));return null;},
+    len(x){if(typeof x==='string'||Array.isArray(x))return x.length;if(isDict(x))return Object.keys(x).length;throw pyErr('TypeError',`object of type '${pyType(x)}' has no len()`);},
+    range(a,b,s=1){if(b===undefined){b=a;a=0;}if(![a,b,s].every(Number.isInteger))throw pyErr('TypeError','range() needs whole numbers');if(s===0)throw pyErr('ValueError','range() arg 3 must not be zero');
+      const r=[];for(let i=a;s>0?i<b:i>b;i+=s){r.push(i);if(r.length>1e6)throw pyErr('MemoryError','range too big for the simulator');}return r;},
+    int(x=0){if(typeof x==='string'){if(!/^\s*[-+]?\d+\s*$/.test(x))throw pyErr('ValueError',`invalid literal for int() with base 10: ${__repr(x)}`);return parseInt(x,10);}if(!num(x))throw pyErr('TypeError',`int() argument must be a string or a number, not '${pyType(x)}'`);return Math.trunc(+x);},
+    float(x=0){if(typeof x==='string'){const v=Number(x.trim());if(x.trim()===''||Number.isNaN(v))throw pyErr('ValueError',`could not convert string to float: ${__repr(x)}`);return v;}return +x;},
+    str:(x='')=>__str(x),bool:x=>__truth(x),abs:x=>Math.abs(x),
+    round(x,n){if(n===undefined||n===null)return Math.round(x);const f=10**n;return Math.round(x*f)/f;},
+    min(...a){const v=a.length===1?__iter(a[0]):a;if(!v.length)throw pyErr('ValueError','min() arg is an empty sequence');return v.reduce((m,x)=>x<m?x:m);},
+    max(...a){const v=a.length===1?__iter(a[0]):a;if(!v.length)throw pyErr('ValueError','max() arg is an empty sequence');return v.reduce((m,x)=>x>m?x:m);},
+    sum:(it,s=0)=>__iter(it).reduce((a,b)=>__add(a,b),s),
+    enumerate:(it,s=0)=>__iter(it).map((v,i)=>[i+s,v]),list:(it=[])=>__iter(it).slice(),sorted:(it)=>__iter(it).slice().sort((a,b)=>a<b?-1:a>b?1:0),
+    reversed:it=>__iter(it).slice().reverse(),
+    input(){throw pyErr('RuntimeError','input() needs a keyboard, and this simulator has none. Use a Button instead!');},
+    type:x=>pyObj('type',{},()=>`<class '${pyType(x)}'>`),
+    isinstance:(x,t)=>t===B.int?Number.isInteger(x)&&typeof x!=='boolean':t===B.float?typeof x==='number':t===B.str?typeof x==='string':t===B.list?Array.isArray(x):t===B.bool?typeof x==='boolean':false,
+    __name__:'__main__',
+  };
+  const rt=Object.assign({},B,EXC,{__import,__dict,__kw:o=>new KW(o),__params,__fmt,__str,__repr,__truth,__eq,__add,__mul,__div,__fdiv,__mod,__get,__in,__iter,__unpack,__exc,__pyerr:toPy,__raise});
+  function reset(){tasks=[];buttons=[];claimed={};gmode=null;gpioOwned.clear();Object.keys(modCache).forEach(k=>delete modCache[k]);Object.assign(st,{pins:{},mode:{},pwm:{}});}
+  function finish(how){running=false;clearTimeout(timer);reset();io.server(null);io.wifi('off');if(how==='done')io.status('done');changed();}
+  return{
+    state:st,
+    start(code){
+      let body;try{body=compilePython(code);}catch(e){io.status('error',Object.assign(toPy(e),{trace:traceback(e)}));return false;}
+      let mainFn;
+      try{mainFn=new Function('__rt',`const {${Object.keys(rt).join(',')}} = __rt;\nlet __ln = 0, __ops = 0;\n__rt.__lnGet = () => __ln;\nreturn function* __main() {\n${body}\n};`)(rt);}
+      catch(e){const pe=pyErr('SyntaxError','invalid syntax (check the brackets, quotes and colons)');io.status('error',Object.assign(pe,{trace:traceback(pe)}));return false;}
+      lnGet=rt.__lnGet;reset();wall0=performance.now();running=true;
+      main=spawn(mainFn(),{quiet:true});io.status('running');changed();slice();return true;},
+    stop(){if(!running)return;running=false;clearTimeout(timer);reset();io.server(null);io.wifi('off');io.status('stopped');changed();},
+    get running(){return running;},
+  };
+}
+
+/* ---------- 3D bench: a Raspberry Pi and a breadboard (three.js) ---------- */
+function createPiBench(host,api){
+  const T=window.THREE,UP=new T.Vector3(0,1,0);
+  const reduce=matchMedia('(prefers-reduced-motion:reduce)').matches;
+  const ease=t=>1-Math.pow(1-Math.min(1,Math.max(0,t)),3);
+  const renderer=new T.WebGLRenderer({antialias:true,alpha:true});
+  renderer.setPixelRatio(Math.min(2,window.devicePixelRatio||1));renderer.shadowMap.enabled=true;renderer.shadowMap.type=T.PCFSoftShadowMap;renderer.outputEncoding=T.sRGBEncoding;
+  host.appendChild(renderer.domElement);
+  const scene=new T.Scene(),camera=new T.PerspectiveCamera(32,1,.1,200);
+  const VIEW_ALL={pos:new T.Vector3(-.4,15.5,14.5),target:new T.Vector3(.2,0,.6)};
+  const VIEW_BOARD={pos:new T.Vector3(),target:new T.Vector3()};
+  let HOME=VIEW_ALL;camera.position.copy(HOME.pos);
+  const controls=new T.OrbitControls(camera,renderer.domElement);
+  controls.target.copy(HOME.target);controls.enableDamping=true;controls.dampingFactor=.08;controls.minDistance=3;controls.maxDistance=45;controls.maxPolarAngle=Math.PI*.48;controls.screenSpacePanning=true;controls.update();
+  let camAnim=null;
+  scene.add(new T.HemisphereLight(0xfff6e6,0x7d6c52,.62));
+  const sun=new T.DirectionalLight(0xffffff,.9);sun.position.set(-8,20,10);sun.castShadow=true;sun.shadow.mapSize.set(2048,2048);
+  Object.assign(sun.shadow.camera,{left:-16,right:16,top:12,bottom:-12,near:1,far:60});sun.shadow.bias=-.0006;scene.add(sun);
+  const fill=new T.DirectionalLight(0xffe8d0,.25);fill.position.set(10,8,-8);scene.add(fill);
+  const ground=new T.Mesh(new T.PlaneGeometry(90,90),new T.ShadowMaterial({opacity:.16}));ground.rotation.x=-Math.PI/2;ground.receiveShadow=true;scene.add(ground);
+
+  const M=(color,o)=>new T.MeshStandardMaterial(Object.assign({color,roughness:.55,metalness:0},o||{}));
+  const metal=()=>M(0xC3C6CC,{metalness:.7,roughness:.3});
+  const gold=()=>M(0xD6B04A,{metalness:.65,roughness:.3});
+  const mesh=(g,m,sh=true)=>{const x=new T.Mesh(g,m);x.castShadow=sh;x.receiveShadow=true;return x;};
+  const along=(o,a,b)=>{const d=new T.Vector3().subVectors(b,a);o.position.copy(a).addScaledVector(d,.5);o.quaternion.setFromUnitVectors(UP,d.clone().normalize());return o;};
+  const rod=(a,b,r,m)=>along(mesh(new T.CylinderGeometry(r,r,a.distanceTo(b),10),m),a,b);
+  const box=(w,h,d,m)=>mesh(new T.BoxGeometry(w,h,d),m);
+  const V=(x,y,z)=>new T.Vector3(x,y,z);
+  function rrect(c,x,y,w,h,r){c.beginPath();c.moveTo(x+r,y);c.lineTo(x+w-r,y);c.quadraticCurveTo(x+w,y,x+w,y+r);c.lineTo(x+w,y+h-r);c.quadraticCurveTo(x+w,y+h,x+w-r,y+h);c.lineTo(x+r,y+h);c.quadraticCurveTo(x,y+h,x,y+h-r);c.lineTo(x,y+r);c.quadraticCurveTo(x,y,x+r,y);c.closePath();}
+  function label(text,o){o=Object.assign({fg:'#1E2B45',bg:'rgba(251,246,236,.95)',size:.32},o||{});
+    const c=document.createElement('canvas'),x=c.getContext('2d'),font='700 56px "JetBrains Mono", monospace';x.font=font;const w=Math.ceil(x.measureText(text).width)+36;c.width=w;c.height=84;x.font=font;
+    if(o.bg){x.fillStyle=o.bg;rrect(x,2,2,w-4,80,22);x.fill();}x.fillStyle=o.fg;x.textBaseline='middle';x.fillText(text,18,45);
+    const t=new T.CanvasTexture(c);t.encoding=T.sRGBEncoding;const s=new T.Sprite(new T.SpriteMaterial({map:t,transparent:true,depthWrite:false}));s.scale.set(o.size*w/84,o.size,1);s.renderOrder=10;return s;}
+  const glowTex=(()=>{const c=document.createElement('canvas');c.width=c.height=128;const x=c.getContext('2d'),g=x.createRadialGradient(64,64,0,64,64,64);
+    g.addColorStop(0,'rgba(255,255,255,1)');g.addColorStop(.35,'rgba(255,255,255,.45)');g.addColorStop(1,'rgba(255,255,255,0)');x.fillStyle=g;x.fillRect(0,0,128,128);const t=new T.CanvasTexture(c);t.encoding=T.sRGBEncoding;return t;})();
+  const glow=c=>{const s=new T.Sprite(new T.SpriteMaterial({map:glowTex,color:c,transparent:true,depthWrite:false}));s.renderOrder=8;return s;};
+  function plateTex(wmm,dmm,bg,draw){const S=14,c=document.createElement('canvas');c.width=Math.max(8,wmm*S);c.height=Math.max(8,dmm*S);const x=c.getContext('2d');x.fillStyle=bg;x.fillRect(0,0,c.width,c.height);draw(x,S,c);const t=new T.CanvasTexture(c);t.encoding=T.sRGBEncoding;t.anisotropy=renderer.capabilities.getMaxAnisotropy();return t;}
+  const topBox=(w,h,d,side,tex)=>mesh(new T.BoxGeometry(w,h,d),[side,side,M(0xffffff,{map:tex,roughness:.5}),side,side,side]);
+
+  /* ---------- the Raspberry Pi ----------
+     Shown turned around so the GPIO header faces you and pin 1 sits nearest the breadboard. */
+  const boardRoot=new T.Group();scene.add(boardRoot);
+  let pinMap=new Map(),pinMeshes=[],antenna=V(-2,1,0),act=null,topY=.44;
+  const PCB=.14,LIFT=.3,GREEN='#1F7A43';
+  function buildBoard(b){
+    boardRoot.clear();pinMap=new Map();pinMeshes=[];
+    const W=b.w*.1,D=b.d*.1,cx=-.7-W/2,left=cx-W/2,right=cx+W/2,zero=b.form==='zero';topY=LIFT+PCB;
+    const at=(o,x,y,z)=>{o.position.set(x,y,z);boardRoot.add(o);return o;};
+    // PCB with traces and the board's name
+    const silk=plateTex(b.w,b.d,GREEN,(x,S,c)=>{
+      x.strokeStyle='rgba(190,230,170,.13)';x.lineWidth=S*.18;
+      for(let i=0;i<14;i++){const y0=c.height*(.18+i*.045);x.beginPath();x.moveTo(c.width*.22,y0);x.lineTo(c.width*.3,y0+S*1.2);x.lineTo(c.width*.62,y0+S*1.2);x.stroke();}
+      x.fillStyle='#F4F6F2';x.textAlign='center';x.textBaseline='middle';
+      x.font=`700 ${S*(zero?1.55:2.2)}px "Barlow", "Segoe UI", sans-serif`;x.fillText(b.silk,c.width*(zero?.26:.4),c.height*(zero?.55:.72));
+      x.font=`500 ${S*(zero?1.0:1.2)}px "JetBrains Mono", monospace`;x.fillText('© Raspberry Pi Ltd',c.width*(zero?.26:.4),c.height*(zero?.68:.8));
+      // raspberry logo
+      const lx=c.width*(zero?.08:.62),ly=c.height*(zero?.3:.74),r=S*(zero?1.1:1.5);x.fillStyle='#F4F6F2';
+      [[0,0],[-1,-.9],[1,-.9],[-1,.9],[1,.9],[0,1.6]].forEach(([dx,dy])=>{x.beginPath();x.arc(lx+dx*r*.75,ly+dy*r*.7,r*.48,0,Math.PI*2);x.fill();});});
+    const pcb=topBox(W,PCB,D,M(new T.Color(GREEN).multiplyScalar(.75)),silk);at(pcb,cx,LIFT+PCB/2,0);
+    // mounting holes with gold rings, on standoffs
+    const holes=zero?[[right-.35,-D/2+.35],[right-.35,D/2-.35],[right-6.15,-D/2+.35],[right-6.15,D/2-.35]]:[[right-.35,-2.45],[right-.35,2.45],[right-6.15,-2.45],[right-6.15,2.45]];
+    holes.forEach(([x,z])=>{at(mesh(new T.CylinderGeometry(.13,.13,LIFT,12),M(0xC9CCD2,{metalness:.6,roughness:.35})),x,LIFT/2,z);
+      const ring=mesh(new T.RingGeometry(.14,.3,24),M(0xD6B04A,{metalness:.65,roughness:.3,side:T.DoubleSide}),false);ring.rotation.x=-Math.PI/2;at(ring,x,topY+.003,z);
+      const hole=mesh(new T.CircleGeometry(.14,20),M(0x1A1A1D),false);hole.rotation.x=-Math.PI/2;at(hole,x,topY+.005,z);});
+    const chip=(w,d,h,color,x,z,txt)=>{const tex=txt?plateTex(w*10,d*10,color,(c,S,cv)=>{c.fillStyle='rgba(255,255,255,.55)';c.textAlign='center';c.textBaseline='middle';c.font=`600 ${S*1.1}px "JetBrains Mono", monospace`;c.fillText(txt,cv.width/2,cv.height/2);}):null;
+      return at(tex?topBox(w,h,d,M(color),tex):box(w,h,d,M(color,{roughness:.4})),x,topY+h/2,z);};
+    const lid=(w,d,x,z,txt)=>{const tex=plateTex(w*10,d*10,'#C7CAD0',(c,S,cv)=>{c.fillStyle='#5B606A';c.textAlign='center';c.textBaseline='middle';c.font=`700 ${S*1.1}px "JetBrains Mono", monospace`;c.fillText(txt,cv.width/2,cv.height/2);});
+      return at(topBox(w,.14,d,M(0xB9BCC2,{metalness:.75,roughness:.28}),tex),x,topY+.07,z);};
+    // USB-A sockets and Ethernet on the left edge
+    if(!zero){
+      const zs={'b':[1.9,.05,-1.8]}[b.form];const eth=b.ports.indexOf('eth');
+      b.ports.forEach((kind,i)=>{const z=eth===0?[1.75,-.05,-1.9][i]:[1.9,.1,-1.75][i];
+        if(kind==='eth'){const j=at(box(2.1,1.35,1.6,metal()),left+.75,topY+.68,z);
+          const mouth=box(.06,.8,1.1,M(0x141416));at(mouth,left-.31,topY+.6,z);
+          [-.42,.42].forEach(dz=>at(box(.06,.18,.22,M(dz<0?0x3DDC84:0xF7C619,{emissive:new T.Color(dz<0?0x3DDC84:0xF7C619),emissiveIntensity:.5})),left-.31,topY+1.15,z+dz));}
+        else{at(box(1.75,1.6,1.33,metal()),left+.6,topY+.8,z);
+          [.4,1.2].forEach(y=>at(box(.06,.22,.95,M(kind==='usb3'?0x2E64D8:0x141416)),left-.27,topY+y,z));}});
+    }
+    // far-edge ports: power, HDMI, audio
+    const farZ=-D/2;
+    const usbC=x=>at(along(mesh(new T.CapsuleGeometry(.13,.6,6,12),metal()),V(x-.3,topY+.16,farZ+.2),V(x+.3,topY+.16,farZ+.2)),0,0,0);
+    if(zero){at(box(1.1,.32,.75,metal()),right-1.24,topY+.16,farZ+.3);at(box(.75,.28,.55,metal()),right-4.14,topY+.14,farZ+.25);at(box(.75,.28,.55,metal()),right-5.4,topY+.14,farZ+.25);}
+    else{
+      if(b.power==='usbc'){const u=along(mesh(new T.CapsuleGeometry(.14,.6,6,12),metal()),V(right-1.12-.32,topY+.16,farZ+.3),V(right-1.12+.32,topY+.16,farZ+.3));boardRoot.add(u);}
+      else at(box(.75,.28,.55,metal()),right-1.06,topY+.14,farZ+.25);
+      if(b.hdmi==='micro'){[2.6,3.95].forEach(o=>at(box(.65,.3,.75,metal()),right-o,topY+.15,farZ+.3));}
+      else at(box(1.5,.6,1.15,metal()),right-3.2,topY+.3,farZ+.5);
+      if(b.audio){at(mesh(new T.CylinderGeometry(.32,.32,1.2,20),M(0x18181B)),right-5.4,topY+.32,farZ+.6).rotation.x=Math.PI/2;}
+      if(b.id==='pi5')at(box(.4,.2,.3,M(0x1A1A1D)),right-.6,topY+.1,farZ+.25);
+    }
+    // chips, wireless can and ribbon connectors
+    if(zero){lid(1.4,1.3,right-3.2,-.35,'RP3A0');chip(.35,.6,.05,0x18181B,right-.4,-.2);at(box(.3,.12,1.6,M(0xEDE7D9)),left+.25,topY+.06,-.1);}
+    else{
+      lid(1.5,1.5,right-2.9,-.4,b.soc);
+      if(b.id==='pi4'||b.id==='pi5')chip(1.0,1.4,.1,0x161618,right-4.35,-.4,'RAM');else chip(1.1,1.1,.1,0x161618,right-2.9,1.2,'RAM');
+      if(b.rp1)chip(1.0,1.0,.1,0x161618,right-5.6,-.4,'RP1');else chip(.9,.9,.1,0x161618,right-5.6,-.4,'USB');
+      lid(1.2,.95,right-1.15,1.25,'Wi-Fi');
+      at(box(.3,.12,1.6,M(0xEDE7D9)),right-.3,topY+.06,-.3);
+      at(box(1.6,.12,.3,M(0xEDE7D9)),right-4.7,topY+.06,-1.85);
+    }
+    antenna=zero?V(left+.7,topY+.12,0):V(right-.7,topY+.3,1.6);
+    // power and activity LEDs
+    const smd=(x,z,color,on)=>{const m=M(new T.Color(color).multiplyScalar(.45),{emissive:new T.Color(color),emissiveIntensity:on?1.4:0});at(box(.16,.08,.1,m),x,topY+.04,z);
+      const g=glow(new T.Color(color));g.scale.setScalar(.9);g.material.opacity=on?.45:0;at(g,x,topY+.2,z);return{m,g};};
+    if(zero)act=smd(right-6.0,-1.0,'#3DDC84',false);
+    else{smd(right-.3,-2.3,'#FF4040',true);act=smd(right-.3,-2.05,'#3DDC84',false);}
+    // the 40-pin header: two rows of 20, odd pins on the inside row
+    const hz=D/2-.35,hx=right-3.25;
+    at(box(5.08,.25,.508,M(0x161618)),hx,topY+.125,hz);
+    HEADER.forEach(([phys,lab,g])=>{const col=Math.floor((phys-1)/2),odd=phys%2===1,x=hx+2.413-col*.254,z=hz+(odd?-.127:.127);
+      const pin=box(.064,.6,.064,gold());pin.position.set(x,topY+.4,z);pin.userData.pinInfo={lab,g,phys};boardRoot.add(pin);pinMeshes.push(pin);
+      const hit=box(.22,.6,.22,new T.MeshBasicMaterial({visible:false}));hit.position.copy(pin.position);hit.userData.pinInfo={lab,g,phys};boardRoot.add(hit);pinMeshes.push(hit);
+      const key=g!=null?'g'+g:lab;if(!pinMap.has(key))pinMap.set(key,V(x,topY+.7,z));pinMap.set('p'+phys,V(x,topY+.7,z));
+      const txt=g!=null?String(g):lab==='GND'?'G':lab==='3V3'?'3V':'5V',fg=g!=null?'#F4F6F2':lab==='GND'?'#C8CDD4':'#FF9C8F';
+      const lb=label(txt,{bg:null,fg,size:.12});lb.position.set(x,topY+.02,z+(odd?-.26:.26));boardRoot.add(lb);});
+    const one=label('1',{bg:'#FF6A13',fg:'#0C0C0D',size:.16});one.position.set(hx+2.413,topY+.85,hz-.36);boardRoot.add(one);
+    VIEW_BOARD.target.set(cx,0,.5);VIEW_BOARD.pos.set(cx-.4,Math.max(6.5,W*1.15),Math.max(6.8,W*1.1));
+  }
+  const pinPos=p=>pinMap.get(typeof p==='number'?'g'+p:p)||pinMap.get('GND')||V(-3,1,0);
+
+  /* ---------- breadboard ---------- */
+  const BB={x0:.3,x1:10.0,z0:-2.75,z1:2.75,top:.5},COL=c=>BB.x0+.55+c*.254;
+  const ROW={a:-1.9,b:-1.65,c:-1.4,d:-1.15,e:-.9,f:.9,g:1.15,h:1.4,i:1.65,j:1.9,minus:-2.45,plus:2.45};
+  const BBP=(c,r,h=BB.top)=>V(COL(c),h,ROW[r]);
+  const bbTex=(()=>{const S=40,w=(BB.x1-BB.x0),d=(BB.z1-BB.z0),c=document.createElement('canvas');c.width=w*S;c.height=d*S;const x=c.getContext('2d');
+    x.fillStyle='#FAFAF7';x.fillRect(0,0,c.width,c.height);const tx=X=>(X-BB.x0)*S,tz=Z=>(Z-BB.z0)*S;x.fillStyle='#E4E2DA';x.fillRect(0,tz(-.22),c.width,.44*S);
+    x.strokeStyle='#1E2B45';x.lineWidth=2;x.beginPath();x.moveTo(tx(BB.x0+.3),tz(-2.25));x.lineTo(tx(BB.x1-.3),tz(-2.25));x.stroke();
+    x.strokeStyle='#D7372A';x.beginPath();x.moveTo(tx(BB.x0+.3),tz(2.25));x.lineTo(tx(BB.x1-.3),tz(2.25));x.stroke();
+    for(let cc=0;cc<36;cc++)Object.values(ROW).forEach(z=>{x.fillStyle='#C9C7C0';x.fillRect(tx(COL(cc))-4,tz(z)-4,8,8);x.fillStyle='#3E4046';x.fillRect(tx(COL(cc))-2.5,tz(z)-2.5,5,5);});
+    const t=new T.CanvasTexture(c);t.encoding=T.sRGBEncoding;t.anisotropy=renderer.capabilities.getMaxAnisotropy();return t;})();
+  const side=M(0xECE8DE,{roughness:.8});
+  const bboard=mesh(new T.BoxGeometry(BB.x1-BB.x0,BB.top,BB.z1-BB.z0),[side,side,M(0xffffff,{map:bbTex,roughness:.75}),side,side,side]);bboard.position.set((BB.x0+BB.x1)/2,BB.top/2,0);scene.add(bboard);
+
+  const WIRE_COLORS=['#FF6A13','#14A39A','#8B6CF6','#E0A800','#3E8EF7','#E2459A'];
+  function wire(a,b,color,parent){const d=a.distanceTo(b),lift=Math.max(a.y,b.y)+.35+d*.13;
+    const curve=new T.CatmullRomCurve3([a,a.clone().setY(a.y+.3),a.clone().lerp(b,.5).setY(lift),b.clone().setY(b.y+.35),b],false,'centripetal');
+    parent.add(mesh(new T.TubeGeometry(curve,64,.06,8,false),M(new T.Color(color),{roughness:.38})));
+    [a,b].forEach(p=>{const tip=mesh(new T.CylinderGeometry(.075,.075,.25,10),M(0x2A2A2E));tip.position.copy(p).setY(p.y+.12);parent.add(tip);});return curve;}
+  const legM=metal();
+  const partsRoot=new T.Group();scene.add(partsRoot);let parts=[],railFlows=[];
+  const WIDTH={led:4,btn:3,buz:3,dht:3};
+  const LEDC={red:'#E5484D',green:'#2FB36A',blue:'#3E63DD',yellow:'#F7C619',white:'#F6F7FA'};
+  function resistor(g,a,b){const y=BB.top+.35,m1=a.clone().setY(y),m2=b.clone().setY(y);g.add(rod(a.clone().setY(a.y-.1),m1,.03,legM),rod(b.clone().setY(b.y-.1),m2,.03,legM),rod(m1,m2,.03,legM));
+    const dir=new T.Vector3().subVectors(m2,m1),L=Math.min(.55,dir.length()*.6),mid=m1.clone().lerp(m2,.5);dir.normalize();g.add(along(mesh(new T.CapsuleGeometry(.12,L-.24,6,12),M(0xDCC6A0)),mid.clone().addScaledVector(dir,-L/2),mid.clone().addScaledVector(dir,L/2)));}
+  function buildPart(p,c0,idx){
+    const g=new T.Group(),ref={p,g,flows:[],tip:''},sig=WIRE_COLORS[idx%WIRE_COLORS.length];
+    const toRail=(c,r,rail,cl)=>{ref.flows.push({curve:wire(BBP(c,r),BBP(c,rail),cl,g),kind:rail});};
+    const fromPin=(pin,c,r,dir='out')=>{ref.flows.push({curve:wire(pinPos(pin),BBP(c,r),sig,g),kind:'sig',pin,dir});};
+    const pl=api.pinLabel(p.pin);
+    if(p.t==='led'){fromPin(p.pin,c0,'a');resistor(g,BBP(c0,'c'),BBP(c0+2,'c'));toRail(c0+3,'a','minus','#1A1A1D');
+      const an=BBP(c0+2,'e'),ca=BBP(c0+3,'e'),mid=an.clone().lerp(ca,.5),base=1.2;
+      [[an,.75],[ca,.62]].forEach(([h,bend])=>{const up=h.clone().setY(BB.top+bend*.6),q=mid.clone().addScaledVector(new T.Vector3().subVectors(h,mid).setY(0).normalize(),.1).setY(base);g.add(rod(h.clone().setY(h.y-.15),up,.03,legM),rod(up,q,.03,legM));});
+      const onC=new T.Color(LEDC[p.color]),offC=onC.clone().multiplyScalar(.55),mat=M(offC.clone(),{roughness:.25,emissive:onC.clone(),emissiveIntensity:0});
+      const can=mesh(new T.CylinderGeometry(.24,.24,.42,24),mat);can.position.copy(mid).setY(base+.25);const dome=mesh(new T.SphereGeometry(.24,24,12,0,Math.PI*2,0,Math.PI/2),mat);dome.position.copy(mid).setY(base+.46);
+      const halo=glow(onC);halo.position.copy(mid).setY(base+.35);halo.material.opacity=0;const light=new T.PointLight(onC,0,5,2);light.position.copy(mid).setY(base+.7);g.add(can,dome,halo,light);
+      let lv=0;ref.target=0;ref.tip=`${p.color==='yellow'?'Amber':p.color[0].toUpperCase()+p.color.slice(1)} LED on ${pl}`;
+      ref.read=st=>{const v=st.pwm[p.pin];return v!=null?v/255:(st.pins[p.pin]?1:0);};ref.setLevel=v=>{ref.target=v;};
+      ref.tick=(now,dt)=>{lv+=(ref.target-lv)*Math.min(1,dt*14);mat.emissiveIntensity=lv*.9;mat.color.copy(offC).lerp(onC,lv);halo.material.opacity=Math.min(.7,lv*.7);halo.scale.setScalar(.5+2*lv);light.intensity=lv*1.6;};}
+    else if(p.t==='btn'){fromPin(p.pin,c0,'a','in');toRail(c0+2,'a','minus','#1A1A1D');
+      const cx=(COL(c0)+COL(c0+2))/2,base=box(.72,.3,.72,M(0x1F1F23));base.position.set(cx,BB.top+.15,0);g.add(base);
+      [[c0,'e'],[c0+2,'e'],[c0,'f'],[c0+2,'f']].forEach(([c,r])=>{const h=BBP(c,r);g.add(rod(h.clone().setY(h.y-.12),V(h.x,BB.top+.12,h.z*.4),.03,legM));});
+      const capM=M(0x3A3B41,{roughness:.35});const cap=mesh(new T.CylinderGeometry(.25,.28,.22,24),capM);cap.position.set(cx,BB.top+.42,0);g.add(cap);
+      ref.tip=`Push button on ${pl}`;ref.hold=p.pin;let y=BB.top+.42;ref.target=0;
+      ref.read=()=>api.pressed(p.pin)?1:0;ref.setLevel=v=>{ref.target=v;capM.color.set(v?0xFF6A13:0x3A3B41);};ref.tick=(now,dt)=>{y+=((ref.target?BB.top+.33:BB.top+.42)-y)*Math.min(1,dt*18);cap.position.y=y;};}
+    else if(p.t==='buz'){fromPin(p.pin,c0,'a');toRail(c0+2,'a','minus','#1A1A1D');
+      const cx=COL(c0+1),cz=-1.25;
+      [[c0,'e'],[c0+2,'e']].forEach(([c,r])=>{const h=BBP(c,r);g.add(rod(h.clone().setY(h.y-.12),V(h.x,BB.top+.3,cz),.03,legM));});
+      const body=mesh(new T.CylinderGeometry(.5,.5,.55,32),M(0x141416,{roughness:.4}));body.position.set(cx,BB.top+.55,cz);g.add(body);
+      const hole=mesh(new T.CylinderGeometry(.1,.1,.02,16),M(0x3A3B41));hole.position.set(cx,BB.top+.835,cz);g.add(hole);
+      const plus=label('+',{size:.24,bg:null,fg:'#E8E9EC'});plus.position.set(cx-.3,BB.top+.86,cz+.1);g.add(plus);
+      const rings=[0,1,2].map(()=>{const r=mesh(new T.TorusGeometry(.5,.025,6,40),new T.MeshBasicMaterial({color:0xFF6A13,transparent:true,opacity:0}),false);r.rotation.x=-Math.PI/2;r.position.set(cx,BB.top+.95,cz);g.add(r);return r;});
+      ref.tip=`Active buzzer on ${pl}`;ref.target=0;ref.read=st=>st.pins[p.pin]?1:0;ref.setLevel=v=>{ref.target=v;};
+      ref.tick=now=>{rings.forEach((r,i)=>{if(!ref.target||reduce&&i){r.material.opacity=ref.target&&!i?.8:0;r.scale.setScalar(1.3);return;}const u=((now/650)+i/3)%1;r.scale.setScalar(.7+u*1.8);r.material.opacity=(1-u)*.85;});};}
+    else if(p.t==='dht'){toRail(c0,'a','plus','#D7372A');fromPin(p.pin,c0+1,'a','in');toRail(c0+2,'a','minus','#1A1A1D');
+      [0,1,2].forEach(i=>{const h=BBP(c0+i,'e');g.add(rod(h.clone().setY(h.y-.12),h.clone().setY(BB.top+.35),.03,legM));});
+      const cx=COL(c0+1),body=box(1.05,1.4,.45,M(0xF2F2EE,{roughness:.6}));body.position.set(cx,BB.top+1.05,ROW.e);g.add(body);
+      for(let i=0;i<5;i++){const s=box(.7,.08,.04,M(0xA7ABB3));s.position.set(cx,BB.top+.6+i*.22,ROW.e+.24);g.add(s);}
+      const nm=label('DHT22',{size:.28});nm.position.set(cx,BB.top+2.05,ROW.e);g.add(nm);
+      const val=new T.Group();g.add(val);let lastTxt='';
+      ref.tip=`DHT22 temperature & humidity on ${pl}`;ref.read=()=>1;ref.setLevel=()=>{const t=`${api.inputs.temp} °C · ${api.inputs.hum} %`;if(t!==lastTxt){lastTxt=t;val.clear();const l=label(t,{size:.3,bg:'#1E2B45',fg:'#F6EDDD'});l.position.set(cx,BB.top+2.5,ROW.e);val.add(l);}};}
+    g.traverse(o=>{o.userData.part=ref;});return ref;
+  }
+  function setLesson(b,partsList){
+    buildBoard(b);partsRoot.clear();parts=[];railFlows=[];
+    let c0=3;partsList.forEach((p,i)=>{const ref=buildPart(p,c0,i);partsRoot.add(ref.g);parts.push(ref);c0+=WIDTH[p.t]+3;});
+    if(parts.length){railFlows.push({curve:wire(pinPos('GND'),V(BB.x0+.35,BB.top,ROW.minus),'#1A1A1D',partsRoot),kind:'gnd'});
+      if(partsList.some(p=>p.t==='dht'))railFlows.push({curve:wire(pinPos('3V3'),V(BB.x0+.35,BB.top,ROW.plus),'#D7372A',partsRoot),kind:'pwr'});}
+    pinRings.clear();HOME=parts.length?VIEW_ALL:VIEW_BOARD;camAnim={t0:performance.now(),p0:camera.position.clone(),p1:HOME.pos.clone(),q0:controls.target.clone(),q1:HOME.target.clone()};
+  }
+  const pinRings=new T.Group();scene.add(pinRings);
+  function highlightPins(list){pinRings.clear();(list||[]).forEach(n=>{const p=pinPos(n);if(!p)return;const r=mesh(new T.TorusGeometry(.14,.025,8,24),new T.MeshBasicMaterial({color:0xFF6A13,transparent:true}),false);r.rotation.x=-Math.PI/2;r.position.copy(p).setY(p.y-.25);r.userData.ring=true;pinRings.add(r);
+    const l=label(typeof n==='number'?'GPIO '+n:n,{fg:'#0C0C0D',bg:'#FF6A13',size:.26});l.position.copy(p).setY(p.y+.45);pinRings.add(l);});}
+
+  /* ---------- Wi-Fi waves while Flask is serving ---------- */
+  const waves=[0,1,2,3].map(()=>{const w=mesh(new T.TorusGeometry(.5,.025,6,48,Math.PI*1.2),new T.MeshBasicMaterial({color:0x14A39A,transparent:true,opacity:0}),false);w.rotation.x=-Math.PI/2;scene.add(w);return w;});
+  let wifiState='off';
+
+  /* ---------- current dots ---------- */
+  const MAXP=400,dots=new T.InstancedMesh(new T.SphereGeometry(.06,10,8),new T.MeshBasicMaterial({color:0xFFE14D}),MAXP);dots.count=0;dots.frustumCulled=false;scene.add(dots);
+  const halos=new T.InstancedMesh(new T.PlaneGeometry(.32,.32),new T.MeshBasicMaterial({map:glowTex,color:0xFF6A13,transparent:true,opacity:.75,depthWrite:false}),MAXP);halos.count=0;halos.frustumCulled=false;scene.add(halos);
+  let flows=[],phase=0,showFlow=true;const tm=new T.Matrix4(),tq=new T.Quaternion(),ts=new T.Vector3(1,1,1);
+  function update(st){
+    const active=[];parts.forEach(r=>{if(!r.read)return;const v=r.read(st);if(r.setLevel)r.setLevel(v);if(v>0)active.push(r);});
+    flows=[];if(!api.running())return;
+    parts.forEach(r=>{const isOn=active.includes(r),passive=r.p.t==='dht';r.flows.forEach(f=>{
+      if(f.kind==='sig'){const pinOn=st.pwm[f.pin]!=null?st.pwm[f.pin]>0:!!st.pins[f.pin];if(f.dir==='in'?(isOn||passive):pinOn)flows.push({curve:f.curve,rev:f.dir==='in'});}
+      else if(isOn||passive)flows.push({curve:f.curve,rev:false});});});
+    if(active.length||parts.some(r=>r.p.t==='dht'))railFlows.forEach(f=>flows.push({curve:f.curve,rev:f.kind==='gnd'}));
+    flows.forEach(f=>{f.len=f.curve.getLength();f.n=Math.max(2,Math.round(f.len/.45));});
+  }
+  /* ---------- hover + presses ---------- */
+  const ray=new T.Raycaster(),ndc=new T.Vector2(),cv=renderer.domElement;cv.tabIndex=0;
+  cv.setAttribute('aria-label','3D Raspberry Pi bench. Drag to rotate, right-drag or W A S D to pan, Q and E to turn, plus and minus to zoom, 0 to reset.');
+  function pick(e){const r=cv.getBoundingClientRect();ndc.set(((e.clientX-r.left)/r.width)*2-1,-((e.clientY-r.top)/r.height)*2+1);ray.setFromCamera(ndc,camera);
+    const hit=ray.intersectObjects([partsRoot,...pinMeshes],true)[0];if(!hit)return null;if(hit.object.userData.pinInfo)return{pin:hit.object.userData.pinInfo};return hit.object.userData.part?{part:hit.object.userData.part}:null;}
+  const tip=document.getElementById('tipbox'),stageEl=document.getElementById('stage');
+  function showTip(e,h){if(!h){tip.hidden=true;return;}const r0=stageEl.getBoundingClientRect();
+    if(h.pin){const {lab,g,phys}=h.pin;tip.innerHTML=`Pin ${phys} · ${esc(g!=null?'GPIO '+g:lab)}<small>${esc(api.pinNote(lab,g))}</small>`;}
+    else tip.innerHTML=`${esc(h.part.tip)}<small>${h.part.hold!==undefined?'Press and hold to test':'Part of this lesson’s circuit'}</small>`;
+    tip.hidden=false;const tw=tip.offsetWidth;let x=e.clientX-r0.left+14;if(x+tw>r0.width-8)x=e.clientX-r0.left-tw-14;tip.style.left=Math.max(8,x)+'px';tip.style.top=(e.clientY-r0.top+16)+'px';}
+  let down=null,holding=null;
+  cv.addEventListener('pointermove',e=>{if(down&&Math.abs(e.clientX-down.x)+Math.abs(e.clientY-down.y)>5)down.moved=true;if(down&&down.moved){tip.hidden=true;return;}const h=pick(e);host.classList.toggle('over-part',!!(h&&h.part&&h.part.hold!==undefined));showTip(e,h);});
+  cv.addEventListener('pointerleave',()=>{tip.hidden=true;});
+  cv.addEventListener('pointerdown',e=>{down={x:e.clientX,y:e.clientY,moved:false};cv.focus({preventScroll:true});const h=pick(e);if(h&&h.part&&h.part.hold!==undefined){holding=h.part.hold;controls.enabled=false;api.press(holding,true);}});
+  window.addEventListener('pointerup',()=>{if(holding!==null){api.press(holding,false);holding=null;controls.enabled=true;}down=null;});
+  cv.addEventListener('keydown',e=>{const k=e.key.toLowerCase();const fwd=new T.Vector3().subVectors(controls.target,camera.position).setY(0).normalize(),right=new T.Vector3().crossVectors(fwd,UP).normalize();
+    let mv=null;if(k==='w')mv=fwd.multiplyScalar(.6);if(k==='s')mv=fwd.multiplyScalar(-.6);if(k==='d')mv=right.multiplyScalar(.6);if(k==='a')mv=right.multiplyScalar(-.6);
+    if(mv){camera.position.add(mv);controls.target.add(mv);e.preventDefault();return;}
+    if(k==='q'||k==='e'){const off=new T.Vector3().subVectors(camera.position,controls.target).applyAxisAngle(UP,(k==='q'?1:-1)*Math.PI/18);camera.position.copy(controls.target).add(off);e.preventDefault();return;}
+    if(k==='+'||k==='='){zoomBy(1/1.25);e.preventDefault();}if(k==='-'){zoomBy(1.25);e.preventDefault();}if(k==='0'){reset();e.preventDefault();}});
+  function zoomBy(f){const off=new T.Vector3().subVectors(camera.position,controls.target).multiplyScalar(f);const d=off.length();if(d<controls.minDistance||d>controls.maxDistance)return;
+    camAnim={t0:performance.now(),p0:camera.position.clone(),p1:controls.target.clone().add(off),q0:controls.target.clone(),q1:controls.target.clone()};}
+  function reset(){camAnim={t0:performance.now(),p0:camera.position.clone(),p1:HOME.pos.clone(),q0:controls.target.clone(),q1:HOME.target.clone()};}
+  function resize(){const w=host.clientWidth||1,h=host.clientHeight||1;renderer.setSize(w,h,false);camera.aspect=w/h;camera.fov=w/h<1.05?50:32;camera.updateProjectionMatrix();}
+  new ResizeObserver(resize).observe(host);resize();
+  function frame(now){requestAnimationFrame(frame);const dt=Math.min(.05,(now-(frame.last||now))/1000);frame.last=now;
+    if(camAnim){const u=ease((now-camAnim.t0)/550);camera.position.lerpVectors(camAnim.p0,camAnim.p1,u);controls.target.lerpVectors(camAnim.q0,camAnim.q1,u);if(u>=1)camAnim=null;}
+    parts.forEach(r=>r.tick&&r.tick(now,dt));
+    if(act){const on=api.running()&&(reduce?1:Math.sin(now*.011)+Math.sin(now*.027)>.6);act.m.emissiveIntensity=on?1.6:0;act.g.material.opacity=on?.5:0;}
+    pinRings.children.forEach(o=>{if(o.userData.ring){const s=1+.4*(.5+.5*Math.sin(now*.006));o.scale.setScalar(s);o.material.opacity=1-.5*(s-1)/.4;}});
+    waves.forEach((w,i)=>{if(wifiState!=='connected'){w.material.opacity=0;return;}const u=reduce?.5:((now/2200)+i/4)%1;
+      w.position.copy(antenna).setY(antenna.y+.15+u*.3);w.scale.setScalar(.4+u*3.2);w.rotation.z=Math.PI*.9;w.material.opacity=(1-u)*.7;});
+    phase+=dt*(reduce?.5:1);let n=0;
+    if(showFlow)for(const f of flows){for(let i=0;i<f.n&&n<MAXP;i++,n++){let u=((phase*1.6/f.len)+i/f.n)%1;if(f.rev)u=1-u;const p=f.curve.getPointAt(u);tm.compose(p,tq,ts);dots.setMatrixAt(n,tm);tm.compose(p,camera.quaternion,ts);halos.setMatrixAt(n,tm);}}
+    dots.count=n;halos.count=n;dots.instanceMatrix.needsUpdate=true;halos.instanceMatrix.needsUpdate=true;controls.update();renderer.render(scene,camera);}
+  requestAnimationFrame(frame);
+  return{setLesson,update,highlightPins,zoom:f=>zoomBy(f>1?1/1.35:1.35),reset,setFlow(on){showFlow=on;},setWifi(s){wifiState=s;}};
+}
+
+/* ---------- page state ---------- */
+const $=s=>document.querySelector(s);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const pad2=n=>String(n).padStart(2,'0');
+const load=(k,d)=>{try{const v=localStorage.getItem(k);return v===null?d:JSON.parse(v);}catch(e){return d;}};
+const store=(k,v)=>{try{if(v===undefined)localStorage.removeItem(k);else localStorage.setItem(k,JSON.stringify(v));}catch(e){}};
+const svgI=(inner,lbl)=>`<svg viewBox="0 0 48 48" ${lbl?`role="img" aria-label="${esc(lbl)}"`:'aria-hidden="true"'}>${inner}</svg>`;
+const CHECK='<svg viewBox="0 0 10 10"><path d="M2 5.2 4.2 7.4 8 3" fill="none" stroke="#FFFFFF" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+const CHEV='<svg class="chev" viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3l5 5-5 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+const KP_ICONS=['<path d="M4 8h8M8 4v8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>','<path d="M3 8.5 6.5 12 13 4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>','<path d="M9 1 3 9h5l-1 6 6-8H8z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>'];
+const PROMPT='pi@raspberrypi:~ $';
+
+let current=1,bench=null,board=BOARDS.find(b=>b.id===load('radix-pi-board','pi5'))||BOARDS[0];
+let done=new Set(load('radix-pi-done',[])),flowOn=true,phoneOn=true,soundOn=load('radix-pi-sound',true);
+const inputs={temp:24,hum:55};
+const pressed=new Set();
+const lesson=()=>LESSONS.find(l=>l.n===current);
+const partsOf=L=>L.parts;
+
+/* ---------- terminal ---------- */
+let lines=[],partial='',serialDirty=false;
+function serialPrint(t,nl){partial+=t;if(nl){lines.push({t:partial});partial='';if(lines.length>400)lines=lines.slice(-400);}serialDirty=true;}
+function serialNote(t,cls){if(partial){lines.push({t:partial});partial='';}lines.push({t,cls});serialDirty=true;}
+function renderSerial(){if(!serialDirty)return;serialDirty=false;const el=$('#serial');const atEnd=el.scrollTop+el.clientHeight>=el.scrollHeight-8;
+  el.innerHTML=lines.map(l=>l.cls?`<span class="${l.cls}">${esc(l.t)}</span>`:esc(l.t)).join('\n')+(partial?(lines.length?'\n':'')+esc(partial):'');if(atEnd)el.scrollTop=el.scrollHeight;}
+$('#sclear').onclick=()=>{lines=[];partial='';serialDirty=true;renderSerial();};
+
+/* ---------- Flask + phone browser ---------- */
+const PI_IP='192.168.1.50';
+let server=null,phonePath='/',refreshT=0,pendingReq=null,wifiState='off';
+function cleanHTML(html){const doc=new DOMParser().parseFromString(String(html),'text/html');
+  doc.querySelectorAll('script,iframe,object,embed,link,base,form[action^="http"]').forEach(n=>n.remove());
+  doc.querySelectorAll('*').forEach(n=>[...n.attributes].forEach(a=>{if(/^on/i.test(a.name)||/^\s*javascript:/i.test(a.value))n.removeAttribute(a.name);}));
+  const meta=doc.querySelector('meta[http-equiv="refresh" i]');const refresh=meta?parseFloat(meta.getAttribute('content')):0;
+  return{body:doc.body?doc.body.innerHTML:'',refresh};}
+function phoneShow(html){$('#pbody').innerHTML=html;}
+function request(path){
+  phonePath=path||'/';const port=server?server.port:5000;$('#purl').textContent=`http://${PI_IP}:${port}${phonePath}`;clearTimeout(refreshT);
+  if(!server||!sim.running){phoneShow('<p class="err">This site can’t be reached.</p><p class="wait">Is the program running, and has it reached app.run()?</p>');return;}
+  if(!server.reachable){phoneShow('<p class="err">This site can’t be reached.</p><p class="wait">Flask is only listening to the Pi itself (127.0.0.1). Use app.run(host="0.0.0.0") so other devices can connect.</p>');return;}
+  phoneShow('<p class="wait">Loading…</p>');
+  const [p,q]=phonePath.split('?');const args={};new URLSearchParams(q||'').forEach((v,k)=>{args[k]=v;});
+  const req={done:r=>{clearTimeout(req.t);if(pendingReq!==req)return;pendingReq=null;
+    if(/html/i.test(r.type)){const c=cleanHTML(r.body);phoneShow(c.body||'<p class="wait">(empty page)</p>');if(c.refresh>0)refreshT=setTimeout(()=>request(phonePath),c.refresh*1000);}
+    else phoneShow(`<pre style="white-space:pre-wrap;margin:0;font-family:var(--mono);font-size:12px">${esc(r.body)}</pre>`);
+    if(r.code>=400&&!/html/i.test(r.type))$('#pbody').insertAdjacentHTML('afterbegin',`<p class="err">HTTP ${r.code}</p>`);queueBench();}};
+  req.t=setTimeout(()=>{if(pendingReq===req){pendingReq=null;phoneShow('<p class="err">No response.</p><p class="wait">Is a route function stuck in a loop or a long sleep()?</p>');}},4000);
+  pendingReq=req;server.handle(p,args,req);
+}
+$('#pbody').addEventListener('click',e=>{const a=e.target.closest('a');if(!a)return;e.preventDefault();const href=a.getAttribute('href')||'/';
+  if(/^https?:/i.test(href)&&!href.includes(PI_IP))return;request(href.replace(/^https?:\/\/[^/]+/i,'')||'/');});
+$('#pbody').addEventListener('submit',e=>{e.preventDefault();const f=e.target;const qs=new URLSearchParams(new FormData(f)).toString();request((f.getAttribute('action')||phonePath.split('?')[0])+(qs?'?'+qs:''));});
+$('#preload').onclick=()=>request(phonePath);
+function updatePhone(){const L=lesson(),show=!!(L.web&&phoneOn&&sim.running);const ph=$('#phone');
+  if(show&&ph.hidden){ph.hidden=false;request('/');}else if(!show&&!ph.hidden){ph.hidden=true;clearTimeout(refreshT);}
+  else if(show&&server&&/can’t be reached/.test($('#pbody').textContent))request(phonePath);}
+
+/* ---------- sound: an active buzzer is one fixed, buzzy note ---------- */
+let audio=null;
+function ensureAudio(){if(audio||!window.AudioContext&&!window.webkitAudioContext)return;try{const C=window.AudioContext||window.webkitAudioContext,ctx=new C(),osc=ctx.createOscillator(),gain=ctx.createGain();
+  osc.type='square';osc.frequency.value=2300;gain.gain.value=0;osc.connect(gain).connect(ctx.destination);osc.start();audio={ctx,gain};}catch(e){audio=null;}}
+function updateSound(st){if(!audio)return;const on=soundOn&&sim.running&&partsOf(lesson()).some(p=>p.t==='buz'&&st.pins[p.pin]);
+  audio.gain.gain.setTargetAtTime(on?.035:0,audio.ctx.currentTime,.004);}
+
+let benchQueued=false;
+function queueBench(){if(benchQueued)return;benchQueued=true;requestAnimationFrame(()=>{benchQueued=false;if(bench)bench.update(sim.state);updateSound(sim.state);renderSerial();});}
+const io={
+  changed:queueBench,
+  read(p){return pressed.has(p)&&partsOf(lesson()).some(x=>x.t==='btn'&&x.pin===p);},
+  dht(){return{t:inputs.temp,h:inputs.hum};},
+  print:serialPrint,
+  wifi(s){wifiState=s;if(bench)bench.setWifi(s);},
+  server(s){server=s;updatePhone();},
+  status(s,e){const el=$('#sstat');el.classList.toggle('on',s==='running');el.classList.toggle('err',s==='error');
+    $('#sstattext').textContent={running:'Running',done:'Finished',error:'Error',stopped:'Stopped'}[s];
+    $('#mode').classList.toggle('run',s==='running');$('#modetext').textContent=s==='running'?`Running · ${board.name}`:`${board.name} · ready`;
+    const run=$('#crun');run.classList.toggle('stop',s==='running');run.setAttribute('aria-label',s==='running'?'Stop':'Run');run.title=s==='running'?'Stop (Ctrl+C)':'Run';
+    $('#runicon').innerHTML=s==='running'?'<rect x="4" y="4" width="8" height="8" rx="1" fill="currentColor"/>':'<path d="M4 2.5v11l9.5-5.5z" fill="currentColor"/>';
+    if(s==='error'&&e){(e.trace||`${e.pyType||'Error'}: ${e.message}`).split('\n').forEach(t=>serialNote(t,'e'));if(e.line)markLine(e.line);serialNote(PROMPT,'s');}
+    if(s==='done')serialNote(PROMPT,'s');
+    if(s==='stopped')serialNote('^C  (program stopped)','s');
+    $('#benchnote').hidden=s==='running';queueBench();updatePhone();},
+};
+let sim=createPySim(io,{board,file:lesson().file});
+
+/* ---------- code editor (Python) ---------- */
+const codeEl=$('#code'),hlEl=$('#hl'),gutter=$('#gutter');
+const TOK=/(#[^\n]*)|([rRbBfFuU]{0,2}"(?:\\.|[^"\\\n])*"|[rRbBfFuU]{0,2}'(?:\\.|[^'\\\n])*')|(^[ \t]*@[^\n]*)|(\b\d+(?:\.\d+)?\b)|([A-Za-z_]\w*)/gm;
+const PYKW=new Set('if elif else for while in not and or is def return import from as try except finally with pass break continue global lambda raise class del assert'.split(' '));
+const TY=new Set('LED PWMLED Button Buzzer TrafficLights Flask DHT22 DHT11 GPIO PWM'.split(' '));
+const FN=new Set('print range len int float str bool abs min max round sum enumerate list sorted sleep pause time uniform randint choice random on off toggle blink beep pulse wait_for_press wait_for_release route run upper lower get append setup output input setmode cleanup'.split(' '));
+const KC=new Set('True False None self __name__'.split(' '));
+function highlight(src){let out='',i=0;src.replace(TOK,(m,c,s,dec,n,id,at)=>{out+=esc(src.slice(i,at));i=at+m.length;
+  const cls=c?'c':s?'s':dec?'pp':n?'n':PYKW.has(id)?'kw':TY.has(id)?'ty':FN.has(id)?'fn':KC.has(id)?'k':null;out+=cls?`<span class="tk-${cls}">${esc(m)}</span>`:esc(m);return m;});return out+esc(src.slice(i))+'\n';}
+let badLine=0;
+function markLine(n){badLine=n;gutter.querySelectorAll('div').forEach((d,i)=>d.classList.toggle('err',i+1===n));}
+function renderCode(){hlEl.innerHTML=highlight(codeEl.value);const n=codeEl.value.split('\n').length;gutter.innerHTML=Array.from({length:n},(_,i)=>`<div${i+1===badLine?' class="err"':''}>${i+1}</div>`).join('');syncScroll();}
+function syncScroll(){hlEl.scrollTop=codeEl.scrollTop;hlEl.scrollLeft=codeEl.scrollLeft;gutter.scrollTop=codeEl.scrollTop;}
+const codeKey=()=>`radix-pi-code-${current}`;
+let saveT=0;
+const saveCode=()=>{clearTimeout(saveT);saveT=setTimeout(()=>store(codeKey(),codeEl.value===lesson().code?undefined:codeEl.value),400);};
+codeEl.addEventListener('input',()=>{badLine=0;renderCode();saveCode();});
+codeEl.addEventListener('scroll',syncScroll);
+codeEl.addEventListener('keydown',e=>{
+  const v=codeEl.value,s=codeEl.selectionStart,lineStart=v.lastIndexOf('\n',s-1)+1;
+  if(e.key==='Tab'&&!e.shiftKey){e.preventDefault();codeEl.setRangeText('    ',s,codeEl.selectionEnd,'end');renderCode();saveCode();}
+  else if(e.key==='Tab'&&e.shiftKey){e.preventDefault();const m=/^ {1,4}/.exec(v.slice(lineStart));if(m){codeEl.setRangeText('',lineStart,lineStart+m[0].length,'preserve');codeEl.selectionStart=codeEl.selectionEnd=Math.max(lineStart,s-m[0].length);renderCode();saveCode();}}
+  else if(e.key==='Enter'&&!e.ctrlKey&&!e.metaKey&&!e.shiftKey){ // keep the indent; one level deeper after a colon
+    const line=v.slice(lineStart,s),ind=/^ */.exec(line)[0];const extra=/:\s*(#.*)?$/.test(line)?'    ':'';
+    e.preventDefault();codeEl.setRangeText('\n'+ind+extra,s,codeEl.selectionEnd,'end');renderCode();saveCode();}
+  if((e.ctrlKey||e.metaKey)&&e.key==='Enter'){e.preventDefault();toggleRun();}});
+$('#creset').onclick=()=>{codeEl.value=lesson().code;store(codeKey(),undefined);markLine(0);renderCode();};
+$('#ccopy').onclick=()=>{try{navigator.clipboard.writeText(codeEl.value);serialNote('Code copied to the clipboard.','s');renderSerial();}catch(e){}};
+function toggleRun(){
+  if(sim.running){sim.stop();return renderSerial();}
+  ensureAudio();if(audio&&audio.ctx.state==='suspended')audio.ctx.resume();
+  lines=[];partial='';markLine(0);
+  serialNote(`${PROMPT} python3 ${lesson().file}`,'s');
+  sim=createPySim(io,{board,file:lesson().file});
+  if(sim.start(codeEl.value)&&!done.has(current)){done.add(current);store('radix-pi-done',[...done]);renderProgress();renderStrip();renderHead();}
+  renderSerial();
+}
+$('#crun').onclick=toggleRun;
+
+/* ---------- inputs ---------- */
+function renderInputs(){
+  const L=lesson(),el=$('#inputs'),h=[],ps=partsOf(L);
+  if(L.web)h.push(`<div class="wifichip"><span class="wifidot ${wifiState==='connected'?'connected':''}"></span><span class="wstat">Pi on Wi-Fi at <b>${PI_IP}</b></span><span>· the phone is on the same network</span></div>`);
+  ps.filter(p=>p.t==='btn').forEach(p=>h.push(`<button class="ctl" data-hold="${p.pin}" aria-pressed="false">Press button <small>GPIO ${p.pin}</small></button>`));
+  const rng=(id,label,min,max,val,fmt)=>`<label class="rng" for="in-${id}"><span>${label} <b id="val-${id}">${fmt(val)}</b></span><input type="range" id="in-${id}" data-input="${id}" min="${min}" max="${max}" value="${val}"></label>`;
+  if(ps.some(p=>p.t==='dht')){h.push(rng('temp','Temperature',-10,50,inputs.temp,v=>v+' °C'));h.push(rng('hum','Humidity',5,95,inputs.hum,v=>v+' %'));}
+  el.innerHTML=h.join('');el.hidden=!h.length;
+  const FMT={temp:v=>v+' °C',hum:v=>v+' %'};
+  el.querySelectorAll('[data-input]').forEach(r=>r.oninput=()=>{const id=r.dataset.input;inputs[id]=+r.value;$('#val-'+id).textContent=FMT[id](+r.value);queueBench();});
+  el.querySelectorAll('[data-hold]').forEach(b=>{const pin=+b.dataset.hold;bindHold(b,on=>press(pin,on));});
+}
+function bindHold(b,fn){b.addEventListener('pointerdown',e=>{e.preventDefault();fn(true);});['pointerup','pointerleave','pointercancel'].forEach(ev=>b.addEventListener(ev,()=>fn(false)));
+  b.addEventListener('keydown',e=>{if((e.key===' '||e.key==='Enter')&&!e.repeat){e.preventDefault();fn(true);}});b.addEventListener('keyup',e=>{if(e.key===' '||e.key==='Enter')fn(false);});}
+function press(pin,on){if(on)pressed.add(pin);else pressed.delete(pin);document.querySelectorAll(`#inputs [data-hold="${pin}"]`).forEach(b=>b.setAttribute('aria-pressed',on));queueBench();}
+
+/* ---------- lesson panel ---------- */
+const TABS=['overview','pinout','example','specs'];
+function setTab(name,focus){
+  TABS.forEach(t=>{const on=t===name,b=$('#tab-'+t);b.setAttribute('aria-selected',on);b.tabIndex=on?0:-1;$('#tp-'+t).hidden=!on;});
+  document.querySelectorAll('.rbtn[data-go]').forEach(b=>{if(TABS.includes(b.dataset.go))b.setAttribute('aria-pressed',b.dataset.go===name);});
+  if(focus)$('#tab-'+name).focus();if(bench)bench.highlightPins(name==='pinout'?lessonPins():[]);
+}
+TABS.forEach((t,i)=>{const b=$('#tab-'+t);b.onclick=()=>setTab(t);b.onkeydown=e=>{if(e.key==='ArrowRight'||e.key==='ArrowLeft'){e.preventDefault();setTab(TABS[(i+(e.key==='ArrowRight'?1:TABS.length-1))%TABS.length],true);}};});
+const lessonPins=()=>{const ps=partsOf(lesson());return ps.length?[...new Set(ps.map(p=>p.pin)),'GND']:['3V3','5V','GND'];};
+const pinNote=(lab,g)=>{
+  if(lab==='GND')return 'Ground (0 V)';if(lab==='3V3')return '3.3 V power for sensors (small loads only)';if(lab==='5V')return '5 V straight from the power supply. Never wire it to a GPIO pin!';
+  const used=partsOf(lesson()).some(p=>p.pin===g)?' · used in this lesson':'';
+  if(g===2||g===3)return `I²C ${g===2?'data (SDA)':'clock (SCL)'}, with a built-in pull-up${used}`;
+  if(g===14||g===15)return `Serial UART ${g===14?'TX':'RX'}${used}`;
+  if(g===0||g===1)return 'Reserved for HAT ID chips: best left alone';
+  if([12,13,18,19].includes(g))return `Hardware PWM capable${used}`;
+  if([7,8,9,10,11].includes(g))return `SPI bus${used}`;
+  return `General-purpose I/O, 3.3 V${used}`;};
+function renderHead(){const L=lesson(),isD=done.has(L.n);
+  $('#phead').innerHTML=`<div class="tile">${svgI(ICONS[L.icon])}</div><div class="phtop"><span class="pnum">LESSON ${pad2(L.n)} · ${esc(board.name)}</span><span class="pill"><i class="${isD?'on':''}"></i>${isD?'Done':'Pi basics'}</span></div><h2>${esc(L.title)}</h2><p>${esc(L.lede)}</p>`;}
+function renderTabs(){const L=lesson();
+  $('#tp-overview').innerHTML=`<div class="ov"><h3>${esc(L.title)}</h3><p>${esc(L.overview(board))}</p></div><ul class="keypoints" style="margin:12px 0 0;padding:0;display:grid;gap:8px">${L.points(board).map((p,i)=>`<li><span class="kpi"><svg viewBox="0 0 16 16">${KP_ICONS[i%3]}</svg></span><span>${esc(p)}</span></li>`).join('')}</ul>`;
+  const rows=L.pins(board);
+  const cell=h=>{const [phys,lab,g,alt]=h,kind=g!=null?'gpio':lab==='GND'?'gnd':'pwr';return `<span data-g="${g??''}" data-l="${esc(lab)}" data-k="${kind}"><b>${esc(g!=null?'GPIO '+g:lab)}${alt?` <em>${esc(alt)}</em>`:''}</b><em>${phys}</em></span>`;};
+  let grid='';for(let i=0;i<HEADER.length;i+=2)grid+=cell(HEADER[i])+cell(HEADER[i+1]);
+  $('#tp-pinout').innerHTML=`<table class="pintable"><thead><tr><th>Pin</th><th>Connects to</th><th>Role</th></tr></thead><tbody>${rows.map(p=>`<tr><td><span class="pinchip">${esc(p[0])}</span></td><td>${esc(p[1])}</td><td>${esc(p[2])}</td></tr>`).join('')}</tbody></table>
+    <p style="margin-top:12px" class="kicker">The 40-pin header · same on every model</p><div class="fullpins">${grid}</div>
+    <p style="margin-top:8px;font-size:12.5px;color:var(--muted)">Left column: odd pins (1 is the square pad). Right column: even pins, along the board’s edge. Code uses the GPIO numbers. Hover a pin to find it on the board.</p>`;
+  $('#tp-pinout').querySelectorAll('.fullpins [data-l]').forEach(s=>{const key=s.dataset.g!==''?+s.dataset.g:s.dataset.l;
+    s.addEventListener('pointerenter',()=>bench&&bench.highlightPins([key]));s.addEventListener('pointerleave',()=>bench&&bench.highlightPins(lessonPins()));});
+  $('#tp-example').innerHTML=`<span class="kicker">Wire it up</span><ol class="steps" style="margin-top:8px">${L.steps(board).map(s=>`<li><span>${s}</span></li>`).join('')}</ol><div class="how"><span class="kicker">How the code works</span><ul>${L.how(board).map(h=>`<li>${h}</li>`).join('')}</ul></div>`;
+  $('#tp-specs').innerHTML=`<p class="kicker">${esc(board.full)}</p><p style="margin:4px 0 10px;color:var(--ink-2)">${esc(board.blurb)}</p><div class="specgrid">${board.specs.map(([k,v])=>`<div class="spec"><small>${esc(k)}</small><b>${esc(v)}</b></div>`).join('')}</div>
+    <div class="how"><span class="kicker">Good to know</span><ul>${board.notes.map(n=>`<li>${esc(n)}</li>`).join('')}</ul></div>`;}
+function renderStrip(){const nl=$('#navlist');
+  nl.innerHTML=LESSONS.map(L=>`<button class="item" data-n="${L.n}" aria-current="${L.n===current}" aria-label="Lesson ${L.n}: ${esc(L.title)}${done.has(L.n)?', done':''}"><span class="tile">${svgI(ICONS[L.icon])}</span><span class="tx"><span class="no">${pad2(L.n)}</span><span class="nm">${esc(L.title)}</span></span>${CHEV}${done.has(L.n)?`<span class="check">${CHECK}</span>`:''}</button>`).join('');
+  nl.querySelectorAll('.item').forEach(b=>b.onclick=()=>select(+b.dataset.n));
+  const cur=nl.querySelector('.item[aria-current="true"]');if(cur)nl.scrollTo({left:cur.offsetLeft-nl.clientWidth/2+cur.offsetWidth/2});}
+function renderProgress(){$('#count').textContent=`${done.size}/${LESSONS.length}`;$('#pbar').style.width=(100*done.size/LESSONS.length)+'%';}
+function renderBoards(){
+  $('#boardsel').innerHTML=BOARDS.map(b=>`<option value="${b.id}" ${b.id===board.id?'selected':''}>${esc(b.full)}</option>`).join('');
+  $('#boardlist').innerHTML=BOARDS.map(b=>`<button class="bcard" data-board="${b.id}" aria-pressed="${b.id===board.id}"><small>${esc(b.soc)}</small><b>${esc(b.name)}</b><span>${esc(b.blurb)}</span><span class="tags">${['CPU','RAM','Wi-Fi'].map(k=>b.specs.find(s=>s[0]===k)).filter(Boolean).map(s=>`<i>${esc(s[1].split(',')[0])}</i>`).join('')}</span></button>`).join('');
+  $('#boardlist').querySelectorAll('[data-board]').forEach(c=>c.onclick=()=>{setBoard(c.dataset.board);openDrawer(false);});
+  $('#famtable').innerHTML=`<thead><tr>${['Model','Year','SoC','CPU','Clock','RAM','Wi-Fi','Bluetooth','USB','Ethernet','Best for'].map(h=>`<th>${h}</th>`).join('')}</tr></thead><tbody>${FAMILY.map(r=>`<tr class="${r[0]===board.name||(board.id==='pi4'&&r[0]==='Pi 4 B')?'cur':''}">${r.map(c=>`<td>${esc(c)}</td>`).join('')}</tr>`).join('')}</tbody>`;}
+function setBoard(id){const b=BOARDS.find(x=>x.id===id);if(!b||b.id===board.id)return;
+  if(sim.running)sim.stop();board=b;store('radix-pi-board',b.id);renderBoards();select(current);}
+$('#boardsel').onchange=e=>setBoard(e.target.value);
+function select(n){
+  if(sim.running)sim.stop();pressed.clear();current=n;server=null;wifiState='off';
+  const L=lesson();codeEl.value=load(codeKey(),null)??L.code;badLine=0;renderCode();
+  lines=[];partial='';serialDirty=true;renderSerial();
+  renderHead();renderTabs();renderStrip();renderInputs();
+  const tabNow=TABS.find(t=>$('#tab-'+t).getAttribute('aria-selected')==='true')||'overview';
+  if(bench){bench.setLesson(board,partsOf(L));bench.setWifi('off');bench.highlightPins(tabNow==='pinout'?lessonPins():[]);bench.update(sim.state);}
+  $('#modetext').textContent=`${board.name} · ready`;
+  $('#benchnote').textContent=L.web?'Press ▶: once Flask starts, the phone opens the Pi’s web page.':partsOf(L).length?'Parts for this lesson are on the breadboard. Press ▶ to run the program.':'Press ▶ to run the program. Its output appears in the terminal.';
+  $('#benchnote').hidden=false;updatePhone();
+  try{history.replaceState(null,'','#l'+n);}catch(e){}
+}
+
+/* ---------- rail, drawer, strip, clock, view tools ---------- */
+const drawer=$('#drawer'),scrim=$('#scrim');let lastFocus=null;
+function openDrawer(o){drawer.classList.toggle('open',o);scrim.classList.toggle('open',o);drawer.setAttribute('aria-hidden',!o);if(o){lastFocus=document.activeElement;$('#refclose').focus();}else if(lastFocus)lastFocus.focus();}
+$('#refclose').onclick=()=>openDrawer(false);scrim.onclick=()=>openDrawer(false);
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&drawer.classList.contains('open'))openDrawer(false);});
+const narrow=()=>matchMedia('(max-width:1020px)').matches;
+document.querySelectorAll('.rbtn[data-go]').forEach(b=>b.onclick=()=>{const g=b.dataset.go;
+  if(g==='components'){openDrawer(true);return;}
+  if(g==='run'){toggleRun();if(narrow())document.querySelector('.try').scrollIntoView({behavior:'smooth',block:'start'});return;}
+  setTab(g);if(narrow())document.querySelector('.panel').scrollIntoView({behavior:'smooth',block:'start'});});
+$('#sleft').onclick=()=>$('#navlist').scrollBy({left:-460,behavior:'smooth'});
+$('#sright').onclick=()=>$('#navlist').scrollBy({left:460,behavior:'smooth'});
+const MON=['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
+function tick(){const d=new Date();$('#cdate').textContent=`${MON[d.getMonth()]} ${pad2(d.getDate())}, ${d.getFullYear()}`;$('#ctime').textContent=[d.getHours(),d.getMinutes(),d.getSeconds()].map(pad2).join(':');}
+tick();setInterval(tick,1000);
+$('#v-phone').onclick=()=>{phoneOn=!phoneOn;$('#v-phone').setAttribute('aria-pressed',phoneOn);updatePhone();};
+$('#v-sound').setAttribute('aria-pressed',soundOn);
+$('#v-sound').onclick=()=>{soundOn=!soundOn;store('radix-pi-sound',soundOn);$('#v-sound').setAttribute('aria-pressed',soundOn);if(soundOn){ensureAudio();if(audio&&audio.ctx.state==='suspended')audio.ctx.resume();}updateSound(sim.state);};
+$('#v-flow').onclick=()=>{flowOn=!flowOn;$('#v-flow').setAttribute('aria-pressed',flowOn);if(bench)bench.setFlow(flowOn);};
+$('#z-in').onclick=()=>bench&&bench.zoom(1.5);$('#z-out').onclick=()=>bench&&bench.zoom(1/1.5);$('#z-fit').onclick=()=>bench&&bench.reset();
+setInterval(renderSerial,120);
+
+/* ---------- start ---------- */
+const THREE_URLS=['https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js','https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/controls/OrbitControls.js'];
+function loadScript(src){return new Promise((res,rej)=>{const s=document.createElement('script');s.src=src;s.crossOrigin='anonymous';s.onload=res;s.onerror=()=>rej(new Error(src));document.head.appendChild(s);});}
+const hm=(location.hash||'').match(/^#l(\d{1,2})$/);
+renderBoards();renderProgress();select(hm&&LESSONS.some(l=>l.n===+hm[1])?+hm[1]:1);
+(async()=>{
+  try{if(!window.THREE)await loadScript(THREE_URLS[0]);if(!THREE.OrbitControls)await loadScript(THREE_URLS[1]);
+    bench=createPiBench($('#view3d'),{pressed:p=>pressed.has(p),press,inputs,running:()=>sim.running,pinLabel:g=>pinName(g),pinNote});
+    $('#loading3d').hidden=true;bench.setLesson(board,partsOf(lesson()));bench.update(sim.state);}
+  catch(e){$('#loading3d').textContent='The 3D bench needs an internet connection. The lessons and code still work.';}
+})();
+
+})();
+</script>
+</body>
+</html>

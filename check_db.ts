@@ -1,7 +1,11 @@
 import { createClient } from "@supabase/supabase-js";
 
-const supabaseUrl = "https://ycjpezxmlhwryzxtoipg.supabase.co";
-const supabaseServiceKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InljanBlenhtbGh3cnl6eHRvaXBnIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NTc2NjA3OSwiZXhwIjoyMDkxMzQyMDc5fQ.Y_-k4ZKEzh2LEQNseL0nyjRzqHRVlvm7yz1YcmSz2GU";
+// Never hard-code keys here. Run with the variables from .env.local loaded.
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+if (!supabaseUrl || !supabaseServiceKey) {
+  throw new Error("Set NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY");
+}
 
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
 

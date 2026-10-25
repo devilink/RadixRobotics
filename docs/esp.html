@@ -1,0 +1,2070 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Radix ESP Lab</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700;800&family=Barlow:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600;700&display=swap">
+<style>
+/* Layout: one-screen workbench on a blueprint grid — icon rail | header (brand, progress, clock) /
+   breadboard stage with floating tool dock | side panel (project, Build/Parts/Overview/Quiz tabs, Try it yourself) /
+   project strip along the bottom. Quick reference opens as a drawer. Stacks on small screens. */
+:root{
+  --paper:#F6EDDD; --paper-2:#EFE3CC; --card:#FBF6EC; --card-2:#F2E8D5;
+  --ink:#1E2B45; --ink-2:#3A4560; --muted:#7A7262; --line:#E0D3BA; --line-2:#CFC0A2;
+  --teal:#1F7A80; --teal-soft:rgba(31,122,128,.12);
+  --orange:#FF6A13; --orange-ink:#B84300; --orange-soft:#FFE7D4; --on-orange:#0C0C0D;
+  --plus:#D7372A; --good:#2E8B57; --good-soft:rgba(46,139,87,.12); --bad-soft:rgba(215,55,42,.09);
+  --tile:#EFE4CF;
+  --display:"Barlow Condensed","Arial Narrow",Arial,sans-serif;
+  --body:"Barlow","Segoe UI",system-ui,sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,Menlo,Consolas,monospace;
+  color-scheme:light;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{
+  background-color:var(--paper);
+  background-image:
+    linear-gradient(rgba(30,43,69,.055) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(30,43,69,.055) 1px,transparent 1px),
+    linear-gradient(rgba(30,43,69,.025) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(30,43,69,.025) 1px,transparent 1px);
+  background-size:120px 120px,120px 120px,24px 24px,24px 24px;
+  color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased;
+}
+h1,h2,h3,h4,p{margin:0}
+button,select,input{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--teal);outline-offset:2px}
+[hidden]{display:none!important}
+.kicker{font-family:var(--display);font-size:14px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--ink)}
+.tile{background:var(--tile);border-radius:10px;display:grid;place-items:center}
+
+/* ---------- frame ---------- */
+.app{display:grid;grid-template-columns:68px minmax(0,1fr);min-height:100dvh}
+.rail{position:sticky;top:0;height:100dvh;display:flex;flex-direction:column;align-items:center;gap:10px;padding:16px 0;border-right:1px solid var(--line);background:rgba(239,227,204,.55);backdrop-filter:blur(6px);z-index:20}
+.rbtn{width:46px;height:46px;border-radius:12px;border:0;background:none;color:var(--ink);display:grid;place-items:center;position:relative;transition:background .15s}
+.rbtn svg{width:24px;height:24px}
+.rbtn:hover{background:var(--card-2)}
+.rbtn[aria-pressed="true"]{background:var(--card);box-shadow:inset 0 0 0 1.5px var(--ink)}
+.rbtn .rtip{position:absolute;left:56px;top:50%;transform:translateY(-50%);white-space:nowrap;background:var(--ink);color:var(--paper);font-family:var(--display);font-size:13px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;padding:4px 9px;border-radius:6px;opacity:0;pointer-events:none;transition:opacity .15s}
+.rbtn:hover .rtip,.rbtn:focus-visible .rtip{opacity:1}
+.rail .sep{width:28px;height:1px;background:var(--line-2);margin:4px 0}
+.credit{margin-top:auto;writing-mode:vertical-rl;transform:rotate(180deg);font-family:var(--mono);font-size:10px;font-weight:700;letter-spacing:.24em;color:var(--muted);text-transform:uppercase;padding:10px 0;border-top:1px solid var(--line-2)}
+
+.shell{
+  display:grid;min-width:0;gap:14px 18px;padding:18px 22px 18px;
+  grid-template-columns:minmax(0,1fr) 430px;
+  grid-template-rows:auto minmax(0,1fr) auto;
+  grid-template-areas:"top top" "stage panel" "strip panel";
+  height:max(100dvh,780px);
+}
+@media (max-width:1280px){.shell{grid-template-columns:minmax(0,1fr) 380px}}
+
+/* ---------- header ---------- */
+.top{grid-area:top;display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:14px}
+.brand{display:flex;align-items:center;gap:16px;min-width:0}
+.mark{width:64px;height:40px;flex:none}
+.brand h1{font-family:var(--display);font-weight:600;font-size:38px;line-height:.95;letter-spacing:.16em;text-transform:uppercase;position:relative}
+.brand h1 b{font-weight:800;color:var(--orange)}
+.brand p{margin-top:6px;font-family:var(--display);font-size:16px;font-weight:600;letter-spacing:.32em;text-transform:uppercase;color:var(--muted)}
+.brand p i{font-style:normal;color:var(--line-2);margin:0 .35em}
+.topright{display:flex;align-items:stretch;gap:12px;flex-wrap:wrap}
+.progcard{display:grid;grid-template-columns:auto minmax(0,1fr);align-items:center;gap:4px 14px;border:1.5px solid var(--line-2);border-radius:12px;padding:10px 16px;background:var(--card);min-width:250px}
+.progcard svg{grid-row:1/3;width:34px;height:34px}
+.progcard .lbl{font-family:var(--display);font-size:15px;font-weight:700;letter-spacing:.1em;text-transform:uppercase}
+.progrow{display:flex;align-items:center;gap:12px}
+.pbar{flex:1;height:8px;border-radius:8px;background:var(--paper-2);overflow:hidden;box-shadow:inset 0 0 0 1px var(--line)}
+.pbar span{display:block;height:100%;width:0;background:var(--teal);border-radius:8px;transition:width .6s cubic-bezier(.2,.8,.2,1)}
+#count{font-family:var(--display);font-size:18px;font-weight:800;font-variant-numeric:tabular-nums}
+.clock{display:flex;flex-direction:column;justify-content:center;padding:6px 16px;border:1.5px solid var(--line-2);border-radius:12px;background:var(--card);font-family:var(--mono);font-size:14px;font-weight:500;letter-spacing:.14em;color:var(--muted);text-transform:uppercase;line-height:1.55;font-variant-numeric:tabular-nums}
+
+/* ---------- stage ---------- */
+.stage{grid-area:stage;position:relative;display:flex;flex-direction:column;min-height:0;min-width:0;border:1.5px solid var(--line-2);border-radius:18px;background:rgba(251,246,236,.45);padding:12px 14px 14px}
+.stage::before,.stage::after{content:"";position:absolute;width:14px;height:14px;border:2px solid var(--ink);opacity:.35;pointer-events:none}
+.stage::before{top:8px;left:8px;border-right:0;border-bottom:0}
+.stage::after{bottom:8px;right:8px;border-left:0;border-top:0}
+.stagebar{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:10px;padding-left:10px}
+.mode{display:inline-flex;align-items:center;gap:8px;font-family:var(--display);font-size:14px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ink)}
+.mode i{width:8px;height:8px;border-radius:50%;background:var(--line-2);box-shadow:0 0 0 3px var(--paper-2)}
+.mode.run i{background:var(--orange);animation:pulse 1.6s infinite}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(255,106,19,.55)}70%{box-shadow:0 0 0 9px rgba(255,106,19,0)}100%{box-shadow:0 0 0 0 rgba(255,106,19,0)}}
+.stage-view{position:relative;flex:1;min-height:0;display:grid;place-items:center;overflow:hidden;container-type:size}
+#svgwrap{perspective:1400px;width:min(100cqw,calc(100cqh * 520 / 436))}
+#svgwrap svg{width:100%;height:auto;display:block;user-select:none;-webkit-user-select:none;touch-action:manipulation;transition:transform .55s cubic-bezier(.2,.8,.2,1);transform-origin:50% 55%}
+#svgwrap.tilt svg{transform:rotateX(38deg) rotateZ(-10deg) scale(.86)}
+#svgwrap.zoomed svg{cursor:grab}
+#svgwrap.panning svg{cursor:grabbing}
+#view3d{position:absolute;inset:0;border-radius:12px;cursor:grab;touch-action:none}
+#view3d:active{cursor:grabbing}
+#view3d.over-part{cursor:pointer}
+#view3d canvas{display:block;width:100%;height:100%;outline:none;border-radius:12px}
+#view3d canvas:focus-visible{box-shadow:inset 0 0 0 2px var(--teal)}
+.loading3d{position:absolute;inset:auto 0 12px;margin:auto;width:max-content;padding:6px 14px;border-radius:99px;background:var(--ink);color:var(--paper);font-family:var(--display);font-size:14px;font-weight:600;letter-spacing:.08em;text-transform:uppercase}
+.legend{display:flex;flex-wrap:wrap;justify-content:center;gap:14px;font-family:var(--mono);font-size:11.5px;color:var(--ink-2);margin-bottom:6px}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.legend i{width:11px;height:11px;border-radius:3px;display:inline-block}
+.dockwrap{display:flex;flex-direction:column;align-items:center;gap:8px}
+.hintpill{background:var(--ink-2);color:#F6EDDD;font-size:11.5px;font-weight:600;padding:3px 12px;border-radius:99px;opacity:.85}
+.dock{display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:4px;padding:5px;border-radius:14px;border:1.5px solid var(--line-2);background:var(--card);box-shadow:0 10px 24px -14px rgba(30,43,69,.45)}
+.dock .div{width:1px;height:22px;background:var(--line-2);margin:0 4px}
+.seg{display:inline-flex;gap:2px}
+.seg button{border:0;background:none;color:var(--ink-2);height:34px;min-width:34px;padding:0 11px;border-radius:9px;font-family:var(--display);font-weight:700;font-size:14px;letter-spacing:.06em;text-transform:uppercase;display:inline-flex;align-items:center;justify-content:center;gap:6px;transition:background .15s}
+.seg button:hover:not(:disabled){background:var(--card-2)}
+.seg button[aria-pressed="true"]{background:var(--teal-soft);color:var(--teal);box-shadow:inset 0 0 0 1.5px rgba(31,122,128,.45)}
+.seg button:disabled{opacity:.35;cursor:default}
+.seg svg{width:16px;height:16px}
+#vtabs .seg{background:var(--card);border:1.5px solid var(--line-2);border-radius:12px;padding:3px}
+.tipbox{position:absolute;pointer-events:none;background:var(--ink);color:#F6EDDD;font-size:13px;font-weight:600;padding:8px 11px;border-radius:9px;box-shadow:0 12px 28px rgba(30,43,69,.35);max-width:260px;z-index:5;line-height:1.35}
+.tipbox small{display:block;font-weight:500;color:#C9C1AE;margin-top:2px;font-size:11.5px}
+.hit{cursor:pointer}
+.spot{filter:drop-shadow(0 0 3px #FF6A13) drop-shadow(0 0 9px rgba(255,106,19,.8))}
+.ring2{fill:none;stroke:#FF6A13;stroke-width:2;animation:ring .8s ease-out infinite;transform-box:fill-box;transform-origin:center}
+@keyframes ring{from{opacity:.9;transform:scale(.75)}to{opacity:0;transform:scale(1.4)}}
+.flowline{fill:none;stroke:#FFF3E6;stroke-width:1.5;stroke-linecap:round;stroke-dasharray:1.5 9;animation:flow .9s linear infinite}
+@keyframes flow{to{stroke-dashoffset:-10.5}}
+.newring{fill:none;stroke:#FF6A13;stroke-width:1.6;animation:blink 1.2s ease-in-out infinite}
+@keyframes blink{50%{opacity:.25}}
+.xr .part{opacity:.5}
+
+/* ---------- side panel ---------- */
+.panel{grid-area:panel;display:flex;flex-direction:column;gap:12px;min-height:0;min-width:0}
+.phead{display:grid;grid-template-columns:60px minmax(0,1fr);gap:4px 14px;align-items:center;border:1.5px solid var(--line-2);border-radius:14px;background:var(--card);padding:14px}
+.phead .tile{width:60px;height:60px;grid-row:1/3;border-radius:12px}
+.phead .tile svg{width:46px;height:46px}
+.phtop{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.pnum{font-family:var(--mono);font-size:12px;font-weight:700;color:var(--orange-ink)}
+.phead h2{font-family:var(--display);font-size:28px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;line-height:1.05}
+.phead p{grid-column:1/-1;margin-top:6px;color:var(--ink-2);font-size:14.5px}
+.pill{display:inline-flex;align-items:center;gap:5px;font-family:var(--mono);font-size:10.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);border:1px solid var(--line-2);border-radius:99px;padding:2px 9px}
+.pill i{width:6px;height:6px;border-radius:2px;background:var(--line-2)}
+.pill i.on{background:var(--orange)}
+.builtbtn{grid-column:1/-1;margin-top:8px;display:inline-flex;align-items:center;justify-content:center;gap:8px;border:1.5px solid var(--ink);border-radius:10px;padding:9px 16px;min-height:42px;font-family:var(--display);font-size:15px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;background:transparent;color:var(--ink);transition:background .15s,color .15s}
+.builtbtn:hover{background:var(--ink);color:var(--paper)}
+.builtbtn[aria-pressed="true"]{background:var(--teal);border-color:var(--teal);color:#fff}
+
+.tabs{display:flex;gap:2px;border-bottom:1.5px solid var(--line-2);overflow-x:auto;scrollbar-width:none}
+.tab{border:0;background:none;padding:8px 12px 10px;font-family:var(--display);font-size:16px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);white-space:nowrap;position:relative}
+.tab:hover{color:var(--ink)}
+.tab[aria-selected="true"]{color:var(--ink);font-weight:700}
+.tab[aria-selected="true"]::after{content:"";position:absolute;left:8px;right:8px;bottom:-1.5px;height:3px;border-radius:3px;background:var(--ink)}
+.tabpanel{flex:1;min-height:0;overflow:auto;border:1.5px solid var(--line-2);border-radius:14px;background:var(--card);padding:14px 16px;scrollbar-width:thin}
+
+/* build guide */
+.ghead{display:flex;justify-content:space-between;align-items:center;font-family:var(--display);font-size:14px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:8px}
+.gprog{height:4px;background:var(--paper-2);border-radius:4px;overflow:hidden;margin-bottom:8px}
+.gprog span{display:block;height:100%;background:var(--teal);transition:width .35s ease}
+.glist{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:2px}
+.gbtn{display:grid;grid-template-columns:28px minmax(0,1fr);gap:12px;align-items:start;text-align:left;width:100%;border:0;background:none;padding:9px 8px;border-radius:10px;color:var(--ink-2);font-size:14.5px;line-height:1.45}
+.gbtn:hover{background:var(--card-2)}
+.gbtn .b{width:26px;height:26px;border-radius:50%;display:grid;place-items:center;font-family:var(--mono);font-size:12px;font-weight:700;border:1.5px solid var(--line-2);color:var(--muted);background:var(--card)}
+.gbtn.done .b{border-color:var(--teal);color:var(--teal)}
+.gbtn[aria-current="step"]{background:var(--teal-soft);color:var(--ink)}
+.gbtn[aria-current="step"] .b{background:var(--teal);border-color:var(--teal);color:#fff}
+.gbtn .t b{color:var(--ink);font-weight:700;font-family:var(--mono);font-size:13px}
+#tp-build:not([hidden]){display:flex;flex-direction:column;overflow:hidden;padding-bottom:0}
+#tp-build .glist{flex:1;min-height:0;overflow:auto;scrollbar-width:thin}
+.gctl{display:flex;align-items:center;gap:8px;padding:10px 0 12px;margin-top:6px;border-top:1.5px solid var(--line)}
+.ibtn{width:42px;height:42px;border-radius:50%;border:1.5px solid var(--line-2);background:var(--card);color:var(--ink);display:grid;place-items:center}
+.ibtn:hover:not(:disabled){border-color:var(--ink)}
+.ibtn:disabled{opacity:.35;cursor:default}
+.ibtn.play{background:var(--ink);border-color:var(--ink);color:var(--paper)}
+.ibtn svg{width:16px;height:16px}
+.gctl .hint{margin-left:auto;font-family:var(--mono);font-size:11px;color:var(--muted)}
+
+/* parts tray */
+.trayhead{display:flex;flex-direction:column;gap:2px;margin-bottom:12px}
+.trayhead span{font-size:13.5px;color:var(--muted)}
+.trayhead b{color:var(--ink)}
+.traygrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(118px,1fr));gap:10px}
+.pcard{background:var(--paper);border:1.5px solid var(--line);border-radius:12px;padding:8px 8px 10px;display:flex;flex-direction:column;gap:6px;position:relative;transition:transform .15s,border-color .15s}
+.pcard:hover,.pcard:focus-within{border-color:var(--teal);transform:translateY(-2px)}
+.pcard .tile{aspect-ratio:4/3;border-radius:9px;background:var(--card)}
+.pcard .tile svg{width:58%;height:auto}
+.pcard .pn{font-weight:700;font-size:13.5px;line-height:1.2;padding:0 2px}
+.pcard .pq{font-family:var(--mono);font-size:11px;color:var(--muted);padding:0 2px}
+.got{border:1.5px solid var(--line-2);background:var(--card);border-radius:99px;padding:5px 10px;font-size:12.5px;font-weight:700;min-height:32px;display:inline-flex;align-items:center;justify-content:center;gap:6px}
+.got[aria-pressed="true"]{background:var(--teal);border-color:var(--teal);color:#fff}
+.pcard.ok::after{content:"";position:absolute;top:12px;right:12px;width:20px;height:20px;border-radius:50%;background:var(--teal) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'%3E%3Cpath d='M2 5.2 4.2 7.4 8 3' fill='none' stroke='%23fff' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/11px no-repeat}
+
+/* overview + quiz */
+.info{display:flex;flex-direction:column;gap:12px}
+.icard{border:1.5px solid var(--line);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:8px;background:var(--paper)}
+.icard p{color:var(--ink-2)}
+.icard.ink{background:var(--ink);border-color:var(--ink)}
+.icard.ink .kicker{color:#FFB27A}
+.icard.ink p{color:#F6EDDD}
+.tipcard{background:var(--orange-soft);border-color:#F6CBA8}
+.flowbox{display:flex;flex-direction:column;gap:12px;overflow-x:auto}
+.flowlabel{font-size:12.5px;font-weight:700;color:var(--muted);margin-bottom:4px}
+.flow{display:flex;flex-wrap:wrap;align-items:center;gap:6px}
+.node{font-family:var(--mono);font-size:12px;padding:4px 9px;border-radius:7px;border:1.5px solid var(--line-2);background:var(--card);display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+.node.pos{background:var(--plus);color:#fff;border-color:transparent}
+.node.neg{background:var(--ink);color:var(--paper);border-color:transparent}
+.node.res{border-color:var(--orange)}
+.node .led{width:9px;height:9px;border-radius:50%;border:1px solid rgba(0,0,0,.25)}
+.arrow{color:var(--muted);font-family:var(--mono);font-size:13px}
+.quiz{display:flex;flex-direction:column;gap:12px}
+.quiz .q{font-family:var(--display);font-weight:700;font-size:22px;line-height:1.15}
+.opts{display:grid;gap:8px}
+.opt{text-align:left;border:1.5px solid var(--line-2);background:var(--paper);border-radius:12px;padding:11px 12px;font-weight:600;min-height:46px;display:flex;gap:10px;align-items:flex-start}
+.opt .k{font-family:var(--mono);font-size:12px;width:22px;height:22px;flex:none;border-radius:6px;border:1.5px solid var(--line-2);display:grid;place-items:center;background:var(--card)}
+.opt:hover:not(:disabled){border-color:var(--ink)}
+.opt.right{border-color:var(--good);background:var(--good-soft)}
+.opt.right .k{background:var(--good);border-color:var(--good);color:#fff}
+.opt.wrong{border-color:var(--plus);background:var(--bad-soft)}
+.opt:disabled{cursor:default}
+.qfeed{font-size:14.5px;color:var(--ink-2)}
+.qfeed b{color:var(--good)}
+.qfeed b.no{color:var(--plus)}
+
+/* try it yourself */
+.try{border:1.5px solid var(--line-2);border-radius:14px;background:var(--card);overflow:hidden}
+.tryhead{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;border-bottom:1.5px solid var(--line)}
+.runpanel{display:flex;flex-direction:column;gap:12px;padding:12px 14px 14px}
+.rp-row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.rp-label{display:none}
+.ctl{display:inline-flex;align-items:center;gap:10px;border:1.5px solid var(--line-2);background:var(--paper);color:var(--ink);border-radius:10px;padding:8px 14px;min-height:42px;font-weight:700;user-select:none;-webkit-user-select:none;touch-action:none;transition:background .12s,transform .08s}
+.ctl small{font-family:var(--mono);font-size:10px;font-weight:700;letter-spacing:.12em;color:var(--muted)}
+.ctl[aria-pressed="true"]{background:var(--orange);border-color:var(--orange);color:var(--on-orange);transform:translateY(1px)}
+.ctl[aria-pressed="true"] small{color:#3A1A05}
+.tog{width:30px;height:18px;border-radius:99px;background:var(--line-2);position:relative;flex:none}
+.tog::after{content:"";position:absolute;top:3px;left:3px;width:12px;height:12px;border-radius:50%;background:#fff;transition:left .15s}
+.ctl[aria-pressed="true"] .tog{background:var(--ink)}
+.ctl[aria-pressed="true"] .tog::after{left:15px;background:var(--orange)}
+.rng{display:flex;flex-direction:column;gap:6px;font-size:14px;font-weight:700;flex:1 1 220px;min-width:0;background:var(--paper);border:1.5px solid var(--line-2);border-radius:10px;padding:8px 12px}
+.rng span{display:flex;justify-content:space-between}
+.rng b{font-family:var(--mono);font-weight:700;color:var(--orange-ink)}
+.rng input{width:100%;accent-color:var(--orange)}
+.outs{display:flex;flex-wrap:wrap;gap:6px;padding:10px;border-radius:10px;background:var(--ink);min-height:44px;align-items:center}
+.outs:empty::before{content:"Outputs appear here";font-family:var(--mono);font-size:12px;color:#8E97AB}
+.out{display:inline-flex;align-items:center;gap:8px;font-family:var(--mono);font-size:12px;border:1px solid #33405E;border-radius:99px;padding:4px 10px;color:#AEB6C8}
+.out i{width:9px;height:9px;border-radius:50%;background:#3A3A40}
+.out.on{color:#fff;border-color:#55638A}
+.snd{display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--muted);margin-left:auto}
+.snd input{accent-color:var(--orange);width:16px;height:16px}
+.cta{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;color:var(--ink-2);font-size:14px}
+.cta button{border:0;border-radius:10px;background:var(--ink);color:var(--paper);font-family:var(--display);font-size:15px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:10px 16px;min-height:42px;display:inline-flex;align-items:center;gap:8px}
+.cta button:hover{background:var(--teal)}
+.playsq{width:34px;height:34px;border-radius:9px;border:0;background:var(--ink);color:var(--paper);display:grid;place-items:center}
+.playsq:hover{background:var(--teal)}
+.playsq svg{width:14px;height:14px}
+
+/* ---------- project strip ---------- */
+.strip{grid-area:strip;display:flex;flex-direction:column;gap:8px;min-width:0}
+.striphead{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.striphead select{background:var(--card);border:1.5px solid var(--line-2);border-radius:9px;padding:5px 10px;font-size:13.5px;min-height:34px}
+.striphead label{font-size:13px;color:var(--muted);display:flex;align-items:center;gap:8px;margin-left:auto}
+.stripnav{display:flex;gap:6px}
+.stripnav button{width:34px;height:34px;border-radius:50%;border:1.5px solid var(--line-2);background:var(--card);display:grid;place-items:center;color:var(--ink)}
+.stripnav button:hover{border-color:var(--ink)}
+.stripnav svg{width:14px;height:14px}
+#navlist{position:relative;display:flex;gap:10px;overflow-x:auto;scroll-snap-type:x proximity;padding:2px 2px 6px;scrollbar-width:thin;scroll-behavior:smooth}
+.item{flex:0 0 auto;scroll-snap-align:start;display:flex;align-items:center;gap:10px;min-width:210px;max-width:260px;padding:8px 12px 8px 8px;border:1.5px solid var(--line-2);border-radius:12px;background:var(--card);text-align:left;position:relative;transition:border-color .15s,transform .15s,box-shadow .15s}
+.item:hover{border-color:var(--ink-2);transform:translateY(-2px)}
+.item .tile{width:56px;height:56px;flex:none;background:var(--paper)}
+.item .tile svg{width:44px;height:44px}
+.item .tx{display:flex;flex-direction:column;min-width:0;flex:1}
+.item .no{font-family:var(--mono);font-size:10.5px;font-weight:700;color:var(--muted);letter-spacing:.06em}
+.item .nm{font-family:var(--display);font-weight:700;font-size:16px;letter-spacing:.06em;text-transform:uppercase;line-height:1.1}
+.item .chev{width:16px;height:16px;color:var(--muted);flex:none}
+.item[aria-current="true"]{border:2px solid var(--teal);background:#FFFBF3;box-shadow:0 8px 20px -12px rgba(31,122,128,.6)}
+.item[aria-current="true"] .chev{color:var(--teal)}
+.item.dim{opacity:.35}
+.check{position:absolute;top:-7px;right:-7px;width:20px;height:20px;border-radius:50%;background:var(--teal);display:grid;place-items:center;box-shadow:0 0 0 2px var(--paper)}
+.check svg{width:10px;height:10px}
+
+/* ---------- reference drawer ---------- */
+.scrim{position:fixed;inset:0;background:rgba(30,43,69,.35);opacity:0;visibility:hidden;transition:opacity .25s,visibility .25s;z-index:40}
+.scrim.open{opacity:1;visibility:visible}
+.drawer{position:fixed;top:0;right:0;bottom:0;width:min(760px,100%);background:var(--paper);border-left:1.5px solid var(--line-2);box-shadow:-30px 0 60px -30px rgba(30,43,69,.5);transform:translateX(100%);transition:transform .35s cubic-bezier(.2,.8,.2,1);z-index:50;display:flex;flex-direction:column}
+.drawer.open{transform:none}
+.drawerhead{display:flex;justify-content:space-between;align-items:center;padding:18px 22px;border-bottom:1.5px solid var(--line-2)}
+.drawerhead h2{font-family:var(--display);font-size:28px;font-weight:700;letter-spacing:.12em;text-transform:uppercase}
+.drawerbody{overflow:auto;padding:18px 22px 28px}
+.refgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px}
+.rcard{background:var(--card);border:1.5px solid var(--line-2);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:10px;min-width:0}
+.rcard h3{font-family:var(--display);font-size:19px;font-weight:700;letter-spacing:.08em;text-transform:uppercase}
+.rcard p,.rcard ul{margin:0;color:var(--ink-2);font-size:14.5px}
+.rcard ul{padding-left:18px;display:flex;flex-direction:column;gap:5px}
+.rcard svg{max-width:100%;height:auto}
+.rtable{width:100%;border-collapse:collapse;font-size:14px}
+.rtable td{padding:7px 0;border-bottom:1px solid var(--line)}
+.rtable td:last-child{text-align:right;font-family:var(--mono);font-variant-numeric:tabular-nums;color:var(--orange-ink);font-weight:700}
+.decoder{grid-column:1/-1}
+.dec-body{display:flex;flex-wrap:wrap;gap:20px;align-items:center}
+.selects{display:flex;flex-wrap:wrap;gap:12px}
+.sel{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--muted)}
+.sel select{background:var(--paper);border:1.5px solid var(--line-2);border-radius:9px;padding:7px 10px;min-height:40px}
+.value{font-family:var(--display);font-size:42px;font-weight:800;font-variant-numeric:tabular-nums}
+.presets{display:flex;flex-wrap:wrap;gap:6px}
+.chip{border:1.5px solid var(--line-2);background:var(--paper);border-radius:99px;padding:5px 13px;font-size:14px;font-weight:700;min-height:36px}
+.chip:hover{border-color:var(--ink)}
+.svgink{fill:none;stroke:var(--ink);stroke-width:2;stroke-linecap:round}
+.svgtext{fill:var(--ink);font-family:var(--mono);font-size:13px}
+.svgbody{fill:var(--ink)}
+
+.burst{position:fixed;width:8px;height:8px;border-radius:2px;pointer-events:none;z-index:60;animation:burst .95s cubic-bezier(.15,.7,.3,1) forwards}
+@keyframes burst{to{transform:translate(var(--dx),var(--dy)) rotate(var(--r));opacity:0}}
+
+.apptabs{display:inline-flex;gap:2px;padding:4px;border-radius:12px;border:1.5px solid var(--line-2);background:var(--card);margin-left:8px}
+.apptabs a{display:inline-flex;align-items:center;gap:8px;padding:7px 14px;border-radius:9px;font-family:var(--display);font-size:15px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);text-decoration:none;transition:background .15s,color .15s}
+.apptabs a:hover{color:var(--ink);background:var(--card-2)}
+.apptabs a[aria-current="page"]{background:var(--ink);color:var(--paper)}
+.apptabs svg{width:16px;height:16px}
+@media (max-width:1020px){.apptabs{margin-left:0}}
+
+/* ---------- small screens: stack, rail becomes a bottom tab bar ---------- */
+@media (max-width:1020px){
+  .app{grid-template-columns:minmax(0,1fr)}
+  .rail{position:fixed;top:auto;bottom:0;left:0;right:0;height:auto;flex-direction:row;justify-content:space-around;padding:6px 8px calc(6px + env(safe-area-inset-bottom,0px));border-right:0;border-top:1px solid var(--line-2);background:rgba(246,237,221,.95)}
+  .rail .sep,.credit,.rbtn .rtip{display:none}
+  .shell{height:auto;align-content:start;grid-template-columns:minmax(0,1fr);grid-template-rows:none;grid-template-areas:"top" "stage" "strip" "panel";padding:14px 14px 90px}
+  .stage-view{container-type:normal}
+  .stage-view.is3d{aspect-ratio:1/1;min-height:320px}
+  #svgwrap{width:100%}
+  #tp-build:not([hidden]){display:block;overflow:visible;padding-bottom:4px}
+  #tp-build .glist{overflow:visible}
+  .stage-view{padding:6px 0}
+  .tabpanel{max-height:none;overflow:visible}
+  .brand h1{font-size:28px}
+  .brand p{font-size:13px;letter-spacing:.24em}
+  .mark{width:48px;height:30px}
+  .progcard{flex:1;min-width:0}
+  .topright{width:100%}
+  .top .brand{flex-wrap:wrap}
+  .apptabs{width:100%}
+  .apptabs a{flex:1;justify-content:center}
+}
+@media (max-width:520px){
+  .clock{display:none}
+  .item{min-width:190px}
+  .dock .div{display:none}
+}
+@media (prefers-reduced-motion:reduce){.flowline,.ring2,.newring,.mode.run i{animation:none}#svgwrap svg,.gprog span,.pbar span,.drawer{transition:none}.burst{display:none}}
+
+/* ---------- Arduino lab additions ---------- */
+.apptabs{display:inline-flex;gap:2px;padding:4px;border-radius:12px;border:1.5px solid var(--line-2);background:var(--card);margin-left:8px}
+.apptabs a{display:inline-flex;align-items:center;gap:8px;padding:7px 14px;border-radius:9px;font-family:var(--display);font-size:15px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);text-decoration:none;transition:background .15s,color .15s}
+.apptabs a:hover{color:var(--ink);background:var(--card-2)}
+.apptabs a[aria-current="page"]{background:var(--ink);color:var(--paper)}
+.apptabs svg{width:16px;height:16px}
+@media (max-width:1020px){.apptabs{margin-left:0}}
+
+.panel{overflow-y:auto;scrollbar-width:thin;padding-right:2px}
+.panel>*{flex-shrink:0}
+.panel .tabpanel{flex:none;max-height:300px}
+.keypoints{display:grid;gap:8px;margin-top:4px}
+.keypoints li{display:flex;gap:10px;align-items:flex-start;list-style:none;padding:9px 10px;border-radius:10px;background:var(--paper);border:1.5px solid var(--line)}
+.keypoints ul{margin:0;padding:0;display:grid;gap:8px}
+.kpi{width:28px;height:28px;flex:none;border-radius:8px;display:grid;place-items:center;background:var(--teal-soft);color:var(--teal)}
+.kpi svg{width:16px;height:16px}
+.ov p{color:var(--ink-2)}
+.ov h3{font-family:var(--display);font-size:24px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;margin-bottom:4px}
+.pintable{width:100%;border-collapse:collapse;font-size:14px}
+.pintable th{text-align:left;font-family:var(--display);font-size:13px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);padding:6px 6px;border-bottom:1.5px solid var(--line-2)}
+.pintable td{padding:8px 6px;border-bottom:1px solid var(--line);vertical-align:top;color:var(--ink-2)}
+.pintable tr{cursor:default;transition:background .15s}
+.pintable tbody tr:hover{background:var(--teal-soft)}
+.pinchip{display:inline-block;font-family:var(--mono);font-size:12px;font-weight:700;padding:2px 8px;border-radius:6px;background:var(--ink);color:var(--paper);white-space:nowrap}
+.steps{margin:0;padding:0;list-style:none;display:grid;gap:8px;counter-reset:st}
+.steps li{display:grid;grid-template-columns:28px minmax(0,1fr);gap:10px;font-size:14.5px;color:var(--ink-2);counter-increment:st}
+.steps li::before{content:counter(st);width:26px;height:26px;border-radius:50%;display:grid;place-items:center;font-family:var(--mono);font-size:12px;font-weight:700;background:var(--teal);color:#fff}
+.how{margin-top:14px;padding:12px;border-radius:12px;background:var(--orange-soft);border:1.5px solid #F6CBA8}
+.how ul{margin:6px 0 0;padding-left:18px;display:grid;gap:4px;font-size:14px;color:var(--ink-2)}
+.how code,.steps code,.ov code{font-family:var(--mono);font-size:12.5px;background:var(--card);border:1px solid var(--line);border-radius:5px;padding:0 4px;color:var(--orange-ink)}
+.specgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
+.spec{padding:10px 12px;border-radius:10px;background:var(--paper);border:1.5px solid var(--line)}
+.spec small{display:block;font-family:var(--display);font-size:12px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.spec b{font-family:var(--mono);font-size:14px;color:var(--ink)}
+
+/* code editor */
+.tryhead .tools2{display:flex;gap:6px}
+.sqbtn{width:34px;height:34px;border-radius:9px;border:1.5px solid var(--line-2);background:var(--card);display:grid;place-items:center;color:var(--ink)}
+.sqbtn:hover{border-color:var(--ink)}
+.sqbtn svg{width:15px;height:15px}
+.sqbtn.run{background:var(--ink);border-color:var(--ink);color:var(--paper)}
+.sqbtn.run:hover{background:var(--teal);border-color:var(--teal)}
+.sqbtn.run.stop{background:var(--plus);border-color:var(--plus)}
+.editor{font-variant-ligatures:none;display:grid;grid-template-columns:38px minmax(0,1fr);height:230px;margin:10px 14px 0;border:1.5px solid var(--line-2);border-radius:10px;background:#FFFDF8;overflow:hidden;font-family:var(--mono);font-size:13px;line-height:1.6}
+.gutter{padding:10px 0;text-align:right;color:#B3A98F;background:var(--paper);border-right:1px solid var(--line);overflow:hidden;user-select:none}
+.gutter div{padding-right:8px}
+.gutter .err{color:#fff;background:var(--plus)}
+.codebox{position:relative;overflow:hidden}
+.codebox pre,.codebox textarea{position:absolute;inset:0;margin:0;padding:10px 12px;font:inherit;line-height:inherit;white-space:pre;tab-size:2;overflow:auto;border:0}
+.codebox pre{pointer-events:none;color:var(--ink);overflow:hidden}
+.codebox textarea{resize:none;background:transparent;color:transparent;caret-color:var(--ink);outline:none}
+.codebox textarea::selection{background:rgba(31,122,128,.25);color:transparent}
+.tk-kw{color:#7C3AED}.tk-ty{color:#1F7A80;font-weight:600}.tk-fn{color:#C2410C}.tk-k{color:#1D4ED8;font-weight:600}.tk-n{color:#0E7490}.tk-s{color:#15803D}.tk-c{color:#A0937A;font-style:italic}.tk-pp{color:#B45309}
+.inputsrow{display:flex;flex-wrap:wrap;gap:8px;padding:10px 14px 0}
+.inputsrow:empty{display:none}
+.serial{margin:10px 14px 14px;border-radius:10px;background:var(--ink);overflow:hidden}
+.serialhead{display:flex;align-items:center;gap:10px;padding:8px 12px;border-bottom:1px solid #33405E}
+.serialhead .kicker{color:#E9E0CC;font-size:13px}
+.sstat{display:inline-flex;align-items:center;gap:6px;font-family:var(--mono);font-size:11px;color:#AEB6C8;margin-left:auto}
+.sstat i{width:8px;height:8px;border-radius:50%;background:#55638A}
+.sstat.on i{background:#3DDC84;box-shadow:0 0 8px #3DDC84}
+.sstat.err i{background:#FF5A5F}
+.serialhead button{border:0;background:none;color:#AEB6C8;font-size:12px;font-weight:600}
+.serialhead button:hover{color:#fff}
+#serial{margin:0;height:104px;overflow:auto;padding:8px 12px;font-family:var(--mono);font-size:12.5px;line-height:1.5;color:#D8E2F5;white-space:pre-wrap;word-break:break-word}
+#serial .e{color:#FF8A8D}
+#serial .s{color:#7F8BA8}
+
+/* 3D hotspots */
+.hotspots{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+.hs{position:absolute;left:0;top:0;transform:translate(-50%,-50%);pointer-events:auto}
+.hs .pin{width:11px;height:11px;border-radius:50%;background:var(--teal);box-shadow:0 0 0 4px rgba(31,122,128,.25);display:block;margin:auto;animation:hsp 2s ease-in-out infinite}
+@keyframes hsp{50%{box-shadow:0 0 0 9px rgba(31,122,128,.08)}}
+.hs .card{position:absolute;left:16px;top:-6px;width:max-content;max-width:190px;padding:4px 9px;border-radius:10px;background:rgba(251,246,236,.95);border:1.5px solid var(--line-2);box-shadow:0 8px 20px -10px rgba(30,43,69,.5)}
+.hs .card b{display:block;font-family:var(--display);font-size:12.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--ink)}
+.hs .card span{display:none;font-size:12px;color:var(--ink-2);line-height:1.35;margin-top:2px}
+.hs:hover,.hs:focus{z-index:2}
+.hs.left .card{left:auto;right:18px}
+.hs:hover .card span,.hs:focus .card span{display:block}
+.bench-note{position:absolute;left:12px;top:44px;max-width:280px;padding:8px 12px;border-radius:10px;background:rgba(30,43,69,.9);color:#F6EDDD;font-size:12.5px;line-height:1.4;pointer-events:none}
+.bench-note:empty{display:none}
+.item .tile svg{width:44px;height:44px}
+.donebadge{display:inline-flex;align-items:center;gap:6px}
+@media (max-width:1020px){
+  #stageview{aspect-ratio:1/1;min-height:320px;flex:none}
+  .top .brand{flex-wrap:wrap}
+  .apptabs{width:100%}
+  .apptabs a{flex:1;justify-content:center}
+  .panel{overflow:visible}
+  .panel .tabpanel{max-height:none}
+}
+
+/* ---------- ESP lab additions ---------- */
+.boardpick{display:inline-flex;align-items:center;gap:8px;font-family:var(--display);font-size:14px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.boardpick select{font-family:var(--body);font-size:14px;font-weight:600;letter-spacing:0;text-transform:none;color:var(--ink);background:var(--card);border:1.5px solid var(--line-2);border-radius:10px;padding:5px 10px;min-height:34px}
+.phone{position:absolute;right:14px;top:10px;width:230px;height:min(400px,calc(100% - 24px));border-radius:26px;background:#14161C;padding:10px 8px 14px;box-shadow:0 24px 48px -18px rgba(30,43,69,.6);display:flex;flex-direction:column;z-index:3;animation:phoneIn .45s cubic-bezier(.2,.8,.2,1) both}
+@keyframes phoneIn{from{opacity:0;transform:translateY(16px) scale(.96)}to{opacity:1;transform:none}}
+.phone::before{content:"";display:block;width:60px;height:6px;border-radius:6px;background:#2A2D36;margin:0 auto 8px}
+.phonebar{display:flex;align-items:center;gap:6px;padding:6px 8px;border-radius:10px 10px 0 0;background:#E9E4D8;font-family:var(--mono);font-size:11px;color:#3A4560}
+.phonebar #purl{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.phonebar .lock{width:8px;height:8px;border-radius:50%;background:#2FB36A}
+.phonebar button{border:0;background:none;font-size:14px;color:#3A4560;padding:0 2px}
+.phonebody{flex:1;overflow:auto;background:#fff;border-radius:0 0 12px 12px;padding:12px;font-family:-apple-system,"Segoe UI",Roboto,sans-serif;font-size:14px;color:#111;line-height:1.45}
+.phonebody h1{font-size:20px;margin:0 0 8px}
+.phonebody p{margin:0 0 8px}
+.phonebody a{display:inline-block;margin:2px 4px 2px 0;padding:6px 12px;border-radius:8px;background:#1F7A80;color:#fff;text-decoration:none;font-weight:600}
+.phonebody a:nth-of-type(2n){background:#1E2B45}
+.phonebody form{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:0 0 8px}
+.phonebody input[type=range]{flex:1 1 100%;accent-color:#1F7A80}
+.phonebody input[type=number]{width:84px;padding:6px 8px;border:1px solid #CBD2DC;border-radius:8px;font:inherit}
+.phonebody input[type=submit]{padding:6px 14px;border:0;border-radius:8px;background:#FF6A13;color:#fff;font:inherit;font-weight:600;cursor:pointer}
+.phonebody .err{color:#B42318;font-family:var(--mono);font-size:12px}
+.phonebody .wait{color:#667085;font-size:13px}
+@media (max-width:1020px){.phone{width:190px;height:min(330px,calc(100% - 20px))}}
+.wifichip{display:flex;flex-wrap:wrap;align-items:center;gap:8px;width:100%;padding:8px 12px;border-radius:10px;background:var(--paper);border:1.5px solid var(--line-2);font-size:13px;color:var(--ink-2)}
+.wifichip b{font-family:var(--mono);color:var(--ink)}
+.wifidot{width:9px;height:9px;border-radius:50%;background:var(--line-2);flex:none}
+.wifidot.connecting{background:#F5A524;animation:hsp 1s infinite}
+.wifidot.connected{background:#2FB36A}
+.wifidot.failed{background:#E5484D}
+.wifidot.scan{background:#3E8EF7}
+.unavail{padding:12px 14px;border-radius:12px;background:#FFF1E6;border:1.5px solid #F6CBA8;color:#7A3A0B;font-size:14px;margin-bottom:10px}
+.unavail b{color:#5A2A05}
+.item.na{opacity:.45}
+.item.na .no::after{content:" · not on this board";color:var(--plus)}
+.drawerlede{color:var(--ink-2);margin-bottom:12px}
+.boardgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px}
+.bcard{display:flex;flex-direction:column;gap:6px;text-align:left;padding:12px;border-radius:14px;border:1.5px solid var(--line-2);background:var(--card);transition:border-color .15s,transform .15s}
+.bcard:hover{transform:translateY(-2px);border-color:var(--ink-2)}
+.bcard[aria-pressed="true"]{border:2px solid var(--teal);background:#FFFBF3}
+.bcard b{font-family:var(--display);font-size:18px;font-weight:700;letter-spacing:.06em;text-transform:uppercase}
+.bcard small{font-family:var(--mono);font-size:11px;color:var(--orange-ink)}
+.bcard span{font-size:13px;color:var(--ink-2);line-height:1.4}
+.bcard .tags{display:flex;flex-wrap:wrap;gap:4px}
+.bcard .tags i{font-style:normal;font-family:var(--mono);font-size:10.5px;padding:2px 7px;border-radius:99px;background:var(--paper-2);color:var(--ink-2)}
+.famh{margin:22px 0 10px;font-family:var(--display);font-size:22px;font-weight:700;letter-spacing:.08em;text-transform:uppercase}
+.famwrap{overflow-x:auto;border:1.5px solid var(--line-2);border-radius:14px;background:var(--card)}
+.famtable{border-collapse:collapse;width:100%;min-width:760px;font-size:13px}
+.famtable th{text-align:left;font-family:var(--display);font-size:12.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);background:var(--paper);padding:8px 10px;border-bottom:1.5px solid var(--line-2);white-space:nowrap}
+.famtable td{padding:8px 10px;border-bottom:1px solid var(--line);color:var(--ink-2);white-space:nowrap}
+.famtable td:first-child{font-weight:700;color:var(--ink);font-family:var(--mono)}
+.famtable td:last-child{white-space:normal;min-width:200px}
+.famtable tr.cur td{background:var(--teal-soft)}
+.famnote{margin-top:8px;font-size:12.5px;color:var(--muted)}
+.fullpins{display:grid;grid-template-columns:1fr 1fr;gap:4px 10px;margin-top:12px}
+.fullpins span{display:flex;justify-content:space-between;gap:6px;font-family:var(--mono);font-size:12px;padding:3px 8px;border-radius:6px;background:var(--paper);border:1px solid var(--line);cursor:default}
+.fullpins span:hover{border-color:var(--teal);background:var(--teal-soft)}
+.fullpins em{font-style:normal;color:var(--muted)}
+</style>
+</head>
+<body>
+<div class="app">
+  <nav class="rail" aria-label="Lab">
+    <button class="rbtn" data-go="overview" aria-pressed="true" aria-label="Overview"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5.5C5.5 4 8.5 4 12 6c3.5-2 6.5-2 9-.5V19c-2.5-1.5-5.5-1.5-9 .5-3.5-2-6.5-2-9-.5z"/><path d="M12 6v13.5"/></svg><span class="rtip">Overview</span></button>
+    <button class="rbtn" data-go="pinout" aria-pressed="false" aria-label="Pinout"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="7" width="10" height="10" rx="1.5"/><path d="M10 3v4M14 3v4M10 17v4M14 17v4M3 10h4M3 14h4M17 10h4M17 14h4"/></svg><span class="rtip">Pinout</span></button>
+    <button class="rbtn" data-go="example" aria-pressed="false" aria-label="Wiring example"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M7 9h.01M10 9h.01M13 9h.01M16 9h.01M7 15h.01M10 15h.01M13 15h.01M16 15h.01M3 12h18"/></svg><span class="rtip">Example</span></button>
+    <button class="rbtn" data-go="specs" aria-pressed="false" aria-label="Specifications"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg><span class="rtip">Specifications</span></button>
+    <span class="sep" aria-hidden="true"></span>
+    <button class="rbtn" data-go="run" aria-label="Run the code"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2.5"/><path d="M10 9v6l5-3z" fill="currentColor"/></svg><span class="rtip">Run</span></button>
+    <button class="rbtn" data-go="components" aria-label="Boards and chips" aria-controls="drawer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 3 8l9 5 9-5z"/><path d="m3 13 9 5 9-5"/></svg><span class="rtip">Boards &amp; chips</span></button>
+    <a class="rbtn" href="/kits/arduino" target="_top" aria-label="Arduino lab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M9 9h6v6H9zM9 1v3M15 1v3M9 20v3M15 20v3M1 9h3M1 15h3M20 9h3M20 15h3"/></svg><span class="rtip">Arduino</span></a>
+    <a class="rbtn" href="/kits" target="_top" aria-label="Starter Kit Lab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10 14 21 3M15 3h6v6"/><path d="M19 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h6"/></svg><span class="rtip">Starter Kit</span></a>
+    <a class="rbtn" href="/kits/pi" target="_top" aria-label="Raspberry Pi lab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21.5c-3.6 0-6-2.4-6-5.4 0-2.6 1.8-4.3 3.4-5.1-1-.6-1.6-1.4-1.6-2.4C7.8 7 9.6 6 12 6s4.2 1 4.2 2.6c0 1-.6 1.8-1.6 2.4 1.6.8 3.4 2.5 3.4 5.1 0 3-2.4 5.4-6 5.4z"/><path d="M12 6c-1.4-2.4-4-3.4-6-2.6.6 2 2.8 3.2 5 3.2M12 6c1.4-2.4 4-3.4 6-2.6-.6 2-2.8 3.2-5 3.2"/></svg><span class="rtip">Raspberry Pi</span></a>
+    <span class="credit">Radix Robotics</span>
+  </nav>
+
+  <div class="shell studio">
+    <header class="top">
+      <div class="brand">
+        <svg class="mark" viewBox="0 0 64 40" aria-hidden="true"><rect x="3" y="3" width="58" height="34" rx="17" fill="none" stroke="#1E2B45" stroke-width="5"/><path d="M16 20h12" stroke="#1E2B45" stroke-width="5" stroke-linecap="round"/><path d="M42 14v12M36 20h12" stroke="#8B6CF6" stroke-width="5" stroke-linecap="round"/></svg>
+        <div>
+          <h1><b>Radix</b> ESP Lab</h1>
+          <p>Wi-Fi<i>·</i>Bluetooth<i>·</i>IoT</p>
+        </div>
+        <nav class="apptabs" aria-label="Labs">
+          <a href="/kits" target="_top"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 12h18"/></svg>Starter Kit</a>
+          <a href="/kits/arduino" target="_top"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M9 9h6v6H9zM9 1v3M15 1v3M9 20v3M15 20v3M1 9h3M1 15h3M20 9h3M20 15h3"/></svg>Arduino</a>
+          <a href="/kits/esp" target="_top" aria-current="page"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 9a15 15 0 0 1 20 0M5.5 12.5a10 10 0 0 1 13 0M9 16a5 5 0 0 1 6 0"/><circle cx="12" cy="19.5" r="1"/></svg>ESP</a>
+          <a href="/kits/pi" target="_top"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21.5c-3.6 0-6-2.4-6-5.4 0-2.6 1.8-4.3 3.4-5.1-1-.6-1.6-1.4-1.6-2.4C7.8 7 9.6 6 12 6s4.2 1 4.2 2.6c0 1-.6 1.8-1.6 2.4 1.6.8 3.4 2.5 3.4 5.1 0 3-2.4 5.4-6 5.4z"/><path d="M12 6c-1.4-2.4-4-3.4-6-2.6.6 2 2.8 3.2 5 3.2M12 6c1.4-2.4 4-3.4 6-2.6-.6 2-2.8 3.2-5 3.2"/></svg>Pi</a>
+        </nav>
+      </div>
+      <div class="topright">
+        <div class="progcard" aria-live="polite">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#1E2B45" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 5.5C5.5 4 8.5 4 12 6c3.5-2 6.5-2 9-.5V19c-2.5-1.5-5.5-1.5-9 .5-3.5-2-6.5-2-9-.5z"/><path d="M12 6v13.5"/></svg>
+          <span class="lbl">ESP basics</span>
+          <span class="progrow"><span class="pbar"><span id="pbar"></span></span><span id="count">0/16</span></span>
+        </div>
+        <div class="clock" aria-hidden="true"><span id="cdate"></span><span id="ctime"></span></div>
+      </div>
+    </header>
+
+    <section class="stage" id="stage" aria-label="3D ESP bench">
+      <div class="stagebar">
+        <span class="mode" id="mode"><i></i><span id="modetext">Board · ready</span></span>
+        <label class="boardpick" for="boardsel"><span>Board</span><select id="boardsel"></select></label>
+      </div>
+      <div class="stage-view" id="stageview">
+        <div id="view3d"></div>
+        <div class="phone" id="phone" hidden>
+          <div class="phonebar"><span class="lock" aria-hidden="true"></span><span id="purl">http://192.168.1.42/</span><button id="preload" aria-label="Reload the page">↻</button></div>
+          <div class="phonebody" id="pbody"></div>
+        </div>
+        <div class="bench-note" id="benchnote"></div>
+        <div class="loading3d" id="loading3d">Building the 3D bench…</div>
+      </div>
+      <div class="dockwrap">
+        <span class="hintpill" id="hint">Drag to rotate · right-drag or WASD to pan · Q/E to turn · scroll to zoom</span>
+        <div class="dock" role="toolbar" aria-label="Board view">
+          <span class="seg"><button id="v-phone" aria-pressed="true" title="Show the phone browser in web lessons"><svg viewBox="0 0 16 16"><rect x="4" y="1.5" width="8" height="13" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M7 12.5h2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>Phone</button></span>
+          <span class="div" aria-hidden="true"></span>
+          <span class="seg"><button id="v-flow" aria-pressed="true" title="Show current flowing through active wires"><svg viewBox="0 0 16 16"><path d="M9 1 3 9h5l-1 6 6-8H8z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>Current</button></span>
+          <span class="div" aria-hidden="true"></span>
+          <span class="seg" role="group" aria-label="Zoom">
+            <button id="z-out" aria-label="Zoom out"><svg viewBox="0 0 16 16"><path d="M4 8h8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
+            <button id="z-in" aria-label="Zoom in"><svg viewBox="0 0 16 16"><path d="M4 8h8M8 4v8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
+            <button id="z-fit" aria-label="Reset the view"><svg viewBox="0 0 16 16"><path d="M2 6V2h4M10 2h4v4M14 10v4h-4M6 14H2v-4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+          </span>
+        </div>
+      </div>
+      <div class="tipbox" id="tipbox" hidden></div>
+    </section>
+
+    <aside class="panel" aria-label="Lesson">
+      <div id="phead" class="phead"></div>
+      <div class="tabs" role="tablist" aria-label="Lesson sections">
+        <button class="tab" role="tab" id="tab-overview" aria-controls="tp-overview" aria-selected="true">Overview</button>
+        <button class="tab" role="tab" id="tab-pinout" aria-controls="tp-pinout" aria-selected="false" tabindex="-1">Pinout</button>
+        <button class="tab" role="tab" id="tab-example" aria-controls="tp-example" aria-selected="false" tabindex="-1">Example</button>
+        <button class="tab" role="tab" id="tab-specs" aria-controls="tp-specs" aria-selected="false" tabindex="-1">Specifications</button>
+      </div>
+      <div class="tabpanel" role="tabpanel" id="tp-overview" aria-labelledby="tab-overview"></div>
+      <div class="tabpanel" role="tabpanel" id="tp-pinout" aria-labelledby="tab-pinout" hidden></div>
+      <div class="tabpanel" role="tabpanel" id="tp-example" aria-labelledby="tab-example" hidden></div>
+      <div class="tabpanel" role="tabpanel" id="tp-specs" aria-labelledby="tab-specs" hidden></div>
+      <section class="try" aria-label="Try it yourself">
+        <div class="tryhead">
+          <span class="kicker">Try it yourself</span>
+          <span class="tools2">
+            <button class="sqbtn" id="creset" title="Restore the lesson's code" aria-label="Restore the lesson's code"><svg viewBox="0 0 16 16"><path d="M3 8a5 5 0 1 0 1.6-3.7M3 2v3h3" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+            <button class="sqbtn" id="ccopy" title="Copy the code" aria-label="Copy the code"><svg viewBox="0 0 16 16"><rect x="5" y="5" width="9" height="9" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M3 11V3a1 1 0 0 1 1-1h7" fill="none" stroke="currentColor" stroke-width="1.6"/></svg></button>
+            <button class="sqbtn run" id="crun" title="Upload and run" aria-label="Upload and run"><svg viewBox="0 0 16 16" id="runicon"><path d="M4 2.5v11l9.5-5.5z" fill="currentColor"/></svg></button>
+          </span>
+        </div>
+        <div class="editor">
+          <div class="gutter" id="gutter" aria-hidden="true"></div>
+          <div class="codebox"><pre id="hl" aria-hidden="true"></pre><textarea id="code" spellcheck="false" autocapitalize="off" autocomplete="off" aria-label="ESP code (Arduino C++). Edit it, then press Run."></textarea></div>
+        </div>
+        <div class="inputsrow" id="inputs"></div>
+        <div class="serial">
+          <div class="serialhead"><span class="kicker">Serial monitor</span><span class="sstat" id="sstat"><i></i><span id="sstattext">Stopped</span></span><button id="sclear">Clear</button></div>
+          <pre id="serial" aria-live="polite"></pre>
+        </div>
+      </section>
+    </aside>
+
+    <section class="strip" aria-label="Lessons">
+      <div class="striphead">
+        <span class="kicker">Lessons</span>
+        <span class="stripnav" style="margin-left:auto">
+          <button id="sleft" aria-label="Scroll lessons left"><svg viewBox="0 0 16 16"><path d="M10 3 5 8l5 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+          <button id="sright" aria-label="Scroll lessons right"><svg viewBox="0 0 16 16"><path d="M6 3l5 5-5 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+        </span>
+      </div>
+      <div id="navlist"></div>
+    </section>
+  </div>
+</div>
+
+<div class="scrim" id="scrim"></div>
+<aside class="drawer" id="drawer" aria-labelledby="refh" aria-hidden="true">
+  <div class="drawerhead">
+    <h2 id="refh">Boards &amp; chips</h2>
+    <button class="ibtn" id="refclose" aria-label="Close boards and chips"><svg viewBox="0 0 16 16"><path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
+  </div>
+  <div class="drawerbody">
+    <p class="drawerlede">Pick the board on your desk. Lessons, pins and code switch to match it.</p>
+    <div class="boardgrid" id="boardlist"></div>
+    <h3 class="famh">The ESP family at a glance</h3>
+    <div class="famwrap"><table class="famtable" id="famtable"></table></div>
+    <p class="famnote">Typical values from the chip datasheets; boards built on the same chip can differ.</p>
+  </div>
+</aside>
+
+<script>
+(function(){
+/* ---------- illustrations for lesson cards and the components drawer (48×48) ---------- */
+const ICON={
+ board:`<rect x="5" y="9" width="38" height="30" rx="4" fill="#1F4E8C"/><rect x="2" y="13" width="10" height="9" rx="1.5" fill="#B9BBC0"/><rect x="3" y="27" width="8" height="8" rx="1.5" fill="#1A1A1D"/><rect x="22" y="25" width="17" height="6" rx="1" fill="#111"/><path d="M16 11h24M24 37h16" stroke="#111" stroke-width="2.4"/><circle cx="34" cy="17" r="3" fill="none" stroke="#fff" stroke-width="1.4"/><circle cx="28" cy="17" r="3" fill="none" stroke="#fff" stroke-width="1.4"/>`,
+ led:`<circle cx="24" cy="19" r="14" fill="#E5484D" opacity=".16"/><path d="M17 27V17a7 7 0 0 1 14 0v10z" fill="#E5484D"/><rect x="15" y="26" width="18" height="4" rx="1.5" fill="#B83A3E"/><ellipse cx="21" cy="16" rx="2" ry="3.2" fill="#fff" opacity=".65"/><path d="M20 30v13M28 30v9" stroke="#9A9DA4" stroke-width="2.2" stroke-linecap="round"/>`,
+ btn:`<rect x="10" y="13" width="28" height="27" rx="5" fill="#1F1F23"/><circle cx="24" cy="26" r="9" fill="#FF6A13"/><circle cx="21" cy="23" r="3" fill="#fff" opacity=".35"/><path d="M13 40v5M35 40v5" stroke="#9A9DA4" stroke-width="2.2" stroke-linecap="round"/>`,
+ pot:`<rect x="8" y="9" width="32" height="25" rx="4" fill="#1F4E8C"/><circle cx="24" cy="21.5" r="9" fill="#E8E9EC"/><path d="M24 21.5l5-5" stroke="#1F4E8C" stroke-width="2.6" stroke-linecap="round"/><path d="M14 34v9M24 34v9M34 34v9" stroke="#9A9DA4" stroke-width="2.2" stroke-linecap="round"/>`,
+ rgb:`<circle cx="18" cy="18" r="9" fill="#E5484D" opacity=".55"/><circle cx="30" cy="18" r="9" fill="#2FB36A" opacity=".55"/><circle cx="24" cy="27" r="9" fill="#3E63DD" opacity=".55"/><path d="M15 36v8M21 36v9M27 36v9M33 36v8" stroke="#9A9DA4" stroke-width="2" stroke-linecap="round"/>`,
+ ldr:`<circle cx="24" cy="20" r="15" fill="#FFD43B" opacity=".25"/><circle cx="24" cy="20" r="10" fill="#E8D8B0"/><path d="M18 17h4v4h-4v4h12v-4h-4v-4h4" fill="none" stroke="#B0472E" stroke-width="1.6"/><path d="M20 30v14M28 30v14" stroke="#9A9DA4" stroke-width="2.2" stroke-linecap="round"/>`,
+ us:`<rect x="3" y="14" width="42" height="20" rx="3" fill="#2D6BD6"/><circle cx="14" cy="24" r="8" fill="#C8CBD2"/><circle cx="34" cy="24" r="8" fill="#C8CBD2"/><circle cx="14" cy="24" r="4.5" fill="#55585F"/><circle cx="34" cy="24" r="4.5" fill="#55585F"/><path d="M18 34v8M22 34v8M26 34v8M30 34v8" stroke="#C9A23B" stroke-width="2"/>`,
+ buz:`<path d="M19 35v9M29 35v9" stroke="#9A9DA4" stroke-width="2.2" stroke-linecap="round"/><circle cx="22" cy="22" r="14" fill="#1A1A1D"/><circle cx="22" cy="22" r="9.5" fill="none" stroke="#38383E"/><circle cx="22" cy="22" r="3.5" fill="#FF6A13"/><path d="M38 14a12 12 0 0 1 0 16M42 10a18 18 0 0 1 0 24" fill="none" stroke="#FF6A13" stroke-width="2" stroke-linecap="round"/>`,
+ piano:`<rect x="4" y="12" width="40" height="26" rx="3" fill="#FAFAF7" stroke="#1E2B45" stroke-width="2"/><path d="M14 12v26M24 12v26M34 12v26" stroke="#1E2B45" stroke-width="1.6"/><rect x="11" y="12" width="6" height="15" fill="#1E2B45"/><rect x="21" y="12" width="6" height="15" fill="#1E2B45"/><rect x="31" y="12" width="6" height="15" fill="#1E2B45"/>`,
+ motor:`<rect x="8" y="16" width="26" height="18" rx="4" fill="#B9BBC0"/><rect x="8" y="16" width="6" height="18" rx="2" fill="#E5D35A"/><path d="M34 25h5" stroke="#55585F" stroke-width="3"/><path d="M40 13c4 6 4 18 0 24M40 13c-4 6-4 18 0 24" fill="#FF6A13" opacity=".85"/>`,
+ tmp:`<path d="M14 27V15a10 7.5 0 0 1 20 0v12z" fill="#1F1F23"/><path d="M18 27v16M24 27v16M30 27v16" stroke="#9A9DA4" stroke-width="2.2" stroke-linecap="round"/><text x="24" y="22" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="5.5" font-weight="700" fill="#FF8C42">TMP</text><circle cx="40" cy="10" r="5" fill="#E5484D" opacity=".8"/>`,
+ servo:`<rect x="6" y="18" width="30" height="20" rx="3" fill="#2D6BD6"/><rect x="2" y="25" width="38" height="5" rx="2" fill="#2D6BD6"/><circle cx="16" cy="18" r="5" fill="#E8E9EC"/><rect x="14" y="4" width="4" height="16" rx="2" fill="#F5F5F5" stroke="#A3A8B3" transform="rotate(30 16 18)"/>`,
+ traffic:`<rect x="15" y="4" width="18" height="40" rx="6" fill="#1F1F23"/><circle cx="24" cy="13" r="4.6" fill="#E5484D"/><circle cx="24" cy="24" r="4.6" fill="#F7C619"/><circle cx="24" cy="35" r="4.6" fill="#2FB36A"/>`,
+ counter:`<rect x="6" y="10" width="36" height="22" rx="4" fill="#1E2B45"/><text x="24" y="27" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="14" font-weight="700" fill="#3DDC84">042</text><circle cx="24" cy="40" r="5" fill="#FF6A13"/>`,
+ bar:`<rect x="6" y="30" width="6" height="12" rx="1.5" fill="#2FB36A"/><rect x="15" y="24" width="6" height="18" rx="1.5" fill="#2FB36A"/><rect x="24" y="18" width="6" height="24" rx="1.5" fill="#F7C619"/><rect x="33" y="10" width="6" height="32" rx="1.5" fill="#E5484D" opacity=".35"/>`,
+ parking:`<rect x="4" y="20" width="24" height="12" rx="3" fill="#2D6BD6"/><circle cx="11" cy="26" r="4" fill="#C8CBD2"/><circle cx="21" cy="26" r="4" fill="#C8CBD2"/><path d="M31 18a10 10 0 0 1 0 16M35 14a16 16 0 0 1 0 24" fill="none" stroke="#FF6A13" stroke-width="2" stroke-linecap="round"/><rect x="40" y="8" width="5" height="32" rx="1" fill="#1E2B45"/>`,
+};
+
+/* ---------- ESP boards ----------
+   Pinouts follow the common board revisions; always check the labels printed on your own board.
+   headers: [label, gpio|null] from the antenna end to the USB end. */
+const BOARDS=[
+ {id:'nodemcu',name:'NodeMCU',full:'NodeMCU v2/v3 (ESP-12E)',chip:'ESP8266',family:'ESP8266',module:'esp12',usb:'micro',pcb:'#1C1C1E',
+  w:49,d:26,rowGap:22.86,ledPin:2,ledLow:true,ledType:'led',adcMax:1023,
+  pins:{out:5,btn:4,pot:17,touch:null,dht:14},
+  consts:{LED_BUILTIN:2,A0:17,D0:16,D1:5,D2:4,D3:0,D4:2,D5:14,D6:12,D7:13,D8:15},
+  left:[['A0',17],['RSV',null],['RSV',null],['SD3',10],['SD2',9],['SD1',null],['CMD',null],['SD0',null],['CLK',null],['GND',null],['3V3',null],['EN',null],['RST',null],['GND',null],['VIN',null]],
+  right:[['D0',16],['D1',5],['D2',4],['D3',0],['D4',2],['3V3',null],['GND',null],['D5',14],['D6',12],['D7',13],['D8',15],['RX',3],['TX',1],['GND',null],['3V3',null]],
+  blurb:'The classic Wi-Fi board for beginners. The ESP8266 on an ESP-12E module, with USB and a voltage regulator so it plugs straight into a breadboard.',
+  specs:[['Chip','ESP8266 (Tensilica L106)'],['Clock','80 / 160 MHz'],['Wi-Fi','802.11 b/g/n, 2.4 GHz'],['Bluetooth','None'],['Flash','4 MB'],['Usable GPIO','11'],['Analog in','1 (A0, 10-bit)'],['USB','Micro-USB (CH340 / CP2102)'],['Logic level','3.3 V']],
+  notes:['Pins are labelled D0–D8; in code use D1 or the GPIO number 5','The built-in LED (GPIO 2) is active-LOW: LOW turns it on','A0 is the only analog input']},
+ {id:'d1mini',name:'D1 mini',full:'Wemos / LOLIN D1 mini (ESP8266)',chip:'ESP8266',family:'ESP8266',module:'esp12',usb:'micro',pcb:'#1B4F8E',
+  w:34.2,d:25.6,rowGap:22.86,ledPin:2,ledLow:true,ledType:'led',adcMax:1023,
+  pins:{out:5,btn:4,pot:17,touch:null,dht:14},
+  consts:{LED_BUILTIN:2,A0:17,D0:16,D1:5,D2:4,D3:0,D4:2,D5:14,D6:12,D7:13,D8:15},
+  left:[['RST',null],['A0',17],['D0',16],['D5',14],['D6',12],['D7',13],['D8',15],['3V3',null]],
+  right:[['TX',1],['RX',3],['D1',5],['D2',4],['D3',0],['D4',2],['GND',null],['5V',null]],
+  blurb:'A tiny ESP8266 board with lots of stackable add-on shields. Same chip as the NodeMCU in half the space.',
+  specs:[['Chip','ESP8266 (Tensilica L106)'],['Clock','80 / 160 MHz'],['Wi-Fi','802.11 b/g/n, 2.4 GHz'],['Bluetooth','None'],['Flash','4 MB'],['Usable GPIO','11'],['Analog in','1 (A0, 10-bit)'],['USB','Micro-USB (CH340)'],['Size','34.2 × 25.6 mm']],
+  notes:['Same D-pin names as the NodeMCU','The built-in LED (GPIO 2 / D4) is active-LOW','Shields stack on top for sensors and displays']},
+ {id:'esp01',name:'ESP-01',full:'ESP-01 / ESP-01S (ESP8266)',chip:'ESP8266',family:'ESP8266',module:'esp01',usb:'none',pcb:'#1C1C1E',
+  w:24.8,d:14.3,rowGap:2.54,ledPin:2,ledLow:true,ledType:'led',adcMax:1023,
+  pins:{out:0,btn:3,pot:null,touch:null,dht:2},
+  consts:{LED_BUILTIN:2},
+  left:[['TX',1],['EN',null],['RST',null],['3V3',null]],
+  right:[['GND',null],['IO2',2],['IO0',0],['RX',3]],
+  blurb:'The smallest ESP8266 board: just the chip, flash and an antenna, with 8 pins. Program it with a USB adapter.',
+  specs:[['Chip','ESP8266 (Tensilica L106)'],['Clock','80 / 160 MHz'],['Wi-Fi','802.11 b/g/n, 2.4 GHz'],['Flash','1 MB'],['Usable GPIO','2 (+ RX/TX)'],['Analog in','None on the header'],['USB','None (use a USB-serial adapter)'],['Size','24.8 × 14.3 mm']],
+  notes:['Only GPIO 0 and 2 are free, plus RX/TX','Needs a USB-serial adapter to upload code','GPIO 0 must be HIGH at power-up to run your sketch']},
+ {id:'esp32',name:'ESP32 DevKit',full:'ESP32 DevKit V1 (ESP32-WROOM-32)',chip:'ESP32',family:'ESP32',module:'wroom',usb:'micro',pcb:'#1B4F8E',
+  w:51.5,d:28.3,rowGap:25.4,ledPin:2,ledLow:false,ledType:'led',adcMax:4095,
+  pins:{out:23,btn:18,pot:34,touch:4,dht:27},touchInc:false,
+  consts:{LED_BUILTIN:2,A0:36,T0:4},
+  left:[['EN',null],['VP',36],['VN',39],['D34',34],['D35',35],['D32',32],['D33',33],['D25',25],['D26',26],['D27',27],['D14',14],['D12',12],['D13',13],['GND',null],['VIN',null]],
+  right:[['D23',23],['D22',22],['TX0',1],['RX0',3],['D21',21],['D19',19],['D18',18],['D5',5],['TX2',17],['RX2',16],['D4',4],['D2',2],['D15',15],['GND',null],['3V3',null]],
+  blurb:'The most popular ESP32 board: two fast cores, Wi-Fi and Bluetooth, touch pins and loads of analog inputs.',
+  specs:[['Chip','ESP32 (dual-core Xtensa LX6)'],['Clock','240 MHz'],['SRAM','520 KB'],['Wi-Fi','802.11 b/g/n, 2.4 GHz'],['Bluetooth','Classic 4.2 + BLE'],['Flash','4 MB'],['Analog in','18 channels, 12-bit (0–4095)'],['Touch pins','10'],['USB','Micro-USB (CP2102 / CH340)']],
+  notes:['GPIO 34–39 are input-only','Analog values go up to 4095 (12-bit)','ADC2 pins stop working while Wi-Fi is on, so use ADC1 pins (32–39) for sensors']},
+ {id:'s3',name:'ESP32-S3',full:'ESP32-S3-DevKitC-1',chip:'ESP32-S3',family:'ESP32-S3',module:'wroom',usb:'usbc2',pcb:'#1C1C1E',
+  w:63.5,d:25.4,rowGap:22.86,ledPin:48,ledLow:false,ledType:'rgb',adcMax:4095,
+  pins:{out:5,btn:6,pot:4,touch:7,dht:15},touchInc:true,
+  consts:{LED_BUILTIN:48,RGB_BUILTIN:48,A0:1,T7:7},
+  left:[['3V3',null],['3V3',null],['RST',null],['4',4],['5',5],['6',6],['7',7],['15',15],['16',16],['17',17],['18',18],['8',8],['3',3],['46',46],['9',9],['10',10],['11',11],['12',12],['13',13],['14',14],['5V',null],['GND',null]],
+  right:[['GND',null],['TX',43],['RX',44],['1',1],['2',2],['42',42],['41',41],['40',40],['39',39],['38',38],['37',37],['36',36],['35',35],['0',0],['45',45],['48',48],['47',47],['21',21],['20',20],['19',19],['GND',null],['GND',null]],
+  blurb:'Dual-core with AI vector instructions and native USB. Great for cameras, displays and machine learning projects.',
+  specs:[['Chip','ESP32-S3 (dual-core Xtensa LX7)'],['Clock','240 MHz'],['SRAM','512 KB'],['Wi-Fi','802.11 b/g/n, 2.4 GHz'],['Bluetooth','BLE 5'],['Analog in','20 channels, 12-bit'],['Touch pins','14'],['USB','2 × USB-C (native USB + UART)'],['Built-in LED','RGB on GPIO 48 (38 on v1.1)']],
+  notes:['The built-in LED is an RGB LED: try rgbLedWrite()','Touch readings go UP when touched on the S3','Native USB can act as a keyboard or mouse']},
+ {id:'c3',name:'ESP32-C3',full:'ESP32-C3-DevKitM-1',chip:'ESP32-C3',family:'ESP32-C3',module:'mini',usb:'micro',pcb:'#1C1C1E',
+  w:48,d:25.4,rowGap:22.86,ledPin:8,ledLow:false,ledType:'rgb',adcMax:4095,
+  pins:{out:5,btn:4,pot:3,touch:null,dht:6},
+  consts:{LED_BUILTIN:8,RGB_BUILTIN:8,A0:0},
+  left:[['GND',null],['3V3',null],['3V3',null],['2',2],['3',3],['GND',null],['RST',null],['GND',null],['0',0],['1',1],['10',10],['GND',null],['5V',null],['5V',null],['GND',null]],
+  right:[['GND',null],['TX',21],['RX',20],['GND',null],['9',9],['8',8],['GND',null],['7',7],['6',6],['5',5],['4',4],['GND',null],['18',18],['19',19],['GND',null]],
+  blurb:'A low-cost, low-power ESP32 with a RISC-V core, Wi-Fi and Bluetooth LE.',
+  specs:[['Chip','ESP32-C3 (single-core RISC-V)'],['Clock','160 MHz'],['SRAM','400 KB'],['Wi-Fi','802.11 b/g/n, 2.4 GHz'],['Bluetooth','BLE 5'],['Analog in','6 channels, 12-bit'],['Touch pins','None'],['USB','Micro-USB'],['Built-in LED','RGB on GPIO 8']],
+  notes:['RISC-V instead of Xtensa, but the same Arduino code','No touch pins','GPIO 9 is the BOOT button']},
+ {id:'c6',name:'ESP32-C6',full:'ESP32-C6-DevKitC-1',chip:'ESP32-C6',family:'ESP32-C6',module:'wroom',usb:'usbc2',pcb:'#1C1C1E',
+  w:52,d:25.4,rowGap:22.86,ledPin:8,ledLow:false,ledType:'rgb',adcMax:4095,
+  pins:{out:5,btn:4,pot:2,touch:null,dht:10},
+  consts:{LED_BUILTIN:8,RGB_BUILTIN:8,A0:0},
+  left:[['3V3',null],['RST',null],['4',4],['5',5],['6',6],['7',7],['0',0],['1',1],['8',8],['10',10],['11',11],['2',2],['3',3],['5V',null],['GND',null],['NC',null]],
+  right:[['GND',null],['TX',16],['RX',17],['15',15],['23',23],['22',22],['21',21],['20',20],['19',19],['18',18],['9',9],['GND',null],['13',13],['12',12],['GND',null],['NC',null]],
+  blurb:'The newest all-rounder: Wi-Fi 6, Bluetooth LE and Zigbee/Thread radios for smart-home projects.',
+  specs:[['Chip','ESP32-C6 (RISC-V + low-power core)'],['Clock','160 MHz'],['SRAM','512 KB'],['Wi-Fi','Wi-Fi 6 (802.11ax), 2.4 GHz'],['Bluetooth','BLE 5'],['802.15.4','Zigbee and Thread'],['Analog in','7 channels, 12-bit'],['USB','2 × USB-C'],['Built-in LED','RGB on GPIO 8']],
+  notes:['Wi-Fi 6 is faster and kinder to batteries','Speaks Zigbee and Thread for Matter smart-home devices','No touch pins']},
+ {id:'cam',name:'ESP32-CAM',full:'ESP32-CAM (AI-Thinker)',chip:'ESP32',family:'ESP32',module:'cam',usb:'none',pcb:'#1C1C1E',
+  w:40.5,d:27,rowGap:22.86,ledPin:33,ledLow:true,ledType:'led',adcMax:4095,
+  pins:{out:13,btn:14,pot:null,touch:12,dht:15},touchInc:false,
+  consts:{LED_BUILTIN:33},
+  left:[['5V',null],['GND',null],['IO12',12],['IO13',13],['IO15',15],['IO14',14],['IO2',2],['IO4',4]],
+  right:[['3V3',null],['IO16',16],['IO0',0],['GND',null],['VCC',null],['U0R',3],['U0T',1],['GND',null]],
+  blurb:'An ESP32 with a 2 MP camera and a microSD slot, for photos, video streaming and face detection.',
+  specs:[['Chip','ESP32 (dual-core Xtensa LX6)'],['Clock','240 MHz'],['PSRAM','4 MB'],['Camera','OV2640, 2 MP'],['Storage','microSD slot'],['Wi-Fi','802.11 b/g/n'],['Bluetooth','Classic 4.2 + BLE'],['USB','None (use a USB-serial adapter)'],['LEDs','Flash on GPIO 4, red on GPIO 33']],
+  notes:['The small red LED (GPIO 33) is active-LOW','The bright flash LED is on GPIO 4','Free pins are few: the camera and SD card use most of them']},
+];
+
+/* The whole family, for the comparison chart (typical values). */
+const FAMILY=[
+ ['ESP8266','Tensilica L106','1','80 / 160 MHz','~80 KB','Wi-Fi 4','—','17','1 (10-bit)','—','—','First low-cost Wi-Fi chip; huge community'],
+ ['ESP32','Xtensa LX6','2','240 MHz','520 KB','Wi-Fi 4','4.2 + BLE','34','18 (12-bit)','10','—','The all-rounder: Wi-Fi, Bluetooth, touch'],
+ ['ESP32-S2','Xtensa LX7','1','240 MHz','320 KB','Wi-Fi 4','—','43','20 (13-bit)','14','OTG','Native USB, no Bluetooth'],
+ ['ESP32-S3','Xtensa LX7','2','240 MHz','512 KB','Wi-Fi 4','BLE 5','45','20 (12-bit)','14','OTG','AI vector maths, cameras, displays'],
+ ['ESP32-C3','RISC-V','1','160 MHz','400 KB','Wi-Fi 4','BLE 5','22','6 (12-bit)','—','Serial/JTAG','Low cost and low power'],
+ ['ESP32-C6','RISC-V','1 + LP','160 MHz','512 KB','Wi-Fi 6','BLE 5','30','7 (12-bit)','—','Serial/JTAG','Wi-Fi 6 + Zigbee/Thread (Matter)'],
+ ['ESP32-H2','RISC-V','1','96 MHz','320 KB','—','BLE 5','19','5 (12-bit)','—','Serial/JTAG','Zigbee/Thread only, no Wi-Fi'],
+];
+
+/* Simulated Wi-Fi networks around the lab. */
+const NETWORKS=[{ssid:'Radix-Lab',pass:'robotics123',rssi:-48,enc:3,ch:6},{ssid:'Phone-Hotspot',pass:'hotspot99',rssi:-58,enc:3,ch:11},{ssid:'School-WiFi',pass:'learn2026',rssi:-63,enc:3,ch:1},{ssid:'Library-Guest',pass:'',rssi:-77,enc:0,ch:6}];
+
+/* ---------- lessons: code and pins adapt to the chosen board ---------- */
+const is8266=b=>b.family==='ESP8266';
+const pinName=(b,g)=>{const e=[...b.left,...b.right].find(x=>x[1]===g);return e?(String(e[0])===String(g)?`GPIO ${g}`:`${e[0]} (GPIO ${g})`):`GPIO ${g}`;};
+const pinRef=(b,g)=>{if(is8266(b)){const e=Object.entries(b.consts).find(([k,v])=>/^D\d$/.test(k)&&v===g);if(e)return e[0];if(g===17)return 'A0';}return String(g);};
+const wifiInc=b=>is8266(b)?'#include <ESP8266WiFi.h>':'#include <WiFi.h>';
+const serverInc=b=>is8266(b)?'#include <ESP8266WebServer.h>':'#include <WebServer.h>';
+const serverType=b=>is8266(b)?'ESP8266WebServer':'WebServer';
+
+const ESP_LESSONS=[
+ {n:1,icon:'board',title:'Meet your ESP',lede:'A Wi-Fi computer smaller than a matchbox. Start by blinking its built-in LED.',
+  needs:[],parts:[],
+  overview:b=>`The ${b.full} is built around the ${b.chip}. Like an Arduino it has pins you control from code, but it also has Wi-Fi${b.family!=='ESP8266'?' and Bluetooth':''} built in and runs much faster.${b.ledLow?' Its built-in LED is active-LOW: writing LOW turns it on.':''}${b.ledType==='rgb'?' This board’s built-in LED is a colour (RGB) LED.':''}`,
+  points:b=>b.notes,
+  pins:b=>[[pinName(b,b.ledPin),'Built-in LED',b.ledLow?'Active-LOW output':'Output'],['USB',b.usb==='none'?'USB-serial adapter':'Your computer','Power and uploading'],['GND','Ground','0 V']],
+  steps:b=>[b.usb==='none'?'Connect a USB-serial adapter: TX→RX, RX→TX, GND→GND, 3.3 V→3V3.':'Plug the board into your computer with a USB cable.','In the Arduino IDE, install the <b>'+(is8266(b)?'esp8266':'esp32')+'</b> boards package and pick <b>'+b.full+'</b>.','Press <b>Run</b> and watch the built-in LED.'],
+  how:b=>['<code>LED_BUILTIN</code> is GPIO '+b.ledPin+' on this board',b.ledLow?'<code>LOW</code> turns this LED on, <code>HIGH</code> turns it off':'<code>HIGH</code> turns the LED on',b.ledType==='rgb'?'<code>rgbLedWrite(RGB_BUILTIN, r, g, b)</code> picks any colour':'<code>delay(500)</code> waits half a second'],
+  code:b=>`// The built-in LED on the ${b.name} is on GPIO ${b.ledPin}.${b.ledLow?'\n// It is active-LOW: LOW turns it on.':''}
+void setup() {
+  pinMode(LED_BUILTIN, OUTPUT);
+}
+
+void loop() {
+  digitalWrite(LED_BUILTIN, ${b.ledLow?'LOW':'HIGH'});   // on
+  delay(500);
+  digitalWrite(LED_BUILTIN, ${b.ledLow?'HIGH':'LOW'});  // off
+  delay(500);
+}`},
+ {n:2,icon:'led',title:'Fade an LED',lede:'PWM switches a pin on and off so fast that an LED looks dimmed.',
+  needs:['out'],parts:b=>[{t:'led',pin:b.pins.out,color:'blue'}],
+  overview:b=>`analogWrite() sets a brightness from 0 to 255 on almost any ${b.chip} pin. Two for loops brighten and dim the LED for a smooth breathing effect.`,
+  points:()=>['analogWrite(pin, 0–255) sets brightness','Use a 220 Ω resistor with the LED','Change the delay to breathe faster or slower'],
+  pins:b=>[[pinName(b,b.pins.out),'LED long leg (via 220 Ω)','PWM output'],['GND','LED short leg','Ground']],
+  steps:b=>['Place an LED on the breadboard.',`Wire ${pinName(b,b.pins.out)} to the LED’s long leg through 220 Ω.`,'Wire the short leg to <b>GND</b>.'],
+  how:()=>['<code>for (int b = 0; b <= 255; b += 5)</code> counts up','<code>analogWrite(ledPin, b)</code> sets the brightness','The second loop counts back down'],
+  code:b=>`const int ledPin = ${pinRef(b,b.pins.out)};
+
+void setup() {
+  pinMode(ledPin, OUTPUT);
+}
+
+void loop() {
+  for (int b = 0; b <= 255; b += 5) {   // brighter
+    analogWrite(ledPin, b);
+    delay(20);
+  }
+  for (int b = 255; b >= 0; b -= 5) {   // dimmer
+    analogWrite(ledPin, b);
+    delay(20);
+  }
+}`},
+ {n:3,icon:'btn',title:'Read a button',lede:'Inputs let your ESP react. Press the button to light the LED.',
+  needs:['out','btn'],parts:b=>[{t:'btn',pin:b.pins.btn},{t:'led',pin:b.pins.out,color:'green'}],
+  overview:b=>'INPUT_PULLUP holds the pin HIGH inside the chip. Pressing the button connects it to GND, so digitalRead() returns LOW.',
+  points:()=>['Pressed reads LOW, released reads HIGH','No extra resistor needed with INPUT_PULLUP','Hold the button in 3D or with the control below'],
+  pins:b=>[[pinName(b,b.pins.btn),'Push button','Input with pull-up'],[pinName(b,b.pins.out),'LED (via 220 Ω)','Output'],['GND','Button and LED','Ground']],
+  steps:b=>[`Wire one button leg to ${pinName(b,b.pins.btn)} and the other to <b>GND</b>.`,`Wire an LED to ${pinName(b,b.pins.out)} through 220 Ω.`,'Run it and press the button.'],
+  how:()=>['<code>pinMode(buttonPin, INPUT_PULLUP)</code>','<code>digitalRead(buttonPin) == LOW</code> means pressed','The LED copies the button'],
+  code:b=>`const int buttonPin = ${pinRef(b,b.pins.btn)};
+const int ledPin = ${pinRef(b,b.pins.out)};
+
+void setup() {
+  pinMode(buttonPin, INPUT_PULLUP);
+  pinMode(ledPin, OUTPUT);
+}
+
+void loop() {
+  if (digitalRead(buttonPin) == LOW) {   // pressed
+    digitalWrite(ledPin, HIGH);
+  } else {
+    digitalWrite(ledPin, LOW);
+  }
+}`,inputs:['btn']},
+ {n:4,icon:'pot',title:'Read a knob',lede:'The ADC turns a voltage into a number you can use.',
+  needs:['out','pot'],parts:b=>[{t:'pot',pin:b.pins.pot},{t:'led',pin:b.pins.out,color:'yellow'}],
+  overview:b=>`analogRead() returns 0–${b.adcMax} on the ${b.chip} (${b.adcMax===4095?'12-bit':'10-bit'}). The knob’s middle leg gives 0–3.3 V. map() turns the reading into an LED brightness.`,
+  points:b=>[`Readings run from 0 to ${b.adcMax}`,'ESP pins are 3.3 V: never feed them 5 V',is8266(b)?'The ESP8266 has just one analog pin, A0':'Use ADC1 pins for sensors when Wi-Fi is on'],
+  pins:b=>[[pinName(b,b.pins.pot),'Pot middle leg','Analog input'],[pinName(b,b.pins.out),'LED (via 220 Ω)','PWM output'],['3V3 / GND','Pot outer legs','Power']],
+  steps:b=>['Pot outer legs to <b>3V3</b> and <b>GND</b>.',`Middle leg to ${pinName(b,b.pins.pot)}.`,`LED to ${pinName(b,b.pins.out)} through 220 Ω.`],
+  how:b=>[`<code>map(value, 0, ${b.adcMax}, 0, 255)</code> rescales`,'<code>analogWrite</code> sets the brightness','<code>Serial.println(value)</code> prints each reading'],
+  code:b=>`const int potPin = ${pinRef(b,b.pins.pot)};
+const int ledPin = ${pinRef(b,b.pins.out)};
+
+void setup() {
+  Serial.begin(115200);
+  pinMode(ledPin, OUTPUT);
+}
+
+void loop() {
+  int value = analogRead(potPin);                 // 0 – ${b.adcMax}
+  analogWrite(ledPin, map(value, 0, ${b.adcMax}, 0, 255));
+  Serial.println(value);
+  delay(200);
+}`,inputs:['pot']},
+ {n:5,icon:'touch',title:'Touch sensor',lede:'Some ESP32 pins can feel your finger, no button needed.',
+  needs:['out','touch'],parts:b=>[{t:'touch',pin:b.pins.touch},{t:'led',pin:b.pins.out,color:'red'}],
+  overview:b=>`touchRead() measures the tiny capacitance of a pin. Your finger changes it, so a bare wire or a coin becomes a button.${b.touchInc?' On the ESP32-S3 the number goes UP when touched.':' On this chip the number goes DOWN when touched.'}`,
+  points:b=>['Any piece of metal can be a touch pad','Pick a threshold between the touched and untouched values',b.touchInc?'S3 readings rise when touched':'Readings fall when touched'],
+  pins:b=>[[pinName(b,b.pins.touch),'Touch pad (wire or foil)','Touch input'],[pinName(b,b.pins.out),'LED (via 220 Ω)','Output']],
+  steps:b=>[`Connect a jumper wire to ${pinName(b,b.pins.touch)}; tape a coin or foil to its end.`,`Wire an LED to ${pinName(b,b.pins.out)} through 220 Ω.`,'Open the serial monitor and touch the pad.'],
+  how:b=>['<code>touchRead(touchPin)</code> returns a number',b.touchInc?'<code>value > threshold</code> means touched':'<code>value < threshold</code> means touched','Print the values first to choose a good threshold'],
+  code:b=>`const int touchPin = ${b.pins.touch};
+const int ledPin = ${pinRef(b,b.pins.out)};
+const int threshold = ${b.touchInc?'40000':'30'};   // try your own
+
+void setup() {
+  Serial.begin(115200);
+  pinMode(ledPin, OUTPUT);
+}
+
+void loop() {
+  int value = touchRead(touchPin);
+  Serial.println(value);
+  digitalWrite(ledPin, value ${b.touchInc?'>':'<'} threshold);   // touched → on
+  delay(100);
+}`,inputs:['touch']},
+ {n:6,icon:'wifi',title:'Join Wi-Fi',lede:'Connect to a network and get an IP address, the ESP’s address on the network.',
+  needs:[],parts:[],wifi:true,
+  overview:b=>'WiFi.begin() starts connecting in the background. The loop waits, printing dots, until WiFi.status() says WL_CONNECTED. Then WiFi.localIP() tells you the board’s address.',
+  points:()=>['The simulated lab network is Radix-Lab, password robotics123','Try a wrong password to see what happens','Your phone and the ESP must be on the same network'],
+  pins:b=>[['Antenna','Built into the module','2.4 GHz Wi-Fi']],
+  steps:()=>['Type your network name and password into the code.','Run it and open the serial monitor at <b>115200</b> baud.','Wait for <b>Connected!</b> and note the IP address.'],
+  how:()=>['<code>const char* ssid</code> holds the network name','<code>while (WiFi.status() != WL_CONNECTED)</code> waits','<code>WiFi.localIP()</code> prints the address'],
+  code:b=>`${wifiInc(b)}
+
+const char* ssid = "Radix-Lab";
+const char* password = "robotics123";
+
+void setup() {
+  Serial.begin(115200);
+  WiFi.begin(ssid, password);
+  Serial.print("Connecting");
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+    Serial.print(".");
+  }
+  Serial.println();
+  Serial.print("Connected! IP address: ");
+  Serial.println(WiFi.localIP());
+  Serial.print("Signal strength: ");
+  Serial.print(WiFi.RSSI());
+  Serial.println(" dBm");
+}
+
+void loop() {
+}`},
+ {n:7,icon:'scan',title:'Scan networks',lede:'List every Wi-Fi network in range, with its signal strength.',
+  needs:[],parts:[],wifi:true,
+  overview:()=>'WiFi.scanNetworks() listens on every channel and returns how many networks it heard. WiFi.SSID(i) and WiFi.RSSI(i) give each one’s name and strength.',
+  points:()=>['RSSI is in dBm: −50 is strong, −80 is weak','Open networks have no password','The scan repeats every 5 seconds'],
+  pins:()=>[['Antenna','Built into the module','Listens on channels 1–13']],
+  steps:()=>['Run the sketch.','Open the serial monitor at <b>115200</b> baud.','Walk around and watch the signal strengths change.'],
+  how:()=>['<code>WiFi.mode(WIFI_STA)</code> makes it a Wi-Fi client','<code>int n = WiFi.scanNetworks()</code> returns the count','The for loop prints each network'],
+  code:b=>`${wifiInc(b)}
+
+void setup() {
+  Serial.begin(115200);
+  WiFi.mode(WIFI_STA);
+  WiFi.disconnect();
+  delay(100);
+}
+
+void loop() {
+  Serial.println("Scanning...");
+  int n = WiFi.scanNetworks();
+  Serial.print(n);
+  Serial.println(" networks found");
+  for (int i = 0; i < n; i++) {
+    Serial.print(i + 1);
+    Serial.print(": ");
+    Serial.print(WiFi.SSID(i));
+    Serial.print("  (");
+    Serial.print(WiFi.RSSI(i));
+    Serial.println(" dBm)");
+  }
+  Serial.println();
+  delay(5000);
+}`},
+ {n:8,icon:'web',title:'Web-controlled LED',lede:'Your ESP becomes a tiny website. Tap links on your phone to switch an LED.',
+  needs:['out'],parts:b=>[{t:'led',pin:b.pins.out,color:'yellow'}],wifi:true,web:true,
+  overview:b=>`${serverType(b)} answers web requests. Each path gets its own function: “/” sends the page, “/on” and “/off” switch the LED and send the page again. In the simulator, the phone on the bench is your browser.`,
+  points:()=>['server.on(path, function) connects a URL to your code','server.send(200, "text/html", page) sends the page back','Call server.handleClient() in every loop'],
+  pins:b=>[[pinName(b,b.pins.out),'LED (via 220 Ω)','Output'],['Antenna','Wi-Fi','Web server on port 80']],
+  steps:b=>[`Wire an LED to ${pinName(b,b.pins.out)} through 220 Ω.`,'Put your Wi-Fi name and password in the code and run it.','Open the IP address from the serial monitor in a browser on the same network.'],
+  how:()=>['<code>String page</code> builds the HTML a piece at a time','<code>handleOn()</code> switches the LED, then shows the page','<code>server.begin()</code> starts listening'],
+  code:b=>`${wifiInc(b)}
+${serverInc(b)}
+
+const char* ssid = "Radix-Lab";
+const char* password = "robotics123";
+const int ledPin = ${pinRef(b,b.pins.out)};
+
+${serverType(b)} server(80);
+
+void handleRoot() {
+  String page = "<h1>Radix LED</h1>";
+  page += "<p>The LED is <b>";
+  page += digitalRead(ledPin) ? "ON" : "OFF";
+  page += "</b></p>";
+  page += "<p><a href='/on'>Turn on</a> <a href='/off'>Turn off</a></p>";
+  server.send(200, "text/html", page);
+}
+
+void handleOn() {
+  digitalWrite(ledPin, HIGH);
+  handleRoot();
+}
+
+void handleOff() {
+  digitalWrite(ledPin, LOW);
+  handleRoot();
+}
+
+void setup() {
+  Serial.begin(115200);
+  pinMode(ledPin, OUTPUT);
+  WiFi.begin(ssid, password);
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+  }
+  Serial.print("Open http://");
+  Serial.println(WiFi.localIP());
+  server.on("/", handleRoot);
+  server.on("/on", handleOn);
+  server.on("/off", handleOff);
+  server.begin();
+}
+
+void loop() {
+  server.handleClient();
+}`},
+ {n:9,icon:'dht',title:'Temperature & humidity',lede:'The DHT22 measures the air around it. Two numbers, one wire.',
+  needs:['dht'],parts:b=>[{t:'dht',pin:b.pins.dht}],
+  overview:()=>'The DHT22 sends temperature and humidity over a single data wire. The DHT library does the timing for you: readTemperature() and readHumidity() give you the numbers.',
+  points:()=>['Install the “DHT sensor library” by Adafruit','Read it at most every 2 seconds','Slide the temperature and humidity below to test'],
+  pins:b=>[[pinName(b,b.pins.dht),'DHT22 data','One-wire data'],['3V3','DHT22 VCC','Power'],['GND','DHT22 GND','Ground']],
+  steps:b=>['Place the DHT22 with its grille facing you.',`Left pin to <b>3V3</b>, data pin to ${pinName(b,b.pins.dht)}, right pin to <b>GND</b>.`,'Add a 10 kΩ resistor from data to 3V3 (most modules have one already).'],
+  how:()=>['<code>DHT dht(pin, DHT22);</code> sets up the sensor','<code>dht.readTemperature()</code> returns °C','<code>dht.readHumidity()</code> returns %'],
+  code:b=>`#include <DHT.h>
+
+DHT dht(${pinRef(b,b.pins.dht)}, DHT22);
+
+void setup() {
+  Serial.begin(115200);
+  dht.begin();
+}
+
+void loop() {
+  float t = dht.readTemperature();
+  float h = dht.readHumidity();
+  Serial.print("Temperature: ");
+  Serial.print(t);
+  Serial.print(" C   Humidity: ");
+  Serial.print(h);
+  Serial.println(" %");
+  delay(2000);
+}`,inputs:['dht']},
+ {n:10,icon:'weather',title:'Weather station',lede:'Put it together: a web page that shows live temperature and humidity.',
+  needs:['dht'],parts:b=>[{t:'dht',pin:b.pins.dht}],wifi:true,web:true,
+  overview:()=>'The ESP reads the DHT22 whenever the page is requested and builds a small web page with the numbers. A refresh tag makes the browser reload it every 5 seconds.',
+  points:()=>['String(t, 1) prints one decimal place','<meta http-equiv="refresh"> reloads the page','Change the sliders and watch the phone update'],
+  pins:b=>[[pinName(b,b.pins.dht),'DHT22 data','One-wire data'],['3V3 / GND','DHT22 power','Power'],['Antenna','Wi-Fi','Web server on port 80']],
+  steps:b=>['Wire the DHT22 as in the previous lesson.','Put your Wi-Fi details in the code and run it.','Open the IP address on your phone.'],
+  how:()=>['<code>handleRoot()</code> reads the sensor each time','<code>String(t, 1)</code> formats the number','The page reloads itself every 5 seconds'],
+  code:b=>`${wifiInc(b)}
+${serverInc(b)}
+#include <DHT.h>
+
+const char* ssid = "Radix-Lab";
+const char* password = "robotics123";
+
+DHT dht(${pinRef(b,b.pins.dht)}, DHT22);
+${serverType(b)} server(80);
+
+void handleRoot() {
+  float t = dht.readTemperature();
+  float h = dht.readHumidity();
+  String page = "<meta http-equiv='refresh' content='5'>";
+  page += "<h1>Radix Weather</h1>";
+  page += "<p>Temperature: <b>" + String(t, 1) + " &deg;C</b></p>";
+  page += "<p>Humidity: <b>" + String(h, 1) + " %</b></p>";
+  server.send(200, "text/html", page);
+}
+
+void setup() {
+  Serial.begin(115200);
+  dht.begin();
+  WiFi.begin(ssid, password);
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+  }
+  Serial.print("Weather station at http://");
+  Serial.println(WiFi.localIP());
+  server.on("/", handleRoot);
+  server.begin();
+}
+
+void loop() {
+  server.handleClient();
+}`,inputs:['dht']},
+ {n:11,icon:'slider',title:'Web dimmer',lede:'A slider on a web page sets the LED brightness, from anywhere on the network.',
+  needs:['out'],parts:b=>[{t:'led',pin:b.pins.out,color:'white'}],wifi:true,web:true,
+  overview:b=>'A web form sends what you chose as part of the address: /set?level=128. server.arg("level") reads it back as text, toInt() turns it into a number and analogWrite() sets the brightness.',
+  points:()=>['Form fields arrive in the URL after the ?','server.arg(name) gives the text; .toInt() makes it a number','constrain() keeps bad values from reaching the pin'],
+  pins:b=>[[pinName(b,b.pins.out),'LED long leg (via 220 Ω)','PWM output'],['GND','LED short leg','Ground'],['Antenna','Wi-Fi','Web server on port 80']],
+  steps:b=>[`Wire an LED to ${pinName(b,b.pins.out)} through 220 Ω, short leg to <b>GND</b>.`,'Put your Wi-Fi details in the code and run it.','Open the IP address, drag the slider and press <b>Set</b>.'],
+  how:()=>['<code>&lt;form action=\'/set\'&gt;</code> sends the slider to /set','<code>server.arg("level").toInt()</code> reads the number','<code>handleSet()</code> dims the LED, then shows the page again'],
+  code:b=>`${wifiInc(b)}
+${serverInc(b)}
+
+const char* ssid = "Radix-Lab";
+const char* password = "robotics123";
+const int ledPin = ${pinRef(b,b.pins.out)};
+int level = 0;
+
+${serverType(b)} server(80);
+
+void handleRoot() {
+  String page = "<h1>Radix Dimmer</h1>";
+  page += "<p>Brightness: <b>" + String(level) + "</b> / 255</p>";
+  page += "<form action='/set'>";
+  page += "<input type='range' name='level' min='0' max='255' value='" + String(level) + "'>";
+  page += "<input type='submit' value='Set'>";
+  page += "</form>";
+  page += "<p><a href='/set?level=0'>Off</a> <a href='/set?level=40'>Dim</a> <a href='/set?level=255'>Full</a></p>";
+  server.send(200, "text/html", page);
+}
+
+void handleSet() {
+  level = constrain(server.arg("level").toInt(), 0, 255);
+  analogWrite(ledPin, level);
+  Serial.print("Brightness set to ");
+  Serial.println(level);
+  handleRoot();
+}
+
+void setup() {
+  Serial.begin(115200);
+  pinMode(ledPin, OUTPUT);
+  WiFi.begin(ssid, password);
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+  }
+  Serial.print("Open http://");
+  Serial.println(WiFi.localIP());
+  server.on("/", handleRoot);
+  server.on("/set", handleSet);
+  server.begin();
+}
+
+void loop() {
+  server.handleClient();
+}`},
+ {n:12,icon:'clock',title:'Two jobs at once',lede:'delay() freezes everything. millis() lets your ESP blink and listen at the same time.',
+  needs:['out','btn'],parts:b=>[{t:'btn',pin:b.pins.btn},{t:'led',pin:b.pins.out,color:'green'}],
+  overview:b=>'While delay() waits, the board can’t do anything else, not even read a button or answer a web page. millis() counts the milliseconds since start-up, so you can check “has 500 ms passed yet?” and carry on with other work if not.',
+  points:()=>['millis() never stops counting','Store when something last happened, then compare','This is how a web server and a blinking LED share one loop'],
+  pins:b=>[[pinName(b,b.ledPin),'Built-in LED','Blinks on its own timer'],[pinName(b,b.pins.btn),'Push button','Input with pull-up'],[pinName(b,b.pins.out),'LED (via 220 Ω)','Output']],
+  steps:b=>[`Wire one button leg to ${pinName(b,b.pins.btn)} and the other to <b>GND</b>.`,`Wire an LED to ${pinName(b,b.pins.out)} through 220 Ω.`,'Run it: the built-in LED blinks, and the button still answers instantly.'],
+  how:()=>['<code>millis() - lastBlink >= 500</code> asks “is it time yet?”','<code>blinkOn = !blinkOn</code> flips between on and off','There is no <code>delay()</code>, so the loop runs thousands of times a second'],
+  code:b=>`const int buttonPin = ${pinRef(b,b.pins.btn)};
+const int ledPin = ${pinRef(b,b.pins.out)};
+
+unsigned long lastBlink = 0;
+bool blinkOn = false;
+
+void setup() {
+  pinMode(LED_BUILTIN, OUTPUT);
+  pinMode(buttonPin, INPUT_PULLUP);
+  pinMode(ledPin, OUTPUT);
+}
+
+void loop() {
+  // Job 1: blink the built-in LED every 500 ms, without delay()
+  if (millis() - lastBlink >= 500) {
+    lastBlink = millis();
+    blinkOn = !blinkOn;
+    digitalWrite(LED_BUILTIN, blinkOn);
+  }
+
+  // Job 2: the LED follows the button, instantly
+  digitalWrite(ledPin, digitalRead(buttonPin) == LOW);
+}`,inputs:['btn']},
+ {n:13,icon:'ap',title:'Make your own network',lede:'No router? Your ESP can be the hotspot, and your phone joins it.',
+  needs:['out'],parts:b=>[{t:'led',pin:b.pins.out,color:'blue'}],wifi:true,web:true,ap:true,
+  overview:b=>'WiFi.softAP() turns the ESP into an access point, like a phone hotspot. Phones join its network directly and reach it at 192.168.4.1. Great for robots in a field or a classroom without Wi-Fi.',
+  points:()=>['The password needs at least 8 characters, or leave it out for an open network','Access-point devices always use 192.168.4.1','softAPgetStationNum() counts who has joined'],
+  pins:b=>[[pinName(b,b.pins.out),'LED (via 220 Ω)','Output'],['Antenna','Wi-Fi access point','Network “Radix-ESP”']],
+  steps:b=>[`Wire an LED to ${pinName(b,b.pins.out)} through 220 Ω.`,'Run the sketch. On your phone, join the Wi-Fi network <b>Radix-ESP</b>.','Open <b>http://192.168.4.1</b> and toggle the LED.'],
+  how:()=>['<code>WiFi.softAP(name, password)</code> starts the hotspot','<code>WiFi.softAPIP()</code> is the board’s own address','Try a 5-letter password and watch it refuse'],
+  code:b=>`${wifiInc(b)}
+${serverInc(b)}
+
+const char* apName = "Radix-ESP";
+const char* apPassword = "radix1234";   // at least 8 characters
+const int ledPin = ${pinRef(b,b.pins.out)};
+
+${serverType(b)} server(80);
+
+void handleRoot() {
+  String page = "<h1>Radix Hotspot</h1>";
+  page += "<p>Devices connected: <b>" + String(WiFi.softAPgetStationNum()) + "</b></p>";
+  page += "<p>The LED is <b>";
+  page += digitalRead(ledPin) ? "ON" : "OFF";
+  page += "</b></p>";
+  page += "<p><a href='/toggle'>Toggle LED</a></p>";
+  server.send(200, "text/html", page);
+}
+
+void handleToggle() {
+  digitalWrite(ledPin, !digitalRead(ledPin));
+  handleRoot();
+}
+
+void setup() {
+  Serial.begin(115200);
+  pinMode(ledPin, OUTPUT);
+  if (WiFi.softAP(apName, apPassword)) {
+    Serial.print("Join the network ");
+    Serial.print(apName);
+    Serial.print(", then open http://");
+    Serial.println(WiFi.softAPIP());
+  } else {
+    Serial.println("Could not start the access point.");
+  }
+  server.on("/", handleRoot);
+  server.on("/toggle", handleToggle);
+  server.begin();
+}
+
+void loop() {
+  server.handleClient();
+}`},
+ {n:14,icon:'signal',title:'Signal meter',lede:'Turn Wi-Fi strength into light: the LED fades as you walk away from the router.',
+  needs:['out'],parts:b=>[{t:'led',pin:b.pins.out,color:'green'}],wifi:true,range:'dist',
+  overview:b=>'WiFi.RSSI() reports how strong the signal is, in dBm. Near the router it is around −40; at the edge of range it drops to −85 or lower. map() turns that range into an LED brightness, so you can find Wi-Fi dead spots.',
+  points:()=>['dBm numbers are negative: closer to 0 is stronger','Every doubling of distance costs about 6 dB','Slide the distance below to walk away from the router'],
+  pins:b=>[[pinName(b,b.pins.out),'LED (via 220 Ω)','PWM output'],['Antenna','Wi-Fi','Measures signal strength']],
+  steps:b=>[`Wire an LED to ${pinName(b,b.pins.out)} through 220 Ω.`,'Put your Wi-Fi details in the code and run it.','Run it from a battery and walk around: the LED shows the signal.'],
+  how:()=>['<code>WiFi.RSSI()</code> returns the signal in dBm','<code>map(rssi, -90, -30, 0, 255)</code> turns it into a brightness','<code>constrain()</code> keeps it between 0 and 255'],
+  code:b=>`${wifiInc(b)}
+
+const char* ssid = "Radix-Lab";
+const char* password = "robotics123";
+const int ledPin = ${pinRef(b,b.pins.out)};
+
+void setup() {
+  Serial.begin(115200);
+  pinMode(ledPin, OUTPUT);
+  WiFi.begin(ssid, password);
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+  }
+  Serial.println("Connected. Now walk away from the router!");
+}
+
+void loop() {
+  int rssi = WiFi.RSSI();             // about -30 (great) to -90 (gone)
+  int level = constrain(map(rssi, -90, -30, 0, 255), 0, 255);
+  analogWrite(ledPin, level);
+  Serial.print(rssi);
+  Serial.print(" dBm  ->  brightness ");
+  Serial.println(level);
+  delay(1000);
+}`},
+ {n:15,icon:'bell',title:'Wi-Fi doorbell',lede:'Press the button and the ring shows up on a web page, with a count and a time.',
+  needs:['btn','out'],parts:b=>[{t:'btn',pin:b.pins.btn},{t:'led',pin:b.pins.out,color:'yellow'}],wifi:true,web:true,
+  overview:b=>'The loop does two jobs: it answers web requests and it watches the button. Comparing the button with its last state catches each press exactly once. The page refreshes itself, so the phone always shows the latest ring.',
+  points:()=>['A press is HIGH → LOW, not just LOW','millis() remembers when the last ring was','The LED glows for a second after each ring'],
+  pins:b=>[[pinName(b,b.pins.btn),'Push button (the bell)','Input with pull-up'],[pinName(b,b.pins.out),'LED (via 220 Ω)','Output'],['Antenna','Wi-Fi','Web server on port 80']],
+  steps:b=>[`Wire the button to ${pinName(b,b.pins.btn)} and <b>GND</b>.`,`Wire an LED to ${pinName(b,b.pins.out)} through 220 Ω.`,'Run it, open the IP address on your phone and ring the bell.'],
+  how:()=>['<code>state == LOW && lastState == HIGH</code> spots a new press','<code>rings++</code> adds one to the count','<code>(millis() - lastRing) / 1000</code> gives the seconds since'],
+  code:b=>`${wifiInc(b)}
+${serverInc(b)}
+
+const char* ssid = "Radix-Lab";
+const char* password = "robotics123";
+const int buttonPin = ${pinRef(b,b.pins.btn)};
+const int ledPin = ${pinRef(b,b.pins.out)};
+
+${serverType(b)} server(80);
+
+int rings = 0;
+unsigned long lastRing = 0;
+int lastState = HIGH;
+
+void handleRoot() {
+  String page = "<meta http-equiv='refresh' content='2'>";
+  page += "<h1>Radix Doorbell</h1>";
+  page += "<p>Rings: <b>" + String(rings) + "</b></p>";
+  if (rings > 0) {
+    unsigned long ago = (millis() - lastRing) / 1000;
+    page += "<p>Last ring <b>" + String(ago) + " s</b> ago</p>";
+  }
+  server.send(200, "text/html", page);
+}
+
+void setup() {
+  Serial.begin(115200);
+  pinMode(buttonPin, INPUT_PULLUP);
+  pinMode(ledPin, OUTPUT);
+  WiFi.begin(ssid, password);
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+  }
+  Serial.print("Doorbell at http://");
+  Serial.println(WiFi.localIP());
+  server.on("/", handleRoot);
+  server.begin();
+}
+
+void loop() {
+  server.handleClient();
+  int state = digitalRead(buttonPin);
+  if (state == LOW && lastState == HIGH) {   // a new press
+    rings++;
+    lastRing = millis();
+    Serial.print("Ding dong! Rings: ");
+    Serial.println(rings);
+  }
+  lastState = state;
+  digitalWrite(ledPin, rings > 0 && millis() - lastRing < 1000);
+  delay(10);
+}`,inputs:['btn']},
+ {n:16,icon:'thermo',title:'Smart thermostat',lede:'Put it all together: a heater that keeps the room at the temperature you set from your phone.',
+  needs:['dht','out'],parts:b=>[{t:'dht',pin:b.pins.dht},{t:'led',pin:b.pins.out,color:'red'}],wifi:true,web:true,
+  overview:b=>'The ESP reads the DHT22 every 2 seconds and switches a “heater” (the red LED) to hold the target temperature. A web page shows the room and lets you change the target. A half-degree gap each side stops the heater flicking on and off.',
+  points:()=>['That gap is called hysteresis','A real heater would sit behind a relay, never straight on a pin','Slide the temperature below and watch the heater react'],
+  pins:b=>[[pinName(b,b.pins.dht),'DHT22 data','One-wire data'],[pinName(b,b.pins.out),'Red LED (the heater)','Output'],['3V3 / GND','DHT22 power','Power']],
+  steps:b=>['Wire the DHT22 as in lesson 9.',`Wire a red LED to ${pinName(b,b.pins.out)} through 220 Ω.`,'Run it, open the page on your phone and set a target.'],
+  how:()=>['<code>room < target - 0.5</code> turns the heater on','<code>room > target + 0.5</code> turns it off','<code>server.arg("target").toFloat()</code> reads the new target'],
+  code:b=>`${wifiInc(b)}
+${serverInc(b)}
+#include <DHT.h>
+
+const char* ssid = "Radix-Lab";
+const char* password = "robotics123";
+const int heaterPin = ${pinRef(b,b.pins.out)};   // the LED stands in for a heater
+
+DHT dht(${pinRef(b,b.pins.dht)}, DHT22);
+${serverType(b)} server(80);
+
+float target = 22.0;
+float room = 0;
+bool heating = false;
+unsigned long lastRead = 0;
+
+void handleRoot() {
+  String page = "<meta http-equiv='refresh' content='5'>";
+  page += "<h1>Radix Thermostat</h1>";
+  page += "<p>Room: <b>" + String(room, 1) + " &deg;C</b></p>";
+  page += "<p>Target: <b>" + String(target, 1) + " &deg;C</b></p>";
+  page += "<p>Heater: <b>";
+  page += heating ? "ON" : "OFF";
+  page += "</b></p>";
+  page += "<form action='/set'>";
+  page += "<input type='number' name='target' step='0.5' value='" + String(target, 1) + "'>";
+  page += "<input type='submit' value='Set'>";
+  page += "</form>";
+  server.send(200, "text/html", page);
+}
+
+void handleSet() {
+  target = constrain(server.arg("target").toFloat(), 5, 35);
+  Serial.print("New target: ");
+  Serial.println(target);
+  handleRoot();
+}
+
+void setup() {
+  Serial.begin(115200);
+  pinMode(heaterPin, OUTPUT);
+  dht.begin();
+  room = dht.readTemperature();
+  WiFi.begin(ssid, password);
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+  }
+  Serial.print("Thermostat at http://");
+  Serial.println(WiFi.localIP());
+  server.on("/", handleRoot);
+  server.on("/set", handleSet);
+  server.begin();
+}
+
+void loop() {
+  server.handleClient();
+  if (millis() - lastRead >= 2000) {    // the DHT22 needs 2 s between readings
+    lastRead = millis();
+    room = dht.readTemperature();
+    if (room < target - 0.5) {
+      heating = true;
+    } else if (room > target + 0.5) {
+      heating = false;
+    }
+    digitalWrite(heaterPin, heating);
+    Serial.print(room);
+    Serial.println(heating ? " C  heater ON" : " C  heater off");
+  }
+}`,inputs:['dht']},
+];
+
+/* Extra lesson-card illustrations (48×48) used on top of the shared ones. */
+const ESP_ICON={
+ touch:`<path d="M20 30V14a3 3 0 0 1 6 0v12" fill="none" stroke="#1E2B45" stroke-width="2.4" stroke-linecap="round"/><path d="M26 22a3 3 0 0 1 6 0v6c0 7-4 12-10 12s-9-4-11-9l-2-5a3 3 0 0 1 5-2l2 4" fill="none" stroke="#1E2B45" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M14 10a10 10 0 0 1 18 0" fill="none" stroke="#FF6A13" stroke-width="2" stroke-linecap="round"/>`,
+ wifi:`<path d="M6 18a26 26 0 0 1 36 0M12 25a17 17 0 0 1 24 0M18 32a8 8 0 0 1 12 0" fill="none" stroke="#1F7A80" stroke-width="3" stroke-linecap="round"/><circle cx="24" cy="38" r="3" fill="#FF6A13"/>`,
+ scan:`<circle cx="22" cy="22" r="13" fill="none" stroke="#1F7A80" stroke-width="3"/><path d="m32 32 9 9" stroke="#1E2B45" stroke-width="3.4" stroke-linecap="round"/><path d="M15 22a7 7 0 0 1 14 0" fill="none" stroke="#FF6A13" stroke-width="2.4" stroke-linecap="round"/>`,
+ web:`<rect x="13" y="4" width="22" height="40" rx="4" fill="#1E2B45"/><rect x="16" y="9" width="16" height="28" rx="1.5" fill="#F6EDDD"/><circle cx="24" cy="18" r="4" fill="#F7C619"/><rect x="18" y="26" width="12" height="3" rx="1.5" fill="#1F7A80"/><rect x="18" y="31" width="12" height="3" rx="1.5" fill="#FF6A13"/>`,
+ dht:`<rect x="12" y="6" width="24" height="30" rx="3" fill="#F2F2EE" stroke="#A3A8B3"/>${[0,1,2,3].map(i=>`<rect x="16" y="${10+i*6}" width="16" height="3" rx="1" fill="#C9CCD2"/>`).join('')}<path d="M18 36v8M24 36v8M30 36v8" stroke="#9A9DA4" stroke-width="2.2" stroke-linecap="round"/>`,
+ weather:`<circle cx="18" cy="18" r="8" fill="#F7C619"/><path d="M14 36h20a7 7 0 0 0 0-14 10 10 0 0 0-19 3 6 6 0 0 0-1 11z" fill="#E8EEF7" stroke="#1E2B45" stroke-width="2"/>`,
+ slider:`<rect x="6" y="20" width="36" height="6" rx="3" fill="#E4E2DA"/><rect x="6" y="20" width="22" height="6" rx="3" fill="#FF6A13"/><circle cx="28" cy="23" r="7" fill="#FAFAF7" stroke="#1E2B45" stroke-width="2.4"/><circle cx="24" cy="38" r="5" fill="#F7C619" opacity=".9"/><circle cx="24" cy="38" r="9" fill="#F7C619" opacity=".25"/>`,
+ clock:`<circle cx="24" cy="24" r="16" fill="#FAFAF7" stroke="#1E2B45" stroke-width="2.6"/><path d="M24 14v10l7 5" fill="none" stroke="#FF6A13" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/><circle cx="40" cy="9" r="4" fill="#2FB36A"/>`,
+ ap:`<rect x="14" y="24" width="20" height="16" rx="3" fill="#1C1C1E"/><rect x="18" y="28" width="12" height="8" rx="1" fill="#C3C6CC"/><path d="M10 16a20 20 0 0 1 28 0M16 21a11 11 0 0 1 16 0" fill="none" stroke="#14A39A" stroke-width="2.8" stroke-linecap="round"/><circle cx="24" cy="10" r="2.6" fill="#FF6A13"/>`,
+ signal:`<rect x="7" y="32" width="6" height="10" rx="1.5" fill="#2FB36A"/><rect x="16" y="25" width="6" height="17" rx="1.5" fill="#2FB36A"/><rect x="25" y="17" width="6" height="25" rx="1.5" fill="#2FB36A"/><rect x="34" y="9" width="6" height="33" rx="1.5" fill="#2FB36A" opacity=".3"/>`,
+ bell:`<path d="M14 32V22a10 10 0 0 1 20 0v10l3 4H11z" fill="#F7C619" stroke="#1E2B45" stroke-width="2.2" stroke-linejoin="round"/><circle cx="24" cy="40" r="3.4" fill="#1E2B45"/><path d="M38 12a12 12 0 0 1 4 8M10 12a12 12 0 0 0-4 8" fill="none" stroke="#FF6A13" stroke-width="2.4" stroke-linecap="round"/>`,
+ thermo:`<path d="M20 30V10a4 4 0 0 1 8 0v20a8 8 0 1 1-8 0z" fill="#FAFAF7" stroke="#1E2B45" stroke-width="2.4"/><circle cx="24" cy="36" r="4.6" fill="#E5484D"/><path d="M24 34V16" stroke="#E5484D" stroke-width="3.2" stroke-linecap="round"/><path d="M34 14h6M34 20h4M34 26h6" stroke="#1E2B45" stroke-width="2" stroke-linecap="round"/>`,
+ esp:`<rect x="8" y="4" width="32" height="40" rx="3" fill="#1C1C1E"/><rect x="13" y="16" width="22" height="22" rx="2" fill="#C3C6CC"/><path d="M14 8h4v4h4V8h4v4h4V8h4" fill="none" stroke="#D6B04A" stroke-width="1.6"/><text x="24" y="29" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="6" font-weight="700" fill="#1E2B45">ESP</text>`,
+};
+
+/* ---------- Arduino mini-simulator ----------
+   Translates a sketch into JavaScript generator functions so delay() can pause
+   without blocking the page. Covers the Arduino calls used in the lessons plus
+   arrays, your own functions and the Servo library. */
+const CTYPES='(?:unsigned\\s+long|unsigned\\s+int|unsigned\\s+char|long\\s+long|long|int|float|double|bool|boolean|byte|char|word|short|String|uint8_t|uint16_t|uint32_t|int8_t|int16_t|int32_t|size_t)';
+const INT_TYPES=/^(?:unsigned\s+long|unsigned\s+int|unsigned\s+char|long\s+long|long|int|byte|word|short|uint8_t|uint16_t|uint32_t|int8_t|int16_t|int32_t|size_t)$/;
+
+/* server.arg() returns text; these mirror Arduino String's toInt() and toFloat(). */
+[['toInt',v=>parseInt(v,10)],['toFloat',v=>parseFloat(v)]].forEach(([k,f])=>{if(!String.prototype[k])Object.defineProperty(String.prototype,k,{value(){const n=f(this);return isNaN(n)?0:n;},configurable:true});});
+
+function matchParen(s,i){
+  let d=0,q=null;
+  for(let j=i;j<s.length;j++){const c=s[j];
+    if(q){if(c==='\\'){j++;continue;}if(c===q)q=null;continue;}
+    if(c==='"'||c==="'"){q=c;continue;}
+    if(c==='('||c==='[')d++;else if(c===')'||c===']'){d--;if(d===0)return j;}}
+  return -1;
+}
+/** Remove comments, keeping strings and line breaks (so line numbers stay put). */
+function stripComments(s){
+  let out='',q=null;
+  for(let i=0;i<s.length;i++){const c=s[i],n=s[i+1];
+    if(q){out+=c;if(c==='\\'){out+=n;i++;}else if(c===q)q=null;continue;}
+    if(c==='"'||c==="'"){q=c;out+=c;continue;}
+    if(c==='/'&&n==='/'){while(i<s.length&&s[i]!=='\n')i++;out+='\n';continue;}
+    if(c==='/'&&n==='*'){i+=2;while(i<s.length&&!(s[i]==='*'&&s[i+1]==='/')){if(s[i]==='\n')out+='\n';i++;}i++;continue;}
+    out+=c;}
+  return out;
+}
+/** Replace every call `name(args)` using make(args) — args are transformed recursively. */
+function wrapCalls(s,name,make,skipIf){
+  const re=new RegExp('\\b'+name+'\\s*\\(','g');let out='',i=0,m;
+  while((m=re.exec(s))){
+    if(skipIf&&skipIf(s,m.index)){continue;}
+    const open=m.index+m[0].length-1,close=matchParen(s,open);if(close<0)break;
+    out+=s.slice(i,m.index)+make(wrapCalls(s.slice(open+1,close),name,make,skipIf));i=close+1;re.lastIndex=close+1;}
+  return out+s.slice(i);
+}
+/** Split on commas that are not inside brackets or strings. */
+function topSplit(s){const parts=[];let d=0,q=null,start=0;
+  for(let i=0;i<s.length;i++){const c=s[i];if(q){if(c==='\\')i++;else if(c===q)q=null;continue;}
+    if(c==='"'||c==="'")q=c;else if('([{'.includes(c))d++;else if(')]}'.includes(c))d--;else if(c===','&&d===0){parts.push(s.slice(start,i));start=i+1;}}
+  parts.push(s.slice(start));return parts;}
+
+function transpile(src){
+  let s=stripComments(src).replace(/^[ \t]*#.*$/gm,'');
+  // Servo objects
+  s=s.replace(/\bServo\s+(\w+)\s*;/g,'let $1 = new Servo();');
+  // Function definitions → generators (so they can pause in delay()).
+  const fnNames=[];
+  s=s.replace(new RegExp('\\b(?:static\\s+|inline\\s+)?(void|'+CTYPES+')\\s+(\\w+)\\s*\\(([^)]*)\\)\\s*\\{','g'),(all,ret,name,params)=>{
+    if(['if','for','while','switch','return'].includes(name))return all;
+    fnNames.push(name);
+    const ps=params.trim()==='void'?'':params.split(',').map(p=>{const m=p.trim().match(/(\w+)\s*(\[\s*\])?$/);return m?m[1]:'';}).filter(Boolean).join(', ');
+    return `function* ${name}(${ps}) {`;});
+  // C strings: const char* ssid = "..."
+  s=s.replace(/\b(?:const\s+)?(?:unsigned\s+)?char\s*\*\s*(?=[A-Za-z_])/g,'let ');
+  // Library objects with constructor arguments: WebServer server(80); DHT dht(4, DHT22);
+  s=s.replace(/\b(WebServer|ESP8266WebServer|DHT)\s+(\w+)\s*\(([^)]*)\)\s*;/g,'let $2 = new $1($3);');
+  // Arrays: int a[] = {1, 2}; and int a[4];
+  s=s.replace(new RegExp('\\b(?:const\\s+|static\\s+)*'+CTYPES+'\\s+(\\w+)\\s*\\[\\s*\\w*\\s*\\]\\s*=\\s*\\{([^}]*)\\}','g'),'let $1 = [$2]');
+  s=s.replace(new RegExp('\\b(?:const\\s+|static\\s+)*'+CTYPES+'\\s+(\\w+)\\s*\\[\\s*(\\w+)\\s*\\]\\s*;','g'),'let $1 = new Array($2).fill(0);');
+  // Declarations. Whole-number types truncate like C does (int x = 7 / 2 → 3); a missing value starts at 0.
+  s=s.replace(new RegExp('\\b((?:const\\s+|static\\s+|volatile\\s+)*)('+CTYPES+')\\s+(?=[A-Za-z_])','g'),(all,mods,type)=>`let/*${INT_TYPES.test(type.replace(/\s+/g,' '))?'i':'n'}*/ `);
+  s=s.replace(/let\/\*([in])\*\/ ([^;]*);/g,(all,kind,body)=>'let '+topSplit(body).map(d=>{const m=d.match(/^\s*(\w+)\s*=\s*([\s\S]+)$/);
+    if(m)return kind==='i'?`${m[1]} = __int(${m[2]})`:`${m[1]} = ${m[2]}`;return /^\s*\w+\s*$/.test(d)?`${d.trim()} = 0`:d.trim();}).join(', ')+';');
+  // Casts
+  s=s.replace(/\(\s*(?:int|long|byte|unsigned\s+long)\s*\)\s*/g,'__int').replace(/\(\s*(?:float|double)\s*\)\s*/g,'');
+  // Infinite-loop guard at the start of every for/while body.
+  { let out='',i=0;const re=/\b(?:for|while)\s*\(/g;let m;
+    while((m=re.exec(s))){const open=m.index+m[0].length-1,close=matchParen(s,open);if(close<0)break;
+      let j=close+1;while(j<s.length&&/\s/.test(s[j]))j++;
+      if(s[j]==='{'){out+=s.slice(i,j+1)+' __guard();';i=j+1;}
+      re.lastIndex=close+1;}
+    s=out+s.slice(i); }
+  // Pausing calls.
+  s=wrapCalls(s,'delayMicroseconds',a=>`(yield __us(${a}))`);
+  s=wrapCalls(s,'delay',a=>`(yield __ms(${a}))`);
+  // Calls to your own functions run as generators too.
+  fnNames.filter(n=>n!=='setup'&&n!=='loop').forEach(n=>{
+    s=wrapCalls(s,n,a=>`(yield* ${n}(${a}))`,(str,at)=>/function\*\s*$/.test(str.slice(Math.max(0,at-12),at)));});
+  return s;
+}
+
+const RT_NAMES=['HIGH','LOW','INPUT','OUTPUT','INPUT_PULLUP','LED_BUILTIN','A0','A1','A2','A3','A4','A5','DEC','HEX','BIN',
+  'D0','D1','D2','D3','D4','D5','D6','D7','D8','T0','T1','T2','T3','T4','T5','T6','T7','T8','T9','RGB_BUILTIN',
+  'WiFi','WebServer','ESP8266WebServer','DHT','DHT11','DHT22','touchRead','rgbLedWrite','String',
+  'WL_IDLE_STATUS','WL_NO_SSID_AVAIL','WL_SCAN_COMPLETED','WL_CONNECTED','WL_CONNECT_FAILED','WL_CONNECTION_LOST','WL_DISCONNECTED','WIFI_STA','WIFI_AP','WIFI_AP_STA','WIFI_OFF',
+  'pinMode','digitalWrite','digitalRead','analogRead','analogWrite','millis','micros','map','constrain','abs','min','max','pow','sqrt','sq',
+  'random','randomSeed','tone','noTone','pulseIn','Serial','Servo','__ms','__us','__int','__guard'];
+
+/** Runs a sketch. io connects it to the bench: read pins, analog values, echoes, serial and redraws.
+    board (optional) supplies board constants such as LED_BUILTIN, A0 or D1, and Wi-Fi networks. */
+function createSim(io,board){
+  let gen=null,timer=null,running=false,wall0=0;
+  const st={pins:{},mode:{},pwm:{},tones:{},servos:{},rgb:{},simMs:0,ops:0,serial:0};
+  const wifi={status:0,target:null,result:0,at:0,scan:[],announced:0,ap:null};
+  const nets=()=>(board&&board.networks)||[];
+  const jitter=v=>v+Math.round((Math.random()-.5)*4);
+  function wifiStatus(){
+    if(wifi.target&&st.simMs>=wifi.at&&wifi.status!==wifi.result){wifi.status=wifi.result;if(io.wifi)io.wifi(wifi.status===3?'connected':'failed',wifi);}
+    return wifi.status;}
+  const runToEnd=(r)=>{if(!r||typeof r.next!=='function')return r;let n=0;for(;;){const x=r.next();if(x.done)return x.value;if(++n>100000)throw new Error('A web handler ran too long.');}};
+  class WebServer{
+    constructor(port){this.port=port||80;this.routes={};this.notFound=null;this.queue=[];this.args={};this.resp=null;this.started=false;}
+    on(path,fn){this.routes[path]=fn;}
+    onNotFound(fn){this.notFound=fn;}
+    begin(){this.started=true;if(io.server)io.server(this);}
+    handleClient(){const req=this.queue.shift();if(!req)return;this.args=req.args||{};this.resp=null;this.path=req.path;
+      const fn=this.routes[req.path]||this.notFound;if(fn)runToEnd(fn());
+      req.done(this.resp||(fn?{code:200,type:'text/plain',body:''}:{code:404,type:'text/plain',body:'Not found: '+req.path}));}
+    send(code,type,body){this.resp={code:+code||200,type:type||'text/plain',body:body===undefined?'':String(body)};}
+    arg(n){return this.args[n]??'';}
+    hasArg(n){return n in this.args;}
+    uri(){return this.path||'/';}
+  }
+  class DHT{constructor(pin,type){this.pin=pin;this.type=type;}begin(){}
+    readTemperature(){const v=io.dht?io.dht():{t:22,h:50};return Math.round((v.t+(Math.random()-.5)*.2)*10)/10;}
+    readHumidity(){const v=io.dht?io.dht():{t:22,h:50};return Math.round((v.h+(Math.random()-.5)*.6)*10)/10;}}
+  const fmt=(x,base)=>{if(typeof x==='boolean')return x?'1':'0';if(typeof x==='number'){if(base===16)return Math.trunc(x).toString(16).toUpperCase();if(base===2)return Math.trunc(x).toString(2);return Number.isInteger(x)?String(x):x.toFixed(2);}return String(x);};
+  const pinNo=p=>typeof p==='string'?(/^A\d$/.test(p)?14+(+p[1]):+p):p;
+  const rt={HIGH:1,LOW:0,INPUT:0,OUTPUT:1,INPUT_PULLUP:2,LED_BUILTIN:13,A0:14,A1:15,A2:16,A3:17,A4:18,A5:19,DEC:10,HEX:16,BIN:2,
+    pinMode(p,m){st.mode[pinNo(p)]=m;io.changed(st);},
+    digitalWrite(p,v){p=pinNo(p);st.pwm[p]=null;st.pins[p]=v?1:0;io.changed(st);},
+    digitalRead(p){p=pinNo(p);if(st.mode[p]===1)return st.pins[p]?1:0;return io.read(p,st.mode[p]);},
+    analogRead(p){p=pinNo(p);return io.analog(p<14?p+14:p);},
+    analogWrite(p,v){p=pinNo(p);v=Math.max(0,Math.min(255,Math.round(+v||0)));st.pwm[p]=v;st.pins[p]=v>0?1:0;io.changed(st);},
+    millis(){return Math.floor(st.simMs);},micros(){return Math.floor(st.simMs*1000);},
+    map(x,a,b,c,d){return Math.trunc((x-a)*(d-c)/(b-a)+c);},
+    constrain(x,a,b){return Math.min(b,Math.max(a,x));},abs:Math.abs,min:Math.min,max:Math.max,pow:Math.pow,sqrt:Math.sqrt,sq:x=>x*x,
+    random(a,b){if(b===undefined){b=a;a=0;}return Math.floor(a+Math.random()*(b-a));},randomSeed(){},
+    tone(p,f,d){p=pinNo(p);st.tones[p]={f:+f,until:d?st.simMs+ +d:Infinity};io.changed(st);},
+    noTone(p){delete st.tones[pinNo(p)];io.changed(st);},
+    pulseIn(p){return io.pulse(pinNo(p));},
+    Serial:{begin(){},end(){},available(){return 0;},read(){return -1;},
+      print(x,base){if(x!==undefined)io.print(fmt(x,base),false);st.serial++;},
+      println(x,base){io.print(x===undefined?'':fmt(x,base),true);st.serial++;}},
+    Servo:class{attach(p){this.p=pinNo(p);this.a=90;st.servos[this.p]=90;io.changed(st);}
+      write(a){this.a=Math.max(0,Math.min(180,+a||0));if(this.p!==undefined){st.servos[this.p]=this.a;io.changed(st);}}
+      read(){return this.a??90;}detach(){}},
+    touchRead(p){return io.touch?io.touch(pinNo(p)):0;},
+    rgbLedWrite(p,r,g,b){p=pinNo(p);st.rgb[p]=[+r||0,+g||0,+b||0];st.pwm[p]=null;st.pins[p]=(r||g||b)?1:0;io.changed(st);},
+    String(v,dec){if(typeof v==='number'){if(dec!==undefined&&(!Number.isInteger(v)||![2,10,16].includes(dec)))return v.toFixed(dec);if(dec===16)return Math.trunc(v).toString(16).toUpperCase();if(dec===2)return Math.trunc(v).toString(2);return Number.isInteger(v)?String(v):v.toFixed(2);}
+      if(typeof v==='boolean')return v?'1':'0';return v===undefined?'':String(v);},
+    WL_IDLE_STATUS:0,WL_NO_SSID_AVAIL:1,WL_SCAN_COMPLETED:2,WL_CONNECTED:3,WL_CONNECT_FAILED:4,WL_CONNECTION_LOST:5,WL_DISCONNECTED:6,
+    WIFI_OFF:0,WIFI_STA:1,WIFI_AP:2,WIFI_AP_STA:3,DHT11:11,DHT22:22,
+    WebServer,ESP8266WebServer:WebServer,DHT,
+    WiFi:{
+      mode(){},setHostname(){},persistent(){},setAutoReconnect(){},
+      begin(ssid,pass){const n=nets().find(x=>x.ssid===String(ssid));wifi.target=String(ssid);wifi.status=6;wifi.at=st.simMs+1800+Math.random()*700;
+        wifi.result=!n?1:(n.pass===''||n.pass===String(pass??''))?3:4;if(io.wifi)io.wifi('connecting',wifi);return wifi.status;},
+      status(){return wifiStatus();},
+      disconnect(){wifi.target=null;wifi.status=6;if(io.wifi)io.wifi('disconnected',wifi);},
+      isConnected(){return wifiStatus()===3;},
+      localIP(){const ok=wifiStatus()===3;return{toString:()=>ok?'192.168.1.42':'0.0.0.0'};},
+      macAddress(){return 'A4:CF:12:9B:3E:01';},
+      softAP(ssid,pass){const p=pass==null?'':String(pass);if(p&&p.length<8){wifi.ap=null;if(io.wifi)io.wifi('apfail',{target:String(ssid)});return false;}
+        wifi.ap=String(ssid);if(io.wifi)io.wifi('ap',{target:wifi.ap});return true;},
+      softAPIP(){return{toString:()=>wifi.ap?'192.168.4.1':'0.0.0.0'};},
+      softAPgetStationNum(){return wifi.ap?1:0;},
+      softAPdisconnect(){wifi.ap=null;if(io.wifi)io.wifi('disconnected',wifi);},
+      SSID(i){return i===undefined?(wifi.status===3?wifi.target:''):(wifi.scan[i]?wifi.scan[i].ssid:'');},
+      RSSI(i){if(i===undefined){const n=nets().find(x=>x.ssid===wifi.target);return wifi.status===3&&n?jitter(io.rssi?io.rssi(n.rssi):n.rssi):0;}return wifi.scan[i]?wifi.scan[i].rssi:0;},
+      encryptionType(i){return wifi.scan[i]?wifi.scan[i].enc:0;},
+      channel(i){return wifi.scan[i]?wifi.scan[i].ch:0;},
+      scanNetworks(){wifi.scan=nets().map(n=>({...n,rssi:jitter(n.rssi)})).sort((a,b)=>b.rssi-a.rssi);if(io.wifi)io.wifi('scan',wifi);return wifi.scan.length;},
+      scanDelete(){wifi.scan=[];},
+    },
+    __ms:x=>Math.max(0,+x||0),__us:x=>Math.max(0,+x||0)/1000,
+    __int:x=>typeof x==='boolean'?+x:Math.trunc(x),
+    __guard(){if(++st.ops>300000)throw new Error('A loop ran 300,000 times without delay(). Add a delay() inside it, or check its condition.');},
+  };
+  if(board&&board.consts)Object.assign(rt,board.consts);
+  function expireTones(){let ch=false;for(const p in st.tones)if(st.tones[p].until<=st.simMs){delete st.tones[p];ch=true;}if(ch)io.changed(st);}
+  function slice(){
+    if(!running)return;const budget=performance.now()+10;let steps=0;
+    try{
+      for(;;){st.ops=0;const r=gen.next();
+        if(r.done){running=false;io.status('done');io.changed(st);return;}
+        const ms=r.value||0;st.simMs+=ms>0?ms:.02;expireTones();
+        if(ms>=1){timer=setTimeout(slice,ms);return;}
+        // A loop without delay() must not run the clock faster than real time, or millis() timers race.
+        const ahead=st.simMs-(performance.now()-wall0);if(ahead>2){timer=setTimeout(slice,ahead);return;}
+        if(++steps>20000||performance.now()>budget){timer=setTimeout(slice,4);return;}
+      }
+    }catch(e){running=false;io.status('error',e);io.changed(st);}
+  }
+  return{
+    state:st,
+    start(code){
+      let fns;
+      try{fns=new Function('__rt',`const {${RT_NAMES.join(',')}} = __rt;\n${transpile(code)}\nreturn {setup: typeof setup==='function'?setup:null, loop: typeof loop==='function'?loop:null};`)(rt);}
+      catch(e){io.status('error',e);return false;}
+      if(!fns.setup&&!fns.loop){io.status('error',new Error('No setup() or loop() found. Every sketch needs both.'));return false;}
+      gen=(function*(){if(fns.setup)yield* fns.setup();if(!fns.loop)return;for(;;){yield* fns.loop();yield 0;}})();
+      running=true;wall0=performance.now();io.status('running');io.changed(st);slice();return true;
+    },
+    stop(){running=false;clearTimeout(timer);gen=null;Object.assign(st,{pins:{},mode:{},pwm:{},tones:{},servos:{},rgb:{}});Object.assign(wifi,{status:0,target:null,scan:[],ap:null});if(io.wifi)io.wifi('off',wifi);if(io.server)io.server(null);io.status('stopped');io.changed(st);},
+    get running(){return running;},
+  };
+}
+
+/** Catches what an Arduino compiler would reject but JavaScript forgives: a statement without its ; */
+function lintSketch(src){
+  const ls=stripComments(src).split('\n');
+  const nextLine=i=>{for(let j=i+1;j<ls.length;j++){const t=ls[j].trim();if(t)return t;}return '';};
+  for(let i=0;i<ls.length;i++){
+    const t=ls[i].trim();if(!t||t.startsWith('#'))continue;
+    if(!/[\w)\]"']$/.test(t))continue;                                  // ends with ; { } , or an operator
+    if(/^(if|else|for|while|switch|do|case|default)\b/.test(t))continue;  // control lines
+    if(/^(?:static\s+|inline\s+)?\w[\w\s]*\s+\w+\s*\([^;]*\)$/.test(t)&&!/=/.test(t))continue; // function header
+    if(/^[{.?:+\-*/%&|<>=)]/.test(nextLine(i)))continue;                 // statement continues on the next line
+    return{line:i+1,msg:`Line ${i+1}: missing ; at the end of “${t.length>40?t.slice(0,40)+'…':t}”.`};
+  }
+  return null;
+}
+
+/* ---------- 3D bench: any ESP board and a breadboard (three.js) ---------- */
+function createEspBench(host,api){
+  const T=window.THREE,UP=new T.Vector3(0,1,0);
+  const reduce=matchMedia('(prefers-reduced-motion:reduce)').matches;
+  const ease=t=>1-Math.pow(1-Math.min(1,Math.max(0,t)),3);
+  const renderer=new T.WebGLRenderer({antialias:true,alpha:true});
+  renderer.setPixelRatio(Math.min(2,window.devicePixelRatio||1));renderer.shadowMap.enabled=true;renderer.shadowMap.type=T.PCFSoftShadowMap;renderer.outputEncoding=T.sRGBEncoding;
+  host.appendChild(renderer.domElement);
+  const scene=new T.Scene(),camera=new T.PerspectiveCamera(32,1,.1,200);
+  const VIEW_ALL={pos:new T.Vector3(-1.4,13,12),target:new T.Vector3(-.2,0,.8)};
+  let HOME=VIEW_ALL;camera.position.copy(HOME.pos);
+  const controls=new T.OrbitControls(camera,renderer.domElement);
+  controls.target.copy(HOME.target);controls.enableDamping=true;controls.dampingFactor=.08;controls.minDistance=3;controls.maxDistance=40;controls.maxPolarAngle=Math.PI*.48;controls.screenSpacePanning=true;controls.update();
+  let camAnim=null;
+  scene.add(new T.HemisphereLight(0xfff6e6,0x7d6c52,.62));
+  const sun=new T.DirectionalLight(0xffffff,.9);sun.position.set(-8,20,10);sun.castShadow=true;sun.shadow.mapSize.set(2048,2048);
+  Object.assign(sun.shadow.camera,{left:-14,right:14,top:12,bottom:-12,near:1,far:60});sun.shadow.bias=-.0006;scene.add(sun);
+  const fill=new T.DirectionalLight(0xffe8d0,.25);fill.position.set(10,8,-8);scene.add(fill);
+  const ground=new T.Mesh(new T.PlaneGeometry(80,80),new T.ShadowMaterial({opacity:.16}));ground.rotation.x=-Math.PI/2;ground.receiveShadow=true;scene.add(ground);
+
+  const M=(color,o)=>new T.MeshStandardMaterial(Object.assign({color,roughness:.55,metalness:0},o||{}));
+  const metal=()=>M(0xC3C6CC,{metalness:.7,roughness:.3});
+  const gold=()=>M(0xD6B04A,{metalness:.65,roughness:.3});
+  const mesh=(g,m,sh=true)=>{const x=new T.Mesh(g,m);x.castShadow=sh;x.receiveShadow=true;return x;};
+  const along=(o,a,b)=>{const d=new T.Vector3().subVectors(b,a);o.position.copy(a).addScaledVector(d,.5);o.quaternion.setFromUnitVectors(UP,d.clone().normalize());return o;};
+  const rod=(a,b,r,m)=>along(mesh(new T.CylinderGeometry(r,r,a.distanceTo(b),10),m),a,b);
+  const box=(w,h,d,m)=>mesh(new T.BoxGeometry(w,h,d),m);
+  const V=(x,y,z)=>new T.Vector3(x,y,z);
+  function rrect(c,x,y,w,h,r){c.beginPath();c.moveTo(x+r,y);c.lineTo(x+w-r,y);c.quadraticCurveTo(x+w,y,x+w,y+r);c.lineTo(x+w,y+h-r);c.quadraticCurveTo(x+w,y+h,x+w-r,y+h);c.lineTo(x+r,y+h);c.quadraticCurveTo(x,y+h,x,y+h-r);c.lineTo(x,y+r);c.quadraticCurveTo(x,y,x+r,y);c.closePath();}
+  function label(text,o){o=Object.assign({fg:'#1E2B45',bg:'rgba(251,246,236,.95)',size:.32},o||{});
+    const c=document.createElement('canvas'),x=c.getContext('2d'),font='700 56px "JetBrains Mono", monospace';x.font=font;const w=Math.ceil(x.measureText(text).width)+36;c.width=w;c.height=84;x.font=font;
+    if(o.bg){x.fillStyle=o.bg;rrect(x,2,2,w-4,80,22);x.fill();}x.fillStyle=o.fg;x.textBaseline='middle';x.fillText(text,18,45);
+    const t=new T.CanvasTexture(c);t.encoding=T.sRGBEncoding;const s=new T.Sprite(new T.SpriteMaterial({map:t,transparent:true,depthWrite:false}));s.scale.set(o.size*w/84,o.size,1);s.renderOrder=10;return s;}
+  const glowTex=(()=>{const c=document.createElement('canvas');c.width=c.height=128;const x=c.getContext('2d'),g=x.createRadialGradient(64,64,0,64,64,64);
+    g.addColorStop(0,'rgba(255,255,255,1)');g.addColorStop(.35,'rgba(255,255,255,.45)');g.addColorStop(1,'rgba(255,255,255,0)');x.fillStyle=g;x.fillRect(0,0,128,128);const t=new T.CanvasTexture(c);t.encoding=T.sRGBEncoding;return t;})();
+  const glow=c=>{const s=new T.Sprite(new T.SpriteMaterial({map:glowTex,color:c,transparent:true,depthWrite:false}));s.renderOrder=8;return s;};
+  /** A flat texture with a label (and optional antenna trace) for module shields and PCBs. */
+  function plateTex(wmm,dmm,bg,draw){const S=14,c=document.createElement('canvas');c.width=Math.max(8,wmm*S);c.height=Math.max(8,dmm*S);const x=c.getContext('2d');x.fillStyle=bg;x.fillRect(0,0,c.width,c.height);draw(x,S,c);const t=new T.CanvasTexture(c);t.encoding=T.sRGBEncoding;t.anisotropy=renderer.capabilities.getMaxAnisotropy();return t;}
+  const topBox=(w,h,d,side,tex)=>mesh(new T.BoxGeometry(w,h,d),[side,side,M(0xffffff,{map:tex,roughness:.5,metalness:tex?.0:0}),side,side,side]);
+  const antennaDraw=(x,S,c)=>{x.strokeStyle='#C9A23B';x.lineWidth=Math.max(2,S*.22);x.beginPath();const n=7,top=c.height*.12,bot=c.height*.88;let px=c.width*.15,py=top;x.moveTo(px,py);
+    for(let i=0;i<n;i++){px+=c.width*.7/n;x.lineTo(px,py);py=py===top?bot:top;x.lineTo(px,py);}x.stroke();};
+
+  /* ---------- the board ---------- */
+  const boardRoot=new T.Group();scene.add(boardRoot);
+  let B=null,pinMap=new Map(),pinMeshes=[],antenna=V(-6,1,0),ledBuiltin=null,ledPower=null,topY=.46;
+  const PCB=.16,LIFT=.3;
+  function buildBoard(b){
+    boardRoot.clear();pinMap=new Map();pinMeshes=[];B=b;
+    const W=b.w*.1,D=b.d*.1,cx=-.7-W/2;topY=LIFT+PCB;
+    const silk=plateTex(b.w,b.d,b.pcb,(x,S,c)=>{
+      x.fillStyle='rgba(255,255,255,.08)';for(let i=0;i<6;i++){x.fillRect(c.width*(.15+i*.12),c.height*.45,S*.4,c.height*.12);}
+      x.fillStyle='#EDEFF3';x.textAlign='center';x.textBaseline='middle';
+      x.font=`700 ${S*1.25}px "JetBrains Mono", monospace`;if(b.module!=='esp01'&&b.module!=='cam')x.fillText(b.name.toUpperCase(),c.width*.74,c.height*.5);
+    });
+    const pcb=topBox(W,PCB,D,M(new T.Color(b.pcb).multiplyScalar(.8)),silk);pcb.position.set(cx,LIFT+PCB/2,0);boardRoot.add(pcb);
+    [[-1,-1],[-1,1],[1,-1],[1,1]].forEach(([sx,sz])=>{const f=mesh(new T.CylinderGeometry(.12,.12,LIFT,10),M(0x2a2a2e));f.position.set(cx+sx*(W/2-.25),LIFT/2,sz*(D/2-.25));boardRoot.add(f);});
+    const left=cx-W/2,right=cx+W/2;
+    // Module
+    const shieldSide=M(0xB9BCC2,{metalness:.7,roughness:.3});
+    if(b.module==='esp12'||b.module==='wroom'||b.module==='mini'){
+      const mw=b.module==='esp12'?2.4:b.module==='wroom'?2.55:1.66,md=b.module==='esp12'?1.6:b.module==='wroom'?1.8:1.32,ant=b.module==='mini'?.45:.62;
+      const mx=left+mw/2+.15,modBase=box(mw,.08,md,M(0x10306a));modBase.position.set(mx,topY+.04,0);boardRoot.add(modBase);
+      const antTex=plateTex(ant*10,md*10,'#10306a',(x,S,c)=>antennaDraw(x,S,c,.5,ant*10-1));
+      const antPlate=topBox(ant,.02,md,M(0x10306a),antTex);antPlate.position.set(mx-mw/2+ant/2,topY+.09,0);boardRoot.add(antPlate);
+      const nm={nodemcu:'ESP-12E',d1mini:'ESP-12F',esp32:'ESP32-WROOM-32',s3:'ESP32-S3-WROOM-1',c6:'ESP32-C6-WROOM-1',c3:'ESP32-C3-MINI-1'}[b.id]||b.chip;
+      const shTex=plateTex((mw-ant-.1)*10,(md-.15)*10,'#C9CCD2',(x,S,c)=>{x.fillStyle='#4A4F58';x.textAlign='center';x.textBaseline='middle';x.font=`700 ${S*1.25}px "JetBrains Mono", monospace`;x.fillText(nm,c.width/2,c.height*.4);
+        x.font=`500 ${S*.9}px "JetBrains Mono", monospace`;x.fillText(b.chip==='ESP8266'?'Wi-Fi 2.4 GHz':'Wi-Fi + BLE',c.width/2,c.height*.62);});
+      const shield=topBox(mw-ant-.1,.24,md-.15,shieldSide,shTex);shield.position.set(mx+ant/2+.05-.05+(-mw/2+ant+.05+(mw-ant-.1)/2)-(0),topY+.2,0);
+      shield.position.x=left+.15+ant+.05+(mw-ant-.1)/2;boardRoot.add(shield);
+      antenna=V(left+.15+ant/2,topY+.12,0);
+    }else if(b.module==='esp01'){
+      const antTex=plateTex(7,b.d-2,b.pcb,(x,S,c)=>antennaDraw(x,S,c,.5,6));const antP=topBox(.7,.01,D-.2,M(new T.Color(b.pcb)),antTex);antP.position.set(left+.45,topY+.005,0);boardRoot.add(antP);
+      const chip=box(.5,.1,.5,M(0x141416,{roughness:.35}));chip.position.set(left+1.25,topY+.05,-.1);boardRoot.add(chip);
+      const fl=box(.5,.12,.4,M(0x141416));fl.position.set(left+1.85,topY+.06,.25);boardRoot.add(fl);
+      const xt=box(.32,.1,.2,metal());xt.position.set(left+1.3,topY+.05,.45);boardRoot.add(xt);
+      antenna=V(left+.45,topY+.05,0);
+    }else if(b.module==='cam'){
+      const shTex=plateTex(17,15,'#C9CCD2',(x,S,c)=>{x.fillStyle='#4A4F58';x.textAlign='center';x.font=`700 ${S*1.3}px "JetBrains Mono", monospace`;x.fillText('ESP32-S',c.width/2,c.height*.5);});
+      const shield=topBox(1.7,.24,1.5,shieldSide,shTex);shield.position.set(left+1.4,topY+.12,0);boardRoot.add(shield);
+      const camB=box(.85,.25,.85,M(0x141416));camB.position.set(left+2.5,topY+.55,0);boardRoot.add(camB);
+      const lens=mesh(new T.CylinderGeometry(.3,.33,.35,28),M(0x1A1A1D,{roughness:.3}));lens.position.set(left+2.5,topY+.85,0);boardRoot.add(lens);
+      const glass=mesh(new T.CylinderGeometry(.18,.18,.02,24),M(0x22344F,{roughness:.05,metalness:.4}));glass.position.set(left+2.5,topY+1.03,0);boardRoot.add(glass);
+      const rib=box(.5,.04,.25,M(0xC48A2C));rib.position.set(left+2.0,topY+.32,0);boardRoot.add(rib);
+      const flash=box(.28,.1,.28,M(0xFFF6D6,{emissive:new T.Color(0xFFF2C0),emissiveIntensity:0}));flash.position.set(left+3.35,topY+.05,.75);boardRoot.add(flash);
+      const sd=box(1.1,.12,1.2,metal());sd.position.set(right-.75,topY+.06,0);boardRoot.add(sd);
+      antenna=V(left+.35,topY+.1,-.9);
+    }
+    // USB and buttons at the far end
+    if(b.usb==='micro'){const u=box(.6,.28,.75,metal());u.position.set(right-.25,topY+.14,0);boardRoot.add(u);}
+    else if(b.usb==='usbc2'){[-.55,.55].forEach(z=>{const u=along(mesh(new T.CapsuleGeometry(.13,.6,6,12),metal()),V(right-.45,topY+.16,z-.0),V(right+.05,topY+.16,z));boardRoot.add(u);});}
+    if(b.usb!=='none'&&b.module!=='esp01'){[[-.6,'EN'],[.6,'BOOT']].forEach(([dz,t])=>{const zz=b.usb==='usbc2'?dz*.25:dz;const base=box(.38,.12,.32,metal());base.position.set(right-1.1,topY+.06,zz);boardRoot.add(base);
+      const cap=box(.2,.1,.18,M(0x1A1A1D));cap.position.set(right-1.1,topY+.16,zz);boardRoot.add(cap);});}
+    // Built-in and power LEDs
+    const smd=(x,z,color)=>{const m=M(new T.Color(color).multiplyScalar(.45),{emissive:new T.Color(color),emissiveIntensity:0});const l=box(.16,.08,.1,m);l.position.set(x,topY+.04,z);boardRoot.add(l);
+      const g=glow(new T.Color(color));g.position.set(x,topY+.2,z);g.scale.setScalar(.9);g.material.opacity=0;boardRoot.add(g);return{m,g,mesh:l};};
+    ledPower=smd(b.module==='esp01'?left+1.0:right-1.7,b.module==='esp01'?-.5:b.d*.03,'#FF4040');ledPower.m.emissiveIntensity=1.2;ledPower.g.material.opacity=.45;
+    if(b.ledType==='rgb'){const m=M(0xF4F4F0,{emissive:new T.Color(0),emissiveIntensity:1.4});const l=box(.32,.12,.32,m);l.position.set(right-1.7,topY+.06,-b.d*.03);boardRoot.add(l);
+      const g=glow(0xffffff);g.position.set(right-1.7,topY+.3,-b.d*.03);g.scale.setScalar(1.3);g.material.opacity=0;boardRoot.add(g);ledBuiltin={rgb:true,m,g};}
+    else ledBuiltin=Object.assign(smd(b.module==='cam'?left+3.6:b.module==='esp01'?left+1.0:left+2.85,b.module==='esp01'?.5:-.15,b.module==='cam'?'#FF3B30':'#3E8EF7'),{rgb:false});
+    // Male headers, pins up
+    const rows=b.module==='esp01'?[[b.left,-.127],[b.right,.127]]:[[b.left,-b.rowGap*.05],[b.right,b.rowGap*.05]];
+    rows.forEach(([list,z])=>{const n=list.length,span=(n-1)*.254;const x0=b.module==='esp01'?right-.25-span:cx-span/2;
+      const strip=box(span+.254,.25,.254,M(0x1A1A1D));strip.position.set(x0+span/2,topY+.125,z);boardRoot.add(strip);
+      list.forEach(([lab,g],i)=>{const x=x0+i*.254;const pin=box(.064,.6,.064,gold());pin.position.set(x,topY+.4,z);pin.userData.pinInfo={lab,g};boardRoot.add(pin);pinMeshes.push(pin);
+        const hit=box(.2,.6,.2,new T.MeshBasicMaterial({visible:false}));hit.position.copy(pin.position);hit.userData.pinInfo={lab,g};boardRoot.add(hit);pinMeshes.push(hit);
+        const key=g!=null?'g'+g:lab;if(!pinMap.has(key))pinMap.set(key,V(x,topY+.7,z));
+        const lb=label(String(lab),{bg:null,fg:'#EDEFF3',size:.13});lb.position.set(x,topY+.02,z+(z<0?.28:-.28));boardRoot.add(lb);});});
+    VIEW_BOARD.target.set(cx,0,0);VIEW_BOARD.pos.set(cx-.6,Math.max(4.5,W*1.3),Math.max(4.6,W*1.25));
+  }
+  const VIEW_BOARD={pos:new T.Vector3(),target:new T.Vector3()};
+  const pinPos=p=>pinMap.get(typeof p==='number'?'g'+p:p)||pinMap.get('GND')||V(-3,1,0);
+
+  /* ---------- breadboard ---------- */
+  const BB={x0:.3,x1:10.0,z0:-2.75,z1:2.75,top:.5},COL=c=>BB.x0+.55+c*.254;
+  const ROW={a:-1.9,b:-1.65,c:-1.4,d:-1.15,e:-.9,f:.9,g:1.15,h:1.4,i:1.65,j:1.9,minus:-2.45,plus:2.45};
+  const BBP=(c,r,h=BB.top)=>V(COL(c),h,ROW[r]);
+  const bbTex=(()=>{const S=40,w=(BB.x1-BB.x0),d=(BB.z1-BB.z0),c=document.createElement('canvas');c.width=w*S;c.height=d*S;const x=c.getContext('2d');
+    x.fillStyle='#FAFAF7';x.fillRect(0,0,c.width,c.height);const tx=X=>(X-BB.x0)*S,tz=Z=>(Z-BB.z0)*S;x.fillStyle='#E4E2DA';x.fillRect(0,tz(-.22),c.width,.44*S);
+    x.strokeStyle='#1E2B45';x.lineWidth=2;x.beginPath();x.moveTo(tx(BB.x0+.3),tz(-2.25));x.lineTo(tx(BB.x1-.3),tz(-2.25));x.stroke();
+    x.strokeStyle='#D7372A';x.beginPath();x.moveTo(tx(BB.x0+.3),tz(2.25));x.lineTo(tx(BB.x1-.3),tz(2.25));x.stroke();
+    for(let cc=0;cc<36;cc++)Object.values(ROW).forEach(z=>{x.fillStyle='#C9C7C0';x.fillRect(tx(COL(cc))-4,tz(z)-4,8,8);x.fillStyle='#3E4046';x.fillRect(tx(COL(cc))-2.5,tz(z)-2.5,5,5);});
+    const t=new T.CanvasTexture(c);t.encoding=T.sRGBEncoding;t.anisotropy=renderer.capabilities.getMaxAnisotropy();return t;})();
+  const side=M(0xECE8DE,{roughness:.8});
+  const bboard=mesh(new T.BoxGeometry(BB.x1-BB.x0,BB.top,BB.z1-BB.z0),[side,side,M(0xffffff,{map:bbTex,roughness:.75}),side,side,side]);bboard.position.set((BB.x0+BB.x1)/2,BB.top/2,0);scene.add(bboard);
+
+  const WIRE_COLORS=['#FF6A13','#14A39A','#8B6CF6','#E0A800','#3E8EF7','#E2459A'];
+  function wire(a,b,color,parent){const d=a.distanceTo(b),lift=Math.max(a.y,b.y)+.35+d*.13;
+    const curve=new T.CatmullRomCurve3([a,a.clone().setY(a.y+.3),a.clone().lerp(b,.5).setY(lift),b.clone().setY(b.y+.35),b],false,'centripetal');
+    parent.add(mesh(new T.TubeGeometry(curve,64,.06,8,false),M(new T.Color(color),{roughness:.38})));
+    [a,b].forEach(p=>{const tip=mesh(new T.CylinderGeometry(.075,.075,.25,10),M(0x2A2A2E));tip.position.copy(p).setY(p.y+.12);parent.add(tip);});return curve;}
+  const legM=metal();
+  const partsRoot=new T.Group();scene.add(partsRoot);let parts=[],railFlows=[];
+  const WIDTH={led:4,btn:3,pot:3,touch:2,dht:3};
+  const LEDC={red:'#E5484D',green:'#2FB36A',blue:'#3E63DD',yellow:'#F7C619',white:'#F6F7FA'};
+  function resistor(g,a,b){const y=BB.top+.35,m1=a.clone().setY(y),m2=b.clone().setY(y);g.add(rod(a.clone().setY(a.y-.1),m1,.03,legM),rod(b.clone().setY(b.y-.1),m2,.03,legM),rod(m1,m2,.03,legM));
+    const dir=new T.Vector3().subVectors(m2,m1),L=Math.min(.55,dir.length()*.6),mid=m1.clone().lerp(m2,.5);dir.normalize();g.add(along(mesh(new T.CapsuleGeometry(.12,L-.24,6,12),M(0xDCC6A0)),mid.clone().addScaledVector(dir,-L/2),mid.clone().addScaledVector(dir,L/2)));}
+  function buildPart(p,c0,idx){
+    const g=new T.Group(),ref={p,g,flows:[],tip:''},sig=WIRE_COLORS[idx%WIRE_COLORS.length];
+    const toRail=(c,r,rail,cl)=>{ref.flows.push({curve:wire(BBP(c,r),BBP(c,rail),cl,g),kind:rail});};
+    const fromPin=(pin,c,r,dir='out')=>{ref.flows.push({curve:wire(pinPos(pin),BBP(c,r),sig,g),kind:'sig',pin,dir});};
+    const pl=api.pinLabel(p.pin);
+    if(p.t==='led'){fromPin(p.pin,c0,'a');resistor(g,BBP(c0,'c'),BBP(c0+2,'c'));toRail(c0+3,'a','minus','#1A1A1D');
+      const an=BBP(c0+2,'e'),ca=BBP(c0+3,'e'),mid=an.clone().lerp(ca,.5),base=1.2;
+      [[an,.75],[ca,.62]].forEach(([h,bend])=>{const up=h.clone().setY(BB.top+bend*.6),q=mid.clone().addScaledVector(new T.Vector3().subVectors(h,mid).setY(0).normalize(),.1).setY(base);g.add(rod(h.clone().setY(h.y-.15),up,.03,legM),rod(up,q,.03,legM));});
+      const onC=new T.Color(LEDC[p.color]),offC=onC.clone().multiplyScalar(.55),mat=M(offC.clone(),{roughness:.25,emissive:onC.clone(),emissiveIntensity:0});
+      const can=mesh(new T.CylinderGeometry(.24,.24,.42,24),mat);can.position.copy(mid).setY(base+.25);const dome=mesh(new T.SphereGeometry(.24,24,12,0,Math.PI*2,0,Math.PI/2),mat);dome.position.copy(mid).setY(base+.46);
+      const halo=glow(onC);halo.position.copy(mid).setY(base+.35);halo.material.opacity=0;const light=new T.PointLight(onC,0,5,2);light.position.copy(mid).setY(base+.7);g.add(can,dome,halo,light);
+      let lv=0;ref.target=0;ref.tip=`${p.color[0].toUpperCase()+p.color.slice(1)} LED on ${pl}`;
+      ref.read=st=>{const v=st.pwm[p.pin];return v!=null?v/255:(st.pins[p.pin]?1:0);};ref.setLevel=v=>{ref.target=v;};
+      ref.tick=(now,dt)=>{lv+=(ref.target-lv)*Math.min(1,dt*14);mat.emissiveIntensity=lv*.9;mat.color.copy(offC).lerp(onC,lv);halo.material.opacity=Math.min(.7,lv*.7);halo.scale.setScalar(.5+2*lv);light.intensity=lv*1.6;};}
+    else if(p.t==='btn'){fromPin(p.pin,c0,'a','in');toRail(c0+2,'a','minus','#1A1A1D');
+      const cx=(COL(c0)+COL(c0+2))/2,base=box(.72,.3,.72,M(0x1F1F23));base.position.set(cx,BB.top+.15,0);g.add(base);
+      [[c0,'e'],[c0+2,'e'],[c0,'f'],[c0+2,'f']].forEach(([c,r])=>{const h=BBP(c,r);g.add(rod(h.clone().setY(h.y-.12),V(h.x,BB.top+.12,h.z*.4),.03,legM));});
+      const capM=M(0x3A3B41,{roughness:.35});const cap=mesh(new T.CylinderGeometry(.25,.28,.22,24),capM);cap.position.set(cx,BB.top+.42,0);g.add(cap);
+      ref.tip=`Push button on ${pl}`;ref.hold=p.pin;let y=BB.top+.42;ref.target=0;
+      ref.read=()=>api.pressed(p.pin)?1:0;ref.setLevel=v=>{ref.target=v;capM.color.set(v?0xFF6A13:0x3A3B41);};ref.tick=(now,dt)=>{y+=((ref.target?BB.top+.33:BB.top+.42)-y)*Math.min(1,dt*18);cap.position.y=y;};}
+    else if(p.t==='pot'){toRail(c0,'a','plus','#D7372A');fromPin(p.pin,c0+1,'a','in');toRail(c0+2,'a','minus','#1A1A1D');
+      [0,1,2].forEach(i=>{const h=BBP(c0+i,'e');g.add(rod(h.clone().setY(h.y-.12),h.clone().setY(BB.top+.3).add(V(0,0,.25)),.03,legM));});
+      const cx=COL(c0+1),body=box(1,.45,.8,M(0x1F4E8C));body.position.set(cx,BB.top+.5,-.55);g.add(body);
+      const knob=new T.Group();knob.position.set(cx,BB.top+.85,-.55);g.add(knob);knob.add(mesh(new T.CylinderGeometry(.3,.33,.3,28),M(0xE8E9EC,{roughness:.4})));
+      const ptr=box(.05,.04,.26,M(0x1F4E8C));ptr.position.set(0,.17,-.12);knob.add(ptr);let a=0;ref.target=0;
+      ref.tip=`10 kΩ potentiometer on ${pl}`;ref.read=()=>api.inputs.pot/100;ref.setLevel=v=>{ref.target=v;};ref.tick=(now,dt)=>{a+=((-(-135+270*ref.target)*Math.PI/180)-a)*Math.min(1,dt*12);knob.rotation.y=a;};}
+    else if(p.t==='touch'){const pad=V(COL(c0+1),BB.top,ROW.f+.4);
+      ref.flows.push({curve:wire(pinPos(p.pin),pad.clone().setY(.62),sig,g),kind:'sig',pin:p.pin,dir:'in'});
+      const coin=mesh(new T.CylinderGeometry(.55,.55,.08,32),M(0xC88A3C,{metalness:.7,roughness:.3}));coin.position.copy(pad).setY(.56);g.add(coin);
+      const finger=along(mesh(new T.CapsuleGeometry(.28,.9,8,16),M(0xE9B98F,{roughness:.7})),pad.clone().add(V(.15,.95,.6)),pad.clone().add(V(.05,.8,1.6)));g.add(finger);
+      const fg=glow(0xFF6A13);fg.position.copy(pad).setY(.9);fg.scale.setScalar(1.6);g.add(fg);
+      ref.tip=`Touch pad on ${pl}`;ref.hold='touch';ref.read=()=>api.touching()?1:0;ref.setLevel=v=>{finger.visible=!!v;fg.material.opacity=v?.6:0;};}
+    else if(p.t==='dht'){toRail(c0,'a','plus','#D7372A');fromPin(p.pin,c0+1,'a','in');toRail(c0+2,'a','minus','#1A1A1D');
+      [0,1,2].forEach(i=>{const h=BBP(c0+i,'e');g.add(rod(h.clone().setY(h.y-.12),h.clone().setY(BB.top+.35),.03,legM));});
+      const cx=COL(c0+1),body=box(1.05,1.4,.45,M(0xF2F2EE,{roughness:.6}));body.position.set(cx,BB.top+1.05,ROW.e);g.add(body);
+      for(let i=0;i<5;i++){const s=box(.7,.08,.04,M(0xA7ABB3));s.position.set(cx,BB.top+.6+i*.22,ROW.e+.24);g.add(s);}
+      const nm=label('DHT22',{size:.28});nm.position.set(cx,BB.top+2.05,ROW.e);g.add(nm);
+      const val=new T.Group();g.add(val);let lastTxt='';
+      ref.tip=`DHT22 temperature & humidity on ${pl}`;ref.read=()=>1;ref.setLevel=()=>{const t=`${api.inputs.temp} °C · ${api.inputs.hum} %`;if(t!==lastTxt){lastTxt=t;val.clear();const l=label(t,{size:.3,bg:'#1E2B45',fg:'#F6EDDD'});l.position.set(cx,BB.top+2.5,ROW.e);val.add(l);}};}
+    g.traverse(o=>{o.userData.part=ref;});return ref;
+  }
+  function setLesson(b,partsList){
+    buildBoard(b);partsRoot.clear();parts=[];railFlows=[];
+    let c0=3;partsList.forEach((p,i)=>{const ref=buildPart(p,c0,i);partsRoot.add(ref.g);parts.push(ref);c0+=WIDTH[p.t]+3;});
+    if(parts.length){railFlows.push({curve:wire(pinPos('GND'),V(BB.x0+.35,BB.top,ROW.minus),'#1A1A1D',partsRoot),kind:'gnd'});
+      if(partsList.some(p=>p.t==='pot'||p.t==='dht'))railFlows.push({curve:wire(pinPos('3V3'),V(BB.x0+.35,BB.top,ROW.plus),'#D7372A',partsRoot),kind:'pwr'});}
+    pinRings.clear();HOME=parts.length?VIEW_ALL:VIEW_BOARD;camAnim={t0:performance.now(),p0:camera.position.clone(),p1:HOME.pos.clone(),q0:controls.target.clone(),q1:HOME.target.clone()};
+  }
+  const pinRings=new T.Group();scene.add(pinRings);
+  function highlightPins(list){pinRings.clear();(list||[]).forEach(n=>{const p=pinPos(n);if(!p)return;const r=mesh(new T.TorusGeometry(.14,.025,8,24),new T.MeshBasicMaterial({color:0xFF6A13,transparent:true}),false);r.rotation.x=-Math.PI/2;r.position.copy(p).setY(p.y-.25);r.userData.ring=true;pinRings.add(r);
+    const l=label(typeof n==='number'?'GPIO '+n:n,{fg:'#0C0C0D',bg:'#FF6A13',size:.26});l.position.copy(p).setY(p.y+.45);pinRings.add(l);});}
+
+  /* ---------- Wi-Fi waves from the antenna ---------- */
+  const waves=[0,1,2,3].map(()=>{const w=mesh(new T.TorusGeometry(.5,.025,6,48,Math.PI*1.2),new T.MeshBasicMaterial({color:0x14A39A,transparent:true,opacity:0}),false);w.rotation.x=-Math.PI/2;scene.add(w);return w;});
+  let wifiState='off';
+
+  /* ---------- current dots ---------- */
+  const MAXP=400,dots=new T.InstancedMesh(new T.SphereGeometry(.06,10,8),new T.MeshBasicMaterial({color:0xFFE14D}),MAXP);dots.count=0;dots.frustumCulled=false;scene.add(dots);
+  const halos=new T.InstancedMesh(new T.PlaneGeometry(.32,.32),new T.MeshBasicMaterial({map:glowTex,color:0xFF6A13,transparent:true,opacity:.75,depthWrite:false}),MAXP);halos.count=0;halos.frustumCulled=false;scene.add(halos);
+  let flows=[],phase=0,showFlow=true;const tm=new T.Matrix4(),tq=new T.Quaternion(),ts=new T.Vector3(1,1,1);
+  function update(st){
+    if(!B)return;
+    const lp=B.ledPin;let on=st.pwm[lp]!=null?st.pwm[lp]/255:(st.pins[lp]?1:0);if(B.ledLow&&st.mode[lp]===1)on=st.pwm[lp]!=null?1-st.pwm[lp]/255:(st.pins[lp]?0:1);if(st.mode[lp]!==1&&!st.rgb[lp])on=0;
+    if(ledBuiltin.rgb){const c=st.rgb[lp]?new T.Color(st.rgb[lp][0]/255,st.rgb[lp][1]/255,st.rgb[lp][2]/255):new T.Color(on,on,on);ledBuiltin.m.emissive.copy(c);const m=Math.max(c.r,c.g,c.b);ledBuiltin.g.material.color.copy(c);ledBuiltin.g.material.opacity=m*.8;}
+    else{ledBuiltin.m.emissiveIntensity=on*2;ledBuiltin.g.material.opacity=on*.8;}
+    const active=[];parts.forEach(r=>{if(!r.read)return;const v=r.read(st);if(r.setLevel)r.setLevel(v);if(v>0)active.push(r);});
+    flows=[];if(!api.running())return;
+    parts.forEach(r=>{const isOn=active.includes(r);r.flows.forEach(f=>{
+      if(f.kind==='sig'){const pinOn=st.pwm[f.pin]!=null?st.pwm[f.pin]>0:!!st.pins[f.pin];if(f.dir==='in'?(isOn||r.p.t==='pot'||r.p.t==='dht'):pinOn)flows.push({curve:f.curve,rev:f.dir==='in'});}
+      else if(isOn||r.p.t==='pot'||r.p.t==='dht')flows.push({curve:f.curve,rev:false});});});
+    if(active.length||parts.some(r=>r.p.t==='pot'||r.p.t==='dht'))railFlows.forEach(f=>flows.push({curve:f.curve,rev:f.kind==='gnd'}));
+    flows.forEach(f=>{f.len=f.curve.getLength();f.n=Math.max(2,Math.round(f.len/.45));});
+  }
+  /* ---------- hover + presses ---------- */
+  const ray=new T.Raycaster(),ndc=new T.Vector2(),cv=renderer.domElement;cv.tabIndex=0;
+  cv.setAttribute('aria-label','3D ESP bench. Drag to rotate, right-drag or W A S D to pan, Q and E to turn, plus and minus to zoom, 0 to reset.');
+  function pick(e){const r=cv.getBoundingClientRect();ndc.set(((e.clientX-r.left)/r.width)*2-1,-((e.clientY-r.top)/r.height)*2+1);ray.setFromCamera(ndc,camera);
+    const hit=ray.intersectObjects([partsRoot,...pinMeshes],true)[0];if(!hit)return null;if(hit.object.userData.pinInfo)return{pin:hit.object.userData.pinInfo};return hit.object.userData.part?{part:hit.object.userData.part}:null;}
+  const tip=document.getElementById('tipbox'),stageEl=document.getElementById('stage');
+  function showTip(e,h){if(!h){tip.hidden=true;return;}const r0=stageEl.getBoundingClientRect();
+    if(h.pin){const {lab,g}=h.pin;tip.innerHTML=`${esc(lab)}${g!=null&&String(lab)!==String(g)?` · GPIO ${g}`:g!=null?' · GPIO':''}<small>${api.pinNote(lab,g)}</small>`;}
+    else tip.innerHTML=`${esc(h.part.tip)}<small>${h.part.hold!==undefined?'Press and hold to test':'Part of this lesson’s circuit'}</small>`;
+    tip.hidden=false;const tw=tip.offsetWidth;let x=e.clientX-r0.left+14;if(x+tw>r0.width-8)x=e.clientX-r0.left-tw-14;tip.style.left=Math.max(8,x)+'px';tip.style.top=(e.clientY-r0.top+16)+'px';}
+  let down=null,holding=null;
+  cv.addEventListener('pointermove',e=>{if(down&&Math.abs(e.clientX-down.x)+Math.abs(e.clientY-down.y)>5)down.moved=true;if(down&&down.moved){tip.hidden=true;return;}const h=pick(e);host.classList.toggle('over-part',!!(h&&h.part&&h.part.hold!==undefined));showTip(e,h);});
+  cv.addEventListener('pointerleave',()=>{tip.hidden=true;});
+  cv.addEventListener('pointerdown',e=>{down={x:e.clientX,y:e.clientY,moved:false};cv.focus({preventScroll:true});const h=pick(e);if(h&&h.part&&h.part.hold!==undefined){holding=h.part.hold;controls.enabled=false;api.press(holding,true);}});
+  window.addEventListener('pointerup',()=>{if(holding!==null){api.press(holding,false);holding=null;controls.enabled=true;}down=null;});
+  cv.addEventListener('keydown',e=>{const k=e.key.toLowerCase();const fwd=new T.Vector3().subVectors(controls.target,camera.position).setY(0).normalize(),right=new T.Vector3().crossVectors(fwd,UP).normalize();
+    let mv=null;if(k==='w')mv=fwd.multiplyScalar(.6);if(k==='s')mv=fwd.multiplyScalar(-.6);if(k==='d')mv=right.multiplyScalar(.6);if(k==='a')mv=right.multiplyScalar(-.6);
+    if(mv){camera.position.add(mv);controls.target.add(mv);e.preventDefault();return;}
+    if(k==='q'||k==='e'){const off=new T.Vector3().subVectors(camera.position,controls.target).applyAxisAngle(UP,(k==='q'?1:-1)*Math.PI/18);camera.position.copy(controls.target).add(off);e.preventDefault();return;}
+    if(k==='+'||k==='='){zoomBy(1/1.25);e.preventDefault();}if(k==='-'){zoomBy(1.25);e.preventDefault();}if(k==='0'){reset();e.preventDefault();}});
+  function zoomBy(f){const off=new T.Vector3().subVectors(camera.position,controls.target).multiplyScalar(f);const d=off.length();if(d<controls.minDistance||d>controls.maxDistance)return;
+    camAnim={t0:performance.now(),p0:camera.position.clone(),p1:controls.target.clone().add(off),q0:controls.target.clone(),q1:controls.target.clone()};}
+  function reset(){camAnim={t0:performance.now(),p0:camera.position.clone(),p1:HOME.pos.clone(),q0:controls.target.clone(),q1:HOME.target.clone()};}
+  function resize(){const w=host.clientWidth||1,h=host.clientHeight||1;renderer.setSize(w,h,false);camera.aspect=w/h;camera.fov=w/h<1.05?48:32;camera.updateProjectionMatrix();}
+  new ResizeObserver(resize).observe(host);resize();
+  function frame(now){requestAnimationFrame(frame);const dt=Math.min(.05,(now-(frame.last||now))/1000);frame.last=now;
+    if(camAnim){const u=ease((now-camAnim.t0)/550);camera.position.lerpVectors(camAnim.p0,camAnim.p1,u);controls.target.lerpVectors(camAnim.q0,camAnim.q1,u);if(u>=1)camAnim=null;}
+    parts.forEach(r=>r.tick&&r.tick(now,dt));
+    pinRings.children.forEach(o=>{if(o.userData.ring){const s=1+.4*(.5+.5*Math.sin(now*.006));o.scale.setScalar(s);o.material.opacity=1-.5*(s-1)/.4;}});
+    const col={connecting:0xF5A524,connected:0x14A39A,scan:0x3E8EF7,failed:0xE5484D}[wifiState];
+    waves.forEach((w,i)=>{if(!col||reduce&&wifiState!=='connected'){w.material.opacity=0;return;}const per=wifiState==='connected'?2200:1300;const u=((now/per)+i/4)%1;
+      w.material.color.setHex(col);w.position.copy(antenna).setY(antenna.y+.15+u*.3);w.scale.setScalar(.4+u*3.2);w.rotation.z=Math.PI*.9;w.material.opacity=(1-u)*(wifiState==='failed'?.9:.7);});
+    phase+=dt*(reduce?.5:1);let n=0;
+    if(showFlow)for(const f of flows){for(let i=0;i<f.n&&n<MAXP;i++,n++){let u=((phase*1.6/f.len)+i/f.n)%1;if(f.rev)u=1-u;const p=f.curve.getPointAt(u);tm.compose(p,tq,ts);dots.setMatrixAt(n,tm);tm.compose(p,camera.quaternion,ts);halos.setMatrixAt(n,tm);}}
+    dots.count=n;halos.count=n;dots.instanceMatrix.needsUpdate=true;halos.instanceMatrix.needsUpdate=true;controls.update();renderer.render(scene,camera);}
+  requestAnimationFrame(frame);
+  return{setLesson,update,highlightPins,zoom:f=>zoomBy(f>1?1/1.35:1.35),reset,setFlow(on){showFlow=on;},setWifi(s){wifiState=s;}};
+}
+
+/* ---------- page state ---------- */
+const $=s=>document.querySelector(s);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const pad2=n=>String(n).padStart(2,'0');
+const load=(k,d)=>{try{const v=localStorage.getItem(k);return v===null?d:JSON.parse(v);}catch(e){return d;}};
+const store=(k,v)=>{try{if(v===undefined)localStorage.removeItem(k);else localStorage.setItem(k,JSON.stringify(v));}catch(e){}};
+const svgI=(inner,lbl)=>`<svg viewBox="0 0 48 48" ${lbl?`role="img" aria-label="${esc(lbl)}"`:'aria-hidden="true"'}>${inner}</svg>`;
+const CHECK='<svg viewBox="0 0 10 10"><path d="M2 5.2 4.2 7.4 8 3" fill="none" stroke="#FFFFFF" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+const CHEV='<svg class="chev" viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3l5 5-5 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+const KP_ICONS=['<path d="M4 8h8M8 4v8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>','<path d="M3 8.5 6.5 12 13 4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>','<path d="M9 1 3 9h5l-1 6 6-8H8z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>'];
+const ICONS=Object.assign({},ICON,ESP_ICON);
+const NEED_NAME={out:'a free output pin',btn:'a free input pin',pot:'an analog input',touch:'touch-sensing pins',dht:'a free data pin'};
+
+let current=1,bench=null,board=BOARDS.find(b=>b.id===load('radix-esp-board','esp32'))||BOARDS[3];
+let done=new Set(load('radix-esp-done',[])),flowOn=true,phoneOn=true,touching=false;
+const inputs={pot:50,temp:24,hum:55,dist:1};
+const pressed=new Set();
+const lesson=()=>ESP_LESSONS.find(l=>l.n===current);
+const partsOf=L=>typeof L.parts==='function'?L.parts(board):L.parts;
+const available=L=>L.needs.every(k=>board.pins[k]!=null);
+const missing=L=>L.needs.filter(k=>board.pins[k]==null);
+
+/* ---------- serial monitor ---------- */
+let lines=[],partial='',serialDirty=false;
+function serialPrint(t,nl){partial+=t;if(nl){lines.push({t:partial});partial='';if(lines.length>400)lines=lines.slice(-400);}serialDirty=true;}
+function serialNote(t,cls){if(partial){lines.push({t:partial});partial='';}lines.push({t,cls});serialDirty=true;}
+function renderSerial(){if(!serialDirty)return;serialDirty=false;const el=$('#serial');const atEnd=el.scrollTop+el.clientHeight>=el.scrollHeight-8;
+  el.innerHTML=lines.map(l=>l.cls?`<span class="${l.cls}">${esc(l.t)}</span>`:esc(l.t)).join('\n')+(partial?(lines.length?'\n':'')+esc(partial):'');if(atEnd)el.scrollTop=el.scrollHeight;}
+$('#sclear').onclick=()=>{lines=[];partial='';serialDirty=true;renderSerial();};
+
+/* ---------- Wi-Fi + phone browser ---------- */
+let wifiState='off',server=null,phonePath='/',refreshT=0,pendingReq=null,siteIp='192.168.1.42',apName='';
+function setWifi(s,w){wifiState=s==='disconnected'?'off':s==='ap'?'connected':s==='apfail'?'failed':s;if(bench)bench.setWifi(wifiState);
+  if(s==='connecting'){siteIp='192.168.1.42';apName='';serialNote(`[sim] Wi-Fi: joining “${w.target}”…`,'s');}
+  if(s==='ap'){siteIp='192.168.4.1';apName=w.target;serialNote(`[sim] Access point “${w.target}” is up. The phone joined it.`,'s');}
+  if(s==='apfail')serialNote(`[sim] Access point “${w.target}” refused: the password needs at least 8 characters.`,'e');
+  if(s==='failed')serialNote(w.result===1?`[sim] Wi-Fi: no network called “${w.target}” is in range.`:`[sim] Wi-Fi: wrong password for “${w.target}”.`,'e');
+  renderWifiChip();updatePhone();}
+function renderWifiChip(){const el=$('#wifichip');if(!el)return;const txt={off:'Not connected',connecting:'Connecting…',connected:apName?`Hotspot “${apName}” · ${siteIp}`:`Connected · ${siteIp}`,failed:'Could not connect',scan:'Scanning…'}[wifiState]||wifiState;
+  el.querySelector('.wifidot').className='wifidot '+wifiState;el.querySelector('.wstat').textContent=txt;}
+function cleanHTML(html){const doc=new DOMParser().parseFromString(String(html),'text/html');
+  doc.querySelectorAll('script,iframe,object,embed,link,base,form[action^="http"]').forEach(n=>n.remove());
+  doc.querySelectorAll('*').forEach(n=>[...n.attributes].forEach(a=>{if(/^on/i.test(a.name)||/^\s*javascript:/i.test(a.value))n.removeAttribute(a.name);}));
+  const meta=doc.querySelector('meta[http-equiv="refresh" i]');const refresh=meta?parseFloat(meta.getAttribute('content')):0;
+  return{body:doc.body?doc.body.innerHTML:'',title:doc.title,refresh};}
+function phoneShow(html){$('#pbody').innerHTML=html;}
+function request(path){
+  phonePath=path||'/';$('#purl').textContent='http://'+siteIp+phonePath;clearTimeout(refreshT);
+  if(!server||!sim.running||wifiState!=='connected'){phoneShow('<p class="err">This site can’t be reached.</p><p class="wait">Is the sketch running and connected to Wi-Fi?</p>');return;}
+  phoneShow('<p class="wait">Loading…</p>');
+  const [p,q]=phonePath.split('?');const args={};new URLSearchParams(q||'').forEach((v,k)=>{args[k]=v;});
+  const req={path:p,args,done:r=>{clearTimeout(req.t);pendingReq=null;
+    if(/html/i.test(r.type)){const c=cleanHTML(r.body);phoneShow(c.body||'<p class="wait">(empty page)</p>');if(c.refresh>0)refreshT=setTimeout(()=>request(phonePath),c.refresh*1000);}
+    else phoneShow(`<pre style="white-space:pre-wrap;margin:0">${esc(r.body)}</pre>`);
+    if(r.code>=400)$('#pbody').insertAdjacentHTML('afterbegin',`<p class="err">HTTP ${r.code}</p>`);queueBench();}};
+  req.t=setTimeout(()=>{if(pendingReq===req){pendingReq=null;phoneShow('<p class="err">No response.</p><p class="wait">Does loop() call server.handleClient()?</p>');}},3000);
+  pendingReq=req;server.queue.push(req);
+}
+$('#pbody').addEventListener('click',e=>{const a=e.target.closest('a');if(!a)return;e.preventDefault();const href=a.getAttribute('href')||'/';
+  if(/^https?:/i.test(href)&&!href.includes(siteIp))return;request(href.replace(/^https?:\/\/[^/]+/i,'')||'/');});
+$('#pbody').addEventListener('submit',e=>{e.preventDefault();const f=e.target;const qs=new URLSearchParams(new FormData(f)).toString();request((f.getAttribute('action')||phonePath.split('?')[0])+(qs?'?'+qs:''));});
+$('#preload').onclick=()=>request(phonePath);
+function updatePhone(){const L=lesson(),show=!!(L.web&&phoneOn&&available(L)&&sim.running);const ph=$('#phone');
+  if(show&&ph.hidden){ph.hidden=false;request('/');}else if(!show&&!ph.hidden){ph.hidden=true;clearTimeout(refreshT);}
+  else if(show&&wifiState==='connected'&&server&&/can’t be reached/.test($('#pbody').textContent))request(phonePath);}
+
+/* ---------- sound is not used by the ESP lessons; tone() simply shows on the board ---------- */
+let benchQueued=false;
+function queueBench(){if(benchQueued)return;benchQueued=true;requestAnimationFrame(()=>{benchQueued=false;if(bench)bench.update(sim.state);renderSerial();});}
+const partOn=pred=>partsOf(lesson()).find(pred);
+const io={
+  changed:queueBench,
+  read(p,mode){const b=partOn(x=>x.t==='btn'&&x.pin===p);if(b){const pr=pressed.has(p);return mode===2?(pr?0:1):(pr?1:0);}return mode===2?1:0;},
+  analog(p){const pot=partOn(x=>x.t==='pot'&&x.pin===p);return pot?Math.round(inputs.pot/100*board.adcMax):Math.floor(Math.random()*40);},
+  pulse(){return 0;},
+  touch(p){const t=partOn(x=>x.t==='touch'&&x.pin===p);const on=t&&touching;const n=Math.round((Math.random()-.5)*(board.touchInc?600:4));
+    return board.touchInc?(on?62000:22000)+n*10:(on?14:68)+n;},
+  dht(){return{t:inputs.temp,h:inputs.hum};},
+  rssi(base){return base-Math.round(20*Math.log10(Math.max(1,inputs.dist)));},
+  print:serialPrint,
+  wifi:setWifi,
+  server(s){server=s;updatePhone();},
+  status(s,e){const el=$('#sstat');el.classList.toggle('on',s==='running');el.classList.toggle('err',s==='error');
+    $('#sstattext').textContent={running:'Running',done:'Finished',error:'Error',stopped:'Stopped'}[s];
+    $('#mode').classList.toggle('run',s==='running');$('#modetext').textContent=s==='running'?`Running · ${board.name}`:`${board.name} · ready`;
+    const run=$('#crun');run.classList.toggle('stop',s==='running');run.setAttribute('aria-label',s==='running'?'Stop':'Upload and run');run.title=s==='running'?'Stop':'Upload and run';
+    $('#runicon').innerHTML=s==='running'?'<rect x="4" y="4" width="8" height="8" rx="1" fill="currentColor"/>':'<path d="M4 2.5v11l9.5-5.5z" fill="currentColor"/>';
+    if(s==='error'&&e){let msg=e.message||String(e);if(e instanceof SyntaxError)msg+=' — check for a missing ; ( ) { } or a typo.';serialNote('Error: '+msg,'e');}
+    if(s==='done')serialNote('— sketch finished (no loop) —','s');
+    $('#benchnote').hidden=s==='running';queueBench();updatePhone();},
+};
+let sim=createSim(io,{consts:board.consts,networks:NETWORKS});
+
+/* ---------- code editor ---------- */
+const codeEl=$('#code'),hlEl=$('#hl'),gutter=$('#gutter');
+const TOK=/(\/\/[^\n]*|\/\*[\s\S]*?\*\/)|("(?:\\.|[^"\\\n])*"|'(?:\\.|[^'\\\n])*')|(^[ \t]*#[^\n]*)|(\b\d+(?:\.\d+)?\b)|([A-Za-z_]\w*)/gm;
+const KW=new Set('if else for while do return break continue switch case default const static true false new'.split(' '));
+const TY=new Set('void int long float double bool boolean byte char unsigned String word short WebServer ESP8266WebServer DHT'.split(' '));
+const FN=new Set('pinMode digitalWrite digitalRead analogRead analogWrite delay delayMicroseconds millis micros map constrain random touchRead rgbLedWrite setup loop begin print println on send handleClient status localIP scanNetworks SSID RSSI mode disconnect readTemperature readHumidity arg hasArg toInt toFloat softAP softAPIP softAPgetStationNum'.split(' '));
+const KC=new Set('HIGH LOW INPUT OUTPUT INPUT_PULLUP LED_BUILTIN RGB_BUILTIN A0 D0 D1 D2 D3 D4 D5 D6 D7 D8 Serial WiFi WL_CONNECTED WIFI_STA DHT22 DHT11'.split(' '));
+function highlight(src){let out='',i=0;src.replace(TOK,(m,c,s,pp,n,id,at)=>{out+=esc(src.slice(i,at));i=at+m.length;
+  const cls=c?'c':s?'s':pp?'pp':n?'n':KW.has(id)?'kw':TY.has(id)?'ty':FN.has(id)?'fn':KC.has(id)?'k':null;out+=cls?`<span class="tk-${cls}">${esc(m)}</span>`:esc(m);return m;});return out+esc(src.slice(i))+'\n';}
+let badLine=0;
+function markLine(n){badLine=n;gutter.querySelectorAll('div').forEach((d,i)=>d.classList.toggle('err',i+1===n));}
+function renderCode(){hlEl.innerHTML=highlight(codeEl.value);const n=codeEl.value.split('\n').length;gutter.innerHTML=Array.from({length:n},(_,i)=>`<div${i+1===badLine?' class="err"':''}>${i+1}</div>`).join('');syncScroll();}
+function syncScroll(){hlEl.scrollTop=codeEl.scrollTop;hlEl.scrollLeft=codeEl.scrollLeft;gutter.scrollTop=codeEl.scrollTop;}
+const codeKey=()=>`radix-esp-code-${board.id}-${current}`;
+let saveT=0;
+codeEl.addEventListener('input',()=>{badLine=0;renderCode();clearTimeout(saveT);saveT=setTimeout(()=>store(codeKey(),codeEl.value===lesson().code(board)?undefined:codeEl.value),400);});
+codeEl.addEventListener('scroll',syncScroll);
+codeEl.addEventListener('keydown',e=>{if(e.key==='Tab'&&!e.shiftKey){e.preventDefault();codeEl.setRangeText('  ',codeEl.selectionStart,codeEl.selectionEnd,'end');renderCode();}
+  if((e.ctrlKey||e.metaKey)&&e.key==='Enter'){e.preventDefault();toggleRun();}});
+$('#creset').onclick=()=>{codeEl.value=lesson().code(board);store(codeKey(),undefined);renderCode();};
+$('#ccopy').onclick=()=>{try{navigator.clipboard.writeText(codeEl.value);serialNote('Code copied to the clipboard.','s');renderSerial();}catch(e){}};
+function toggleRun(){
+  if(sim.running){sim.stop();return;}
+  if(!available(lesson())){serialNote(`This lesson needs ${missing(lesson()).map(k=>NEED_NAME[k]).join(' and ')}, which the ${board.name} doesn’t have.`,'e');return renderSerial();}
+  lines=[];partial='';markLine(0);
+  const lint=lintSketch(codeEl.value);
+  if(lint){serialNote(`Compiling for ${board.full}… error.`,'s');serialNote(lint.msg,'e');markLine(lint.line);io.status('error');return renderSerial();}
+  serialNote(`Uploading to ${board.full}… done.`,'s');
+  if(sim.start(codeEl.value)&&!done.has(current)){done.add(current);store('radix-esp-done',[...done]);renderProgress();renderStrip();renderHead();}
+  renderSerial();
+}
+$('#crun').onclick=toggleRun;
+
+/* ---------- inputs ---------- */
+function renderInputs(){
+  const L=lesson(),el=$('#inputs'),h=[],ps=available(L)?partsOf(L):[];
+  if(L.wifi)h.push(`<div class="wifichip" id="wifichip"><span class="wifidot ${wifiState}"></span><span class="wstat"></span><span>${L.ap?'· The ESP makes its own network <b>Radix-ESP</b>':'· Lab network <b>Radix-Lab</b> / <b>robotics123</b>'}</span></div>`);
+  ps.filter(p=>p.t==='btn').forEach(p=>h.push(`<button class="ctl" data-hold="${p.pin}" aria-pressed="false">Press button <small>${esc(pinRef(board,p.pin))}</small></button>`));
+  if(ps.some(p=>p.t==='touch'))h.push(`<button class="ctl" data-touch aria-pressed="false">Touch the pad <small>HOLD</small></button>`);
+  const rng=(id,label,min,max,val,fmt)=>`<label class="rng" for="in-${id}"><span>${label} <b id="val-${id}">${fmt(val)}</b></span><input type="range" id="in-${id}" data-input="${id}" min="${min}" max="${max}" value="${val}"></label>`;
+  if(ps.some(p=>p.t==='pot'))h.push(rng('pot','Knob',0,100,inputs.pot,v=>v+'%'));
+  if(ps.some(p=>p.t==='dht')){h.push(rng('temp','Temperature',-10,50,inputs.temp,v=>v+' °C'));h.push(rng('hum','Humidity',5,95,inputs.hum,v=>v+' %'));}
+  if(L.range==='dist'&&available(L))h.push(rng('dist','Distance from the router',1,40,inputs.dist,v=>v+' m'));
+  el.innerHTML=h.join('');renderWifiChip();
+  const FMT={pot:v=>v+'%',temp:v=>v+' °C',hum:v=>v+' %',dist:v=>v+' m'};
+  el.querySelectorAll('[data-input]').forEach(r=>r.oninput=()=>{const id=r.dataset.input;inputs[id]=+r.value;$('#val-'+id).textContent=FMT[id](+r.value);queueBench();});
+  el.querySelectorAll('[data-hold]').forEach(b=>{const pin=+b.dataset.hold;bindHold(b,on=>press(pin,on));});
+  const t=el.querySelector('[data-touch]');if(t)bindHold(t,on=>press('touch',on));
+}
+function bindHold(b,fn){b.addEventListener('pointerdown',e=>{e.preventDefault();fn(true);});['pointerup','pointerleave','pointercancel'].forEach(ev=>b.addEventListener(ev,()=>fn(false)));
+  b.addEventListener('keydown',e=>{if((e.key===' '||e.key==='Enter')&&!e.repeat){e.preventDefault();fn(true);}});b.addEventListener('keyup',e=>{if(e.key===' '||e.key==='Enter')fn(false);});}
+function press(pin,on){if(pin==='touch'){touching=on;document.querySelectorAll('#inputs [data-touch]').forEach(b=>b.setAttribute('aria-pressed',on));}
+  else{if(on)pressed.add(pin);else pressed.delete(pin);document.querySelectorAll(`#inputs [data-hold="${pin}"]`).forEach(b=>b.setAttribute('aria-pressed',on));}queueBench();}
+
+/* ---------- lesson panel ---------- */
+const TABS=['overview','pinout','example','specs'];
+function setTab(name,focus){
+  TABS.forEach(t=>{const on=t===name,b=$('#tab-'+t);b.setAttribute('aria-selected',on);b.tabIndex=on?0:-1;$('#tp-'+t).hidden=!on;});
+  document.querySelectorAll('.rbtn[data-go]').forEach(b=>{if(TABS.includes(b.dataset.go))b.setAttribute('aria-pressed',b.dataset.go===name);});
+  if(focus)$('#tab-'+name).focus();if(bench)bench.highlightPins(name==='pinout'?lessonPins():[]);
+}
+TABS.forEach((t,i)=>{const b=$('#tab-'+t);b.onclick=()=>setTab(t);b.onkeydown=e=>{if(e.key==='ArrowRight'||e.key==='ArrowLeft'){e.preventDefault();setTab(TABS[(i+(e.key==='ArrowRight'?1:TABS.length-1))%TABS.length],true);}};});
+const lessonPins=()=>available(lesson())?[...new Set(lesson().needs.map(k=>board.pins[k]).concat(current===1?[board.ledPin]:[]))]:[board.ledPin];
+const pinNote=(lab,g)=>{lab=String(lab);if(/^GND/.test(lab))return 'Ground (0 V)';if(lab==='3V3'||lab==='VCC')return '3.3 V power';if(lab==='5V'||lab==='VIN')return '5 V in (from USB)';
+  if(lab==='EN'||lab==='RST')return 'Reset: restarts the chip';if(g==null)return lab==='NC'?'Not connected':'Reserved';
+  if(g===board.ledPin)return 'Built-in LED'+(board.ledLow?' (active-LOW)':'');if(g===1||g===3||g===43||g===44||(board.id==='c3'&&(g===20||g===21))||(board.id==='c6'&&(g===16||g===17)))return 'Serial TX/RX (used for uploading)';
+  if(board.family==='ESP32'&&g>=34&&g<=39)return 'Input only, analog-capable';if(g===0)return 'BOOT pin: keep HIGH at start-up';
+  if(g===board.pins.pot)return 'Analog input (ADC)';if(g===board.pins.touch)return 'Touch-capable';return 'General-purpose I/O';};
+function renderHead(){const L=lesson(),isD=done.has(L.n);
+  $('#phead').innerHTML=`<div class="tile">${svgI(ICONS[L.icon])}</div><div class="phtop"><span class="pnum">LESSON ${pad2(L.n)} · ${esc(board.name)}</span><span class="pill"><i class="${isD?'on':''}"></i>${isD?'Done':'ESP basics'}</span></div><h2>${esc(L.title)}</h2><p>${esc(L.lede)}</p>`;}
+function renderTabs(){const L=lesson(),ok=available(L);
+  const na=ok?'':`<div class="unavail">This lesson needs <b>${missing(L).map(k=>NEED_NAME[k]).join(' and ')}</b>, which the <b>${esc(board.full)}</b> doesn’t have. Try ${BOARDS.filter(b=>L.needs.every(k=>b.pins[k]!=null)).slice(0,3).map(b=>esc(b.name)).join(', ')}.</div>`;
+  $('#tp-overview').innerHTML=`${na}<div class="ov"><h3>${esc(L.title)}</h3><p>${esc(L.overview(board))}</p></div><ul class="keypoints" style="margin:12px 0 0;padding:0;display:grid;gap:8px">${L.points(board).map((p,i)=>`<li><span class="kpi"><svg viewBox="0 0 16 16">${KP_ICONS[i%3]}</svg></span><span>${esc(p)}</span></li>`).join('')}</ul>`;
+  const rows=ok?L.pins(board):[];
+  $('#tp-pinout').innerHTML=`${na}${rows.length?`<table class="pintable"><thead><tr><th>Pin</th><th>Connects to</th><th>Role</th></tr></thead><tbody>${rows.map(p=>`<tr><td><span class="pinchip">${esc(p[0])}</span></td><td>${esc(p[1])}</td><td>${esc(p[2])}</td></tr>`).join('')}</tbody></table>`:''}
+    <p style="margin-top:12px" class="kicker">${esc(board.full)} pinout</p><div class="fullpins">${board.left.map((l,i)=>{const r=board.right[i];return `<span data-g="${l[1]??''}" data-l="${esc(l[0])}">${esc(l[0])}<em>${l[1]!=null&&String(l[0])!==String(l[1])?'GPIO '+l[1]:''}</em></span>${r?`<span data-g="${r[1]??''}" data-l="${esc(r[0])}">${esc(r[0])}<em>${r[1]!=null&&String(r[0])!==String(r[1])?'GPIO '+r[1]:''}</em></span>`:'<span></span>'}`;}).join('')}</div>
+    <p style="margin-top:8px;font-size:12.5px;color:var(--muted)">Hover a pin to find it on the board. Check your own board’s labels: revisions differ.</p>`;
+  $('#tp-pinout').querySelectorAll('.fullpins [data-l]').forEach(s=>{const key=s.dataset.g!==''?+s.dataset.g:s.dataset.l;
+    s.addEventListener('pointerenter',()=>bench&&bench.highlightPins([key]));s.addEventListener('pointerleave',()=>bench&&bench.highlightPins(lessonPins()));});
+  $('#tp-example').innerHTML=`${na}<span class="kicker">Wire it up</span><ol class="steps" style="margin-top:8px">${L.steps(board).map(s=>`<li><span>${s}</span></li>`).join('')}</ol><div class="how"><span class="kicker">How the code works</span><ul>${L.how(board).map(h=>`<li>${h}</li>`).join('')}</ul></div>`;
+  $('#tp-specs').innerHTML=`<p class="kicker">${esc(board.full)}</p><p style="margin:4px 0 10px;color:var(--ink-2)">${esc(board.blurb)}</p><div class="specgrid">${board.specs.map(([k,v])=>`<div class="spec"><small>${esc(k)}</small><b>${esc(v)}</b></div>`).join('')}</div>
+    <div class="how"><span class="kicker">Good to know</span><ul>${board.notes.map(n=>`<li>${esc(n)}</li>`).join('')}</ul></div>`;}
+function renderStrip(){const nl=$('#navlist');
+  nl.innerHTML=ESP_LESSONS.map(L=>`<button class="item${available(L)?'':' na'}" data-n="${L.n}" aria-current="${L.n===current}" aria-label="Lesson ${L.n}: ${esc(L.title)}${available(L)?'':', not available on this board'}${done.has(L.n)?', done':''}"><span class="tile">${svgI(ICONS[L.icon])}</span><span class="tx"><span class="no">${pad2(L.n)}</span><span class="nm">${esc(L.title)}</span></span>${CHEV}${done.has(L.n)?`<span class="check">${CHECK}</span>`:''}</button>`).join('');
+  nl.querySelectorAll('.item').forEach(b=>b.onclick=()=>select(+b.dataset.n));
+  const cur=nl.querySelector('.item[aria-current="true"]');if(cur)nl.scrollTo({left:cur.offsetLeft-nl.clientWidth/2+cur.offsetWidth/2});}
+function renderProgress(){$('#count').textContent=`${done.size}/${ESP_LESSONS.length}`;$('#pbar').style.width=(100*done.size/ESP_LESSONS.length)+'%';}
+function renderBoards(){
+  $('#boardsel').innerHTML=['ESP8266','ESP32','ESP32-S3','ESP32-C3','ESP32-C6'].map(f=>`<optgroup label="${f}">${BOARDS.filter(b=>b.family===f).map(b=>`<option value="${b.id}" ${b.id===board.id?'selected':''}>${esc(b.full)}</option>`).join('')}</optgroup>`).join('');
+  $('#boardlist').innerHTML=BOARDS.map(b=>`<button class="bcard" data-board="${b.id}" aria-pressed="${b.id===board.id}"><small>${esc(b.chip)}</small><b>${esc(b.name)}</b><span>${esc(b.blurb)}</span><span class="tags">${[b.specs.find(s=>s[0]==='Wi-Fi'),b.specs.find(s=>s[0]==='Bluetooth'),b.specs.find(s=>s[0]==='USB')].filter(Boolean).map(s=>`<i>${esc(s[1].split(',')[0])}</i>`).join('')}</span></button>`).join('');
+  $('#boardlist').querySelectorAll('[data-board]').forEach(c=>c.onclick=()=>{setBoard(c.dataset.board);openDrawer(false);});
+  $('#famtable').innerHTML=`<thead><tr>${['Chip','Core','Cores','Clock','SRAM','Wi-Fi','Bluetooth','GPIO','ADC','Touch','USB','Best for'].map(h=>`<th>${h}</th>`).join('')}</tr></thead><tbody>${FAMILY.map(r=>`<tr class="${r[0]===board.family?'cur':''}">${r.map(c=>`<td>${esc(c)}</td>`).join('')}</tr>`).join('')}</tbody>`;}
+function setBoard(id){const b=BOARDS.find(x=>x.id===id);if(!b||b.id===board.id)return;
+  if(sim.running)sim.stop();board=b;store('radix-esp-board',b.id);
+  sim=createSim(io,{consts:board.consts,networks:NETWORKS});renderBoards();select(current);}
+$('#boardsel').onchange=e=>setBoard(e.target.value);
+function select(n){
+  if(sim.running)sim.stop();pressed.clear();touching=false;current=n;server=null;wifiState='off';
+  const L=lesson();codeEl.value=available(L)?(load(codeKey(),null)??L.code(board)):`// “${L.title}” needs ${missing(L).map(k=>NEED_NAME[k]).join(' and ')},
+// which the ${board.full} doesn’t have.
+//
+// Pick another board from the Board menu above the 3D view,
+// for example: ${BOARDS.filter(b=>L.needs.every(k=>b.pins[k]!=null)).slice(0,3).map(b=>b.name).join(', ')}.`;badLine=0;renderCode();
+  lines=[];partial='';serialDirty=true;renderSerial();
+  renderHead();renderTabs();renderStrip();renderInputs();
+  const tabNow=TABS.find(t=>$('#tab-'+t).getAttribute('aria-selected')==='true')||'overview';
+  if(bench){bench.setLesson(board,available(L)?partsOf(L):[]);bench.setWifi('off');bench.highlightPins(tabNow==='pinout'?lessonPins():[]);bench.update(sim.state);}
+  $('#modetext').textContent=`${board.name} · ready`;
+  $('#benchnote').textContent=!available(L)?`Not available on the ${board.name}. Pick another board from the menu above.`:L.web?'Press ▶: once it joins Wi-Fi, the phone opens the ESP’s web page.':L.wifi?'Press ▶ to join the simulated Wi-Fi network.':partsOf(L).length?'Parts for this lesson are on the breadboard. Press ▶ to run the code.':'Press ▶ to blink the built-in LED.';
+  $('#benchnote').hidden=false;updatePhone();
+  try{history.replaceState(null,'','#l'+n);}catch(e){}
+}
+
+/* ---------- rail, drawer, strip, clock, view tools ---------- */
+const drawer=$('#drawer'),scrim=$('#scrim');let lastFocus=null;
+function openDrawer(o){drawer.classList.toggle('open',o);scrim.classList.toggle('open',o);drawer.setAttribute('aria-hidden',!o);if(o){lastFocus=document.activeElement;$('#refclose').focus();}else if(lastFocus)lastFocus.focus();}
+$('#refclose').onclick=()=>openDrawer(false);scrim.onclick=()=>openDrawer(false);
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&drawer.classList.contains('open'))openDrawer(false);});
+const narrow=()=>matchMedia('(max-width:1020px)').matches;
+document.querySelectorAll('.rbtn[data-go]').forEach(b=>b.onclick=()=>{const g=b.dataset.go;
+  if(g==='components'){openDrawer(true);return;}
+  if(g==='run'){toggleRun();if(narrow())document.querySelector('.try').scrollIntoView({behavior:'smooth',block:'start'});return;}
+  setTab(g);if(narrow())document.querySelector('.panel').scrollIntoView({behavior:'smooth',block:'start'});});
+$('#sleft').onclick=()=>$('#navlist').scrollBy({left:-460,behavior:'smooth'});
+$('#sright').onclick=()=>$('#navlist').scrollBy({left:460,behavior:'smooth'});
+const MON=['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
+function tick(){const d=new Date();$('#cdate').textContent=`${MON[d.getMonth()]} ${pad2(d.getDate())}, ${d.getFullYear()}`;$('#ctime').textContent=[d.getHours(),d.getMinutes(),d.getSeconds()].map(pad2).join(':');}
+tick();setInterval(tick,1000);
+$('#v-phone').onclick=()=>{phoneOn=!phoneOn;$('#v-phone').setAttribute('aria-pressed',phoneOn);updatePhone();};
+$('#v-flow').onclick=()=>{flowOn=!flowOn;$('#v-flow').setAttribute('aria-pressed',flowOn);if(bench)bench.setFlow(flowOn);};
+$('#z-in').onclick=()=>bench&&bench.zoom(1.5);$('#z-out').onclick=()=>bench&&bench.zoom(1/1.5);$('#z-fit').onclick=()=>bench&&bench.reset();
+setInterval(renderSerial,120);
+
+/* ---------- start ---------- */
+const THREE_URLS=['https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js','https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/controls/OrbitControls.js'];
+function loadScript(src){return new Promise((res,rej)=>{const s=document.createElement('script');s.src=src;s.crossOrigin='anonymous';s.onload=res;s.onerror=()=>rej(new Error(src));document.head.appendChild(s);});}
+const hm=(location.hash||'').match(/^#l(\d{1,2})$/);
+renderBoards();renderProgress();select(hm&&ESP_LESSONS.some(l=>l.n===+hm[1])?+hm[1]:1);
+(async()=>{
+  try{if(!window.THREE)await loadScript(THREE_URLS[0]);if(!THREE.OrbitControls)await loadScript(THREE_URLS[1]);
+    bench=createEspBench($('#view3d'),{pressed:p=>pressed.has(p),press,inputs,running:()=>sim.running,touching:()=>touching,pinLabel:g=>pinName(board,g),pinNote});
+    $('#loading3d').hidden=true;const L=lesson();bench.setLesson(board,available(L)?partsOf(L):[]);bench.update(sim.state);}
+  catch(e){$('#loading3d').textContent='The 3D bench needs an internet connection. The lessons and code still work.';}
+})();
+
+})();
+</script>
+</body>
+</html>

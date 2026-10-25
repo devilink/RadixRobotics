@@ -1,0 +1,60 @@
+import { requirePagePermission } from "@/lib/erp/context";
+import { str } from "@/lib/erp/format";
+import { STUDENT_TEMPLATE } from "@/lib/erp/imports";
+import { Card, EmptyState, Field, PageHeader, inputClass } from "../../_components/ui";
+import { SpreadsheetImport } from "../../_components/SpreadsheetImport";
+import { memberInstitutionChoices } from "../choices";
+import { importStudents } from "./actions";
+
+export const metadata = { title: "Import students" };
+
+const GUIDE: [string, string][] = [
+  ["Student Name", "Required. Or use separate “First Name” and “Last Name” columns."],
+  ["Roll No", "Unique at the institution. Left blank, one is generated (STU-XXXXXX)."],
+  ["Class / Batch", "Optional. Must match a class or batch name in the ERP, e.g. “Grade 6 - A”. The student is enrolled in it."],
+  ["Admission No, Admission Date", "Optional. Dates as DD/MM/YYYY or real Excel dates."],
+  ["Email, Phone", "Optional."],
+  ["Guardian Name, Relationship, Guardian Phone, Guardian Email", "Optional. Relationship is Mother, Father, Guardian or Other."],
+];
+
+export default async function ImportStudentsPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
+  const ctx = await requirePagePermission(["students.manage"]);
+  const sp = await searchParams;
+  const choices = (await memberInstitutionChoices(ctx)).filter((i) => i.canStudents);
+  const preset = str(sp.institution);
+
+  return (
+    <>
+      <PageHeader
+        title="Import students"
+        description="Add many students at once from an Excel file, a CSV or a Google Sheet. The sheet is checked first; nothing is saved until you click Import."
+        crumbs={[{ href: "/erp/people?type=students", label: "Students" }, { label: "Import" }]}
+      />
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_22rem]">
+        <Card>
+          {choices.length === 0 ? (
+            <EmptyState title="No institutions available">You need permission to manage students at a school or learning centre.</EmptyState>
+          ) : (
+            <SpreadsheetImport action={importStudents} noun="students"
+              template={{ ...STUDENT_TEMPLATE, filename: "radix-students-template.csv" }}>
+              <Field label="Add students to" htmlFor="imp-inst" required>
+                <select id="imp-inst" name="institution_id" defaultValue={choices.some((c) => c.id === preset) ? preset : choices[0].id} className={inputClass}>
+                  {choices.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+                </select>
+              </Field>
+            </SpreadsheetImport>
+          )}
+        </Card>
+        <Card title="Sheet columns">
+          <p className="mb-3 text-xs text-zinc-400">Put column names in the first row. Names are matched loosely (“Roll Number”, “Mobile”, “Parent Name” also work); other columns are ignored.</p>
+          <dl className="space-y-3 text-sm">
+            {GUIDE.map(([k, v]) => (
+              <div key={k}><dt className="font-medium text-zinc-100">{k}</dt><dd className="text-xs text-zinc-400">{v}</dd></div>
+            ))}
+          </dl>
+          <p className="mt-4 text-xs text-zinc-500">If any row has a problem, nothing is imported unless you choose to skip those rows.</p>
+        </Card>
+      </div>
+    </>
+  );
+}

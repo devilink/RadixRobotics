@@ -2,6 +2,7 @@
 
 import { createClient } from '@supabase/supabase-js';
 import { revalidatePath } from 'next/cache';
+import { requireLegacySuperAdmin } from '@/lib/auth/legacy';
 
 // Initialize Supabase Admin strictly on the server-side to bypass RLS for super-admin functionality
 const supabaseAdmin = createClient(
@@ -39,6 +40,7 @@ export interface Project {
 // 1. Fetch All Projects
 export async function getAllProjects() {
   try {
+    await requireLegacySuperAdmin();
     const { data, error } = await supabaseAdmin
       .from('projects')
       .select('*');
@@ -65,6 +67,7 @@ export async function getAllProjects() {
 // 2. Create Project
 export async function createProject(project: Project) {
   try {
+    await requireLegacySuperAdmin();
     const { error } = await supabaseAdmin
       .from('projects')
       .insert({
@@ -88,6 +91,7 @@ export async function createProject(project: Project) {
 // 3. Update Project (Full update for edits or module completion toggles)
 export async function updateProject(project: Project) {
   try {
+    await requireLegacySuperAdmin();
     const { error } = await supabaseAdmin
       .from('projects')
       .update({
@@ -111,6 +115,7 @@ export async function updateProject(project: Project) {
 // 4. Update Project Status (Optimized for quick status shifts)
 export async function updateProjectStatusAction(projectId: string, newStatus: string) {
   try {
+    await requireLegacySuperAdmin();
     const { error } = await supabaseAdmin
       .from('projects')
       .update({ status: newStatus })
@@ -128,6 +133,7 @@ export async function updateProjectStatusAction(projectId: string, newStatus: st
 // 5. Delete Project
 export async function deleteProjectAction(projectId: string) {
   try {
+    await requireLegacySuperAdmin();
     const { error } = await supabaseAdmin
       .from('projects')
       .delete()

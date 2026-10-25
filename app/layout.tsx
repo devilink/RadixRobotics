@@ -8,13 +8,13 @@ import NavbarWrapper from "@/app/components/NavbarWrapper";
 import StructuredData from "@/app/components/StructuredData";
 
 const inter = Inter({ subsets: ["latin"], display: "swap" });
-const spaceGrotesk = Space_Grotesk({ subsets: ["latin"], weight: ['400', '500', '600', '700'], display: 'swap', variable: '--font-space-grotesk' });
+const spaceGrotesk = Space_Grotesk({ subsets: ["latin"], display: 'swap', variable: '--font-space-grotesk' });
 const anton = Anton({ subsets: ["latin"], weight: '400', display: 'swap', variable: '--font-grotesk' });
 const condiment = Condiment({ subsets: ["latin"], weight: '400', display: 'swap', variable: '--font-condiment' });
-const caveat = Caveat({ subsets: ["latin"], weight: ['400', '500', '600', '700'], display: 'swap', variable: '--font-caveat' });
+const caveat = Caveat({ subsets: ["latin"], display: 'swap', variable: '--font-caveat' });
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://radixrobotics.com"),
+  metadataBase: new URL("https://radixrobotics.in"),
   title: {
     default: "RADIX Robotics | Turnkey Composite Skill Labs for Schools",
     template: "%s | RADIX Robotics",
@@ -31,7 +31,7 @@ export const metadata: Metadata = {
     "Atal Tinkering Lab",
     "RADIX Robotics",
   ],
-  authors: [{ name: "RADIX Robotics", url: "https://radixrobotics.com" }],
+  authors: [{ name: "RADIX Robotics", url: "https://radixrobotics.in" }],
   creator: "RADIX Robotics",
   publisher: "RADIX Robotics",
   formatDetection: {
@@ -42,7 +42,7 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     locale: "en_IN",
-    url: "https://radixrobotics.com",
+    url: "https://radixrobotics.in",
     siteName: "RADIX Robotics",
     title: "RADIX Robotics — Composite Skill Labs for Schools",
     description:
@@ -75,11 +75,11 @@ export const metadata: Metadata = {
     },
   },
   icons: {
-    icon: "/fav.png",
-    apple: "/fav.png",
+    icon: "/fav.png?v=2",
+    apple: "/fav.png?v=2",
   },
   alternates: {
-    canonical: "https://radixrobotics.com",
+    canonical: "https://radixrobotics.in",
   },
 };
 

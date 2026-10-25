@@ -1,9 +1,12 @@
 "use client";
 
-import React, { useState, useMemo, useEffect, useRef } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Search, ChevronRight, ArrowUp, GraduationCap, PlayCircle, CheckCircle2, X } from 'lucide-react';
+import {
+  ArrowLeft, ArrowRight, ArrowUp, BookOpen, CheckCircle2, ChevronRight, Circle, GraduationCap,
+  Layers, PlayCircle, Search, Sparkles, X,
+} from 'lucide-react';
 import { curriculumData, levelMeta, Level } from './curriculumData';
 import { getTopicDescription } from './topicDescriptions';
 import { getStudentProgress, updateStudentProgress } from '@/app/actions/progressActions';
@@ -16,609 +19,570 @@ interface CurriculumPageProps {
   userId?: string;
 }
 
-interface ActiveVideo {
-  topicId: string;
+type Lesson = {
+  id: string;          // persisted in student_progress: cls-{class}-p{part}-t{topic}
+  cls: number;
+  level: Level;
+  partIdx: number;
+  topicIdx: number;
+  session: number;     // 1-based session number within the class
   title: string;
-}
-
-const classColors: Record<number, { bg: string, text: string, border: string, from: string, to: string }> = {
-  1: { bg: 'bg-rose-500/10', text: 'text-rose-400', border: 'border-rose-500/20', from: 'from-rose-600', to: 'to-pink-600' },
-  2: { bg: 'bg-orange-500/10', text: 'text-orange-400', border: 'border-orange-500/20', from: 'from-orange-600', to: 'to-amber-500' },
-  3: { bg: 'bg-amber-500/10', text: 'text-amber-400', border: 'border-amber-500/20', from: 'from-amber-500', to: 'to-yellow-500' },
-  4: { bg: 'bg-lime-500/10', text: 'text-lime-400', border: 'border-lime-500/20', from: 'from-lime-600', to: 'to-green-500' },
-  5: { bg: 'bg-emerald-500/10', text: 'text-emerald-400', border: 'border-emerald-500/20', from: 'from-emerald-600', to: 'to-teal-500' },
-  6: { bg: 'bg-teal-500/10', text: 'text-teal-400', border: 'border-teal-500/20', from: 'from-teal-600', to: 'to-cyan-600' },
-  7: { bg: 'bg-cyan-500/10', text: 'text-cyan-400', border: 'border-cyan-500/20', from: 'from-cyan-600', to: 'to-sky-500' },
-  8: { bg: 'bg-blue-500/10', text: 'text-blue-400', border: 'border-blue-500/20', from: 'from-blue-600', to: 'to-indigo-500' },
-  9: { bg: 'bg-indigo-500/10', text: 'text-indigo-400', border: 'border-indigo-500/20', from: 'from-indigo-600', to: 'to-violet-500' },
-  10: { bg: 'bg-violet-500/10', text: 'text-violet-400', border: 'border-violet-500/20', from: 'from-purple-600', to: 'to-fuchsia-500' }
 };
 
+type Module = { idx: number; name: string; title: string; range: string; lessons: Lesson[] };
+type Progress = { pct: number; done: boolean; last?: string };
+
+const LEVEL_ACCENT: Record<Level, string> = { p: '#fb923c', i: '#38bdf8', a: '#a78bfa' };
+const LEVEL_FILTERS: { key: Level | 'all'; label: string; hint: string }[] = [
+  { key: 'all', label: 'All classes', hint: '1–10' },
+  { key: 'p', label: 'Primary', hint: '1–5' },
+  { key: 'i', label: 'Intermediate', hint: '6–9' },
+  { key: 'a', label: 'Advanced', hint: '10' },
+];
+
+/** "Part 1 — Foundation & Curiosity (Sessions 1–10)" → name, title, range. */
+function parsePartLabel(label: string) {
+  const m = label.match(/^(.*?)\s+—\s+(.*?)(?:\s+\((.*)\))?$/);
+  return m ? { name: m[1], title: m[2], range: m[3] ?? '' } : { name: label, title: '', range: '' };
+}
+
+// The whole course, flattened once. Ids use the original part/topic indices so
+// they never change with filtering or search.
+const CLASSES = curriculumData.map((c) => {
+  let session = 0;
+  const modules: Module[] = c.parts.map((part, partIdx) => ({
+    idx: partIdx,
+    ...parsePartLabel(part.label),
+    lessons: part.topics.map((title, topicIdx) => ({
+      id: `cls-${c.cls}-p${partIdx}-t${topicIdx}`,
+      cls: c.cls, level: c.level, partIdx, topicIdx, session: ++session, title,
+    })),
+  }));
+  return { cls: c.cls, level: c.level, modules, lessons: modules.flatMap((m) => m.lessons) };
+});
+const ALL_LESSONS = CLASSES.flatMap((c) => c.lessons);
+const LESSON_BY_ID = new Map(ALL_LESSONS.map((l) => [l.id, l]));
+
 export default function CurriculumPage({ schoolName, userRole, schoolId, userId }: CurriculumPageProps) {
-  const [currentFilter, setCurrentFilter] = useState<Level | 'all'>('all');
+  const isStudent = userRole === 'student' && !!userId;
+  const [levelFilter, setLevelFilter] = useState<Level | 'all'>('all');
   const [searchQuery, setSearchQuery] = useState('');
-  
-  // Set all sections open by default
-  const [openSections, setOpenSections] = useState<Set<number>>(new Set(curriculumData.map(d => d.cls)));
+  const [selectedClass, setSelectedClass] = useState(1);
+  const [progress, setProgress] = useState<Map<string, Progress>>(new Map());
   const [showScrollTop, setShowScrollTop] = useState(false);
 
-  // Video, Progress, and Quiz State
-  const [completedTopics, setCompletedTopics] = useState<Set<string>>(new Set());
-  const [activeVideo, setActiveVideo] = useState<ActiveVideo | null>(null);
+  // Lesson player, progress and quiz state
+  const [activeId, setActiveId] = useState<string | null>(null);
   const [videoProgress, setVideoProgress] = useState(0);
   const [showQuiz, setShowQuiz] = useState(false);
   const [quizSubmitted, setQuizSubmitted] = useState(false);
   const [quizScore, setQuizScore] = useState<number | null>(null);
   const [selectedAnswers, setSelectedAnswers] = useState<Record<number, string>>({});
+  const active = activeId ? LESSON_BY_ID.get(activeId) ?? null : null;
 
-  // Fetch initial progress for students
+  // Fetch progress for students and open on the class they were last working in.
   useEffect(() => {
-    if (userRole === 'student' && userId) {
-      getStudentProgress(userId).then(progressData => {
-        const completedIds = new Set(
-          progressData.filter(p => p.is_completed).map(p => p.topic_id)
-        );
-        setCompletedTopics(completedIds);
-      });
-    }
-  }, [userRole, userId]);
+    if (!isStudent || !userId) return;
+    getStudentProgress(userId).then((rows) => {
+      const map = new Map<string, Progress>();
+      for (const r of rows) map.set(r.topic_id, { pct: r.progress_percentage, done: r.is_completed, last: r.last_watched_at });
+      setProgress(map);
+      const latest = rows.filter((r) => LESSON_BY_ID.has(r.topic_id))
+        .sort((a, b) => (b.last_watched_at ?? '').localeCompare(a.last_watched_at ?? ''))[0];
+      if (latest) setSelectedClass(LESSON_BY_ID.get(latest.topic_id)!.cls);
+    });
+  }, [isStudent, userId]);
 
-  // Handle Video Progress Tracking Simulation
+  // Video progress tracking (simulated watch time, synced to the backend)
   const progressRef = useRef(0);
-
   useEffect(() => {
-    if (!activeVideo || !userId) return;
-
-    // Reset progress and quiz states when a new video opens
-    progressRef.current = 0;
-    setVideoProgress(0);
+    if (!activeId) return;
+    const start = progress.get(activeId)?.pct ?? 0;
+    progressRef.current = start;
+    setVideoProgress(start);
     setShowQuiz(false);
     setQuizSubmitted(false);
     setQuizScore(null);
     setSelectedAnswers({});
+    if (!userId || !isStudent || start >= 100) return;
 
     const interval = setInterval(() => {
       const next = Math.min(progressRef.current + 2, 100);
       progressRef.current = next;
       setVideoProgress(next);
-
-      // Sync with backend (side effect kept outside of setState updater)
-      updateStudentProgress(userId, activeVideo.topicId, next).then(res => {
-        if (res.success && res.isCompleted) {
-          setCompletedTopics(prevSet => new Set(prevSet).add(activeVideo.topicId));
+      updateStudentProgress(userId, activeId, next).then((res) => {
+        if (res.success) {
+          setProgress((prev) => new Map(prev).set(activeId, { pct: next, done: !!res.isCompleted, last: new Date().toISOString() }));
         }
       });
-
       if (next >= 100) clearInterval(interval);
     }, 5000); // 2% every 5 seconds (~4 min to complete)
-
     return () => clearInterval(interval);
-  }, [activeVideo, userId]);
+    // Progress is read once when a lesson opens; later updates come from this effect itself.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeId, userId, isStudent]);
 
-  // Parse current class for dynamic coloring
-  const currentClassMatch = activeVideo?.topicId.match(/cls-(\d+)-/);
-  const activeClassNum = currentClassMatch ? parseInt(currentClassMatch[1], 10) : 1;
-  const activeColor = classColors[activeClassNum] || classColors[8]; // Fallback to blue
-
-  // Handle scroll to top visibility
+  // Close on Escape and lock page scroll while a lesson is open.
   useEffect(() => {
-    const handleScroll = () => {
-      setShowScrollTop(window.scrollY > 400);
-    };
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
+    if (!activeId) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setActiveId(null); };
+    document.addEventListener('keydown', onKey);
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => { document.removeEventListener('keydown', onKey); document.body.style.overflow = prev; };
+  }, [activeId]);
+
+  useEffect(() => {
+    const onScroll = () => setShowScrollTop(window.scrollY > 500);
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
-  const scrollToTop = () => {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+  const visibleClasses = useMemo(
+    () => CLASSES.filter((c) => levelFilter === 'all' || c.level === levelFilter),
+    [levelFilter]
+  );
+  useEffect(() => {
+    if (!visibleClasses.some((c) => c.cls === selectedClass)) setSelectedClass(visibleClasses[0].cls);
+  }, [visibleClasses, selectedClass]);
+
+  const query = searchQuery.trim().toLowerCase();
+  const searchResults = useMemo(() => {
+    if (!query) return null;
+    return visibleClasses
+      .map((c) => ({ cls: c.cls, level: c.level, lessons: c.lessons.filter((l) => l.title.toLowerCase().includes(query)) }))
+      .filter((c) => c.lessons.length > 0);
+  }, [query, visibleClasses]);
+
+  const doneIn = useCallback((lessons: Lesson[]) => lessons.filter((l) => progress.get(l.id)?.done).length, [progress]);
+  const totalDone = doneIn(ALL_LESSONS);
+  const overallPct = Math.round((100 * totalDone) / ALL_LESSONS.length);
+
+  // "Continue": the most recently watched unfinished lesson, else the next lesson after the last finished one.
+  const continueLesson = useMemo(() => {
+    if (!isStudent) return null;
+    const watched = [...progress.entries()].filter(([id]) => LESSON_BY_ID.has(id))
+      .sort((a, b) => (b[1].last ?? '').localeCompare(a[1].last ?? ''));
+    const unfinished = watched.find(([, p]) => !p.done);
+    if (unfinished) return LESSON_BY_ID.get(unfinished[0])!;
+    if (watched.length) {
+      const last = LESSON_BY_ID.get(watched[0][0])!;
+      return ALL_LESSONS[ALL_LESSONS.indexOf(last) + 1] ?? null;
+    }
+    return ALL_LESSONS[0];
+  }, [isStudent, progress]);
+
+  const current = CLASSES.find((c) => c.cls === selectedClass) ?? CLASSES[0];
+  const currentDone = doneIn(current.lessons);
+
+  const openLesson = (l: Lesson) => setActiveId(l.id);
+  const siblings = active ? CLASSES.find((c) => c.cls === active.cls)!.lessons : [];
+  const activePos = active ? siblings.findIndex((l) => l.id === active.id) : -1;
+  const prevLesson = activePos > 0 ? siblings[activePos - 1] : null;
+  const nextLesson = activePos >= 0 && activePos < siblings.length - 1 ? siblings[activePos + 1] : null;
+  const activeModule = active ? CLASSES.find((c) => c.cls === active.cls)!.modules[active.partIdx] : null;
+  const accent = active ? LEVEL_ACCENT[active.level] : LEVEL_ACCENT.p;
+
+  const statusOf = (l: Lesson): 'done' | 'progress' | 'new' => {
+    const p = progress.get(l.id);
+    return p?.done ? 'done' : p && p.pct > 0 ? 'progress' : 'new';
   };
 
-  const toggleSection = (cls: number) => {
-    setOpenSections(prev => {
-      const next = new Set(prev);
-      if (next.has(cls)) {
-        next.delete(cls);
-      } else {
-        next.add(cls);
-      }
-      return next;
-    });
-  };
-
-  // Filter and compute data using useMemo
-  const { filteredData, totalMatchedTopics, hasResults } = useMemo(() => {
-    let matchedCount = 0;
-    
-    // First, filter by level
-    const levelFiltered = currentFilter === 'all' 
-      ? curriculumData 
-      : curriculumData.filter(d => d.level === currentFilter);
-
-    // Then, filter by search query
-    const finalFiltered = levelFiltered.map(clsData => {
-      const filteredParts = clsData.parts.map(part => {
-        const matchedTopics = searchQuery
-          ? part.topics.filter(t => t.toLowerCase().includes(searchQuery.toLowerCase()))
-          : part.topics;
-        return { ...part, topics: matchedTopics };
-      }).filter(part => part.topics.length > 0);
-
-      const totalSessionsForClass = filteredParts.reduce((sum, p) => sum + p.topics.length, 0);
-      matchedCount += totalSessionsForClass;
-
-      return {
-        ...clsData,
-        filteredParts,
-        totalSessionsForClass
-      };
-    }).filter(clsData => clsData.filteredParts.length > 0);
-
-    return {
-      filteredData: finalFiltered,
-      totalMatchedTopics: matchedCount,
-      hasResults: finalFiltered.length > 0
-    };
-  }, [currentFilter, searchQuery]);
-
-  // Helper to safely highlight search matches
-  const highlightText = (text: string, query: string) => {
+  const highlight = (text: string) => {
     if (!query) return text;
-    const parts = text.split(new RegExp(`(${query})`, 'gi'));
+    const i = text.toLowerCase().indexOf(query);
+    if (i < 0) return text;
+    return <>{text.slice(0, i)}<mark className={styles.mark}>{text.slice(i, i + query.length)}</mark>{text.slice(i + query.length)}</>;
+  };
+
+  const renderLesson = (l: Lesson, showClass = false) => {
+    const s = isStudent ? statusOf(l) : 'new';
+    const pct = progress.get(l.id)?.pct ?? 0;
     return (
-      <>
-        {parts.map((part, i) => 
-          part.toLowerCase() === query.toLowerCase() 
-            ? <span key={i} className={styles.highlightMark}>{part}</span>
-            : part
-        )}
-      </>
+      <button key={l.id} type="button" onClick={() => openLesson(l)} className={`${styles.lesson} ${s === 'done' ? styles.lessonDone : ''}`}
+        style={{ '--accent': LEVEL_ACCENT[l.level] } as React.CSSProperties}
+        aria-label={`${showClass ? `Class ${l.cls}, ` : ''}session ${l.session}: ${l.title}${isStudent ? `, ${s === 'done' ? 'completed' : s === 'progress' ? `${pct}% watched` : 'not started'}` : ''}`}>
+        <span className={styles.lessonNum}>{showClass ? `C${l.cls}·` : ''}{String(l.session).padStart(2, '0')}</span>
+        <span className={styles.lessonTitle}>{highlight(l.title)}</span>
+        <span className={styles.lessonIcon} aria-hidden>
+          {s === 'done' ? <CheckCircle2 size={18} /> : s === 'progress' ? <ProgressDot pct={pct} /> : <PlayCircle size={18} />}
+        </span>
+        {s === 'progress' && <span className={styles.lessonBar} style={{ width: `${pct}%` }} aria-hidden />}
+      </button>
     );
   };
 
   return (
     <div className={styles.themeContainer}>
-      {/* Ambient Background */}
-      <div className={styles.ambientBg}>
-        <div className={`${styles.orb} ${styles.orb1}`} />
-        <div className={`${styles.orb} ${styles.orb2}`} />
-        <div className={`${styles.orb} ${styles.orb3}`} />
-      </div>
-      <div className={styles.gridOverlay} />
+      <div className={styles.backdrop} aria-hidden />
 
-      {/* Navbar with Role-Based Conditional Rendering */}
-      <nav className="sticky top-0 z-[1000] border-b border-white/10 bg-[#0a0a0f]/80 backdrop-blur-xl py-3 px-6 md:px-8">
-        <div className="max-w-[1100px] mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-6">
-            <Link href="/" className="flex items-center gap-3 font-bold text-lg text-neutral-100 no-underline hover:text-emerald-400 transition-colors">
-              {/* You can replace this with next/image if preferred */}
-              <Image src="/logo1.jpeg" alt="Radix Logo" width={32} height={32} className="h-8 w-auto rounded" />
+      {/* Navbar with role-based links */}
+      <nav className={styles.nav}>
+        <div className={styles.navInner}>
+          <div className={styles.navLeft}>
+            <Link href="/" className={styles.brand}>
+              <Image src="/fav.png" alt="" width={32} height={32} className={styles.brandLogo} />
               <span>RADIX</span>
             </Link>
-            <div className="h-5 w-px bg-zinc-800 hidden sm:block" />
-            <Link href="/" className="hidden sm:flex text-sm font-semibold text-zinc-400 hover:text-white transition-colors">Home</Link>
-            <span className="hidden sm:flex text-sm font-semibold text-zinc-100">Curriculum</span>
+            <span className={styles.navDivider} aria-hidden />
+            <Link href="/" className={`${styles.navLink} ${styles.hideSm}`}>Home</Link>
+            <span className={`${styles.navLink} ${styles.navLinkActive}`} aria-current="page">Curriculum</span>
+            <Link href="/kits" className={styles.navLink}>Kits</Link>
           </div>
-          
-          <div className="flex items-center gap-3">
+          <div className={styles.navRight}>
             {userRole === 'super_admin' && (
-              <Link 
-                href="/super-admin"
-                className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-purple-500/10 hover:bg-purple-500/20 text-purple-400 rounded-full text-xs sm:text-sm font-medium transition-colors border border-purple-500/20"
-              >
-                <span className="hidden sm:inline">Super </span>Admin
-                <ChevronRight className="w-4 h-4" />
+              <Link href="/super-admin" className={`${styles.roleBtn} ${styles.roleSuper}`}>
+                <span className={styles.hideSm}>Super </span>Admin <ChevronRight size={16} />
               </Link>
             )}
-          {userRole === 'school_admin' && (
-            <Link 
-              href={`/school-admin/${schoolId}`}
-              className="flex items-center gap-1 sm:gap-2 px-3 sm:px-4 py-2 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 rounded-full text-xs sm:text-sm font-medium transition-colors border border-emerald-500/20 whitespace-nowrap"
-            >
-              <span className="hidden sm:inline">School </span>Admin<span className="hidden md:inline"> Dashboard</span>
-              <ChevronRight className="w-3 h-3 sm:w-4 sm:h-4" />
-            </Link>
-          )}
-        </div>
+            {userRole === 'school_admin' && (
+              <Link href={`/school-admin/${schoolId}`} className={`${styles.roleBtn} ${styles.roleSchool}`}>
+                <span className={styles.hideSm}>School </span>Admin <ChevronRight size={16} />
+              </Link>
+            )}
+          </div>
         </div>
       </nav>
 
-      <main className="max-w-[1100px] mx-auto px-6 px-safe relative z-10 pb-16">
-        
-        {/* Hero Section */}
-        <section className="pt-20 pb-12 text-center relative">
-          <div className={styles.heroBadge}>
-            <span className={styles.dot} />
-            NEP 2020 Aligned Curriculum
+      <main className={styles.main}>
+        {/* Hero */}
+        <section className={styles.hero}>
+          <div className={styles.heroText}>
+            <p className={styles.eyebrow}><Sparkles size={14} /> NEP 2020 aligned · Robotics, coding & AI</p>
+            {schoolName && <p className={styles.school}>{schoolName}</p>}
+            <h1 className={styles.title}>Composite <span>Skill Lab</span></h1>
+            <p className={styles.lede}>
+              A K–10 learning path of <strong>{ALL_LESSONS.length} hands-on sessions</strong>, from simple machines
+              to competition-ready autonomous robots and AI systems.
+            </p>
+            <dl className={styles.heroStats}>
+              <div><dt>Sessions</dt><dd>{ALL_LESSONS.length}</dd></div>
+              <div><dt>Classes</dt><dd>{CLASSES.length}</dd></div>
+              <div><dt>Modules</dt><dd>{CLASSES.reduce((n, c) => n + c.modules.length, 0)}</dd></div>
+            </dl>
           </div>
-          <h1 className="text-3xl md:text-5xl lg:text-5xl font-extrabold leading-tight tracking-tight mb-4 animate-[fadeInUp_0.6s_ease_0.1s_both]">
-            {schoolName ? (
-              <>
-                <span className="text-white">{schoolName}</span>
-                <br />
-                <span className={styles.gradientText}>Composite Skill Lab</span>
-              </>
-            ) : (
-              <span className={styles.gradientText}>Composite Skill Lab</span>
-            )}
-          </h1>
-          <p className="text-base md:text-lg text-[#9898a6] max-w-2xl mx-auto leading-relaxed mb-9 animate-[fadeInUp_0.6s_ease_0.2s_both]">
-            A comprehensive K-10 learning path with <strong>250 hands-on sessions</strong> — from basic machines to competition-ready autonomous robots and AI systems.
-          </p>
-        </section>
 
-        {/* Stats Bar */}
-        <div className="flex justify-center flex-wrap gap-3 mb-10 animate-[fadeInUp_0.6s_ease_0.3s_both]">
-          <div className={styles.statChip}>
-            <span className="font-bold text-lg text-[#eeeef0]">250</span>
-            <span className="text-[13px]">Total Sessions</span>
-          </div>
-          <div className={styles.statChip}>
-            <span className="font-bold text-lg text-[#eeeef0]">10</span>
-            <span className="text-[13px]">Classes</span>
-          </div>
-          <div className={styles.statChip}>
-            <span className="font-bold text-lg text-[#eeeef0]">150</span>
-            <span className="text-[13px]">Primary (1–5)</span>
-          </div>
-          <div className={styles.statChip}>
-            <span className="font-bold text-lg text-[#eeeef0]">100</span>
-            <span className="text-[13px]">Secondary (6–10)</span>
-          </div>
-        </div>
-
-        {/* Filter Pills */}
-        <div className="flex justify-center flex-wrap gap-2 mb-12 animate-[fadeInUp_0.6s_ease_0.4s_both]">
-          <button 
-            className={`${styles.pill} ${currentFilter === 'all' ? styles.pillActive : ''}`} 
-            data-f="all" 
-            onClick={() => setCurrentFilter('all')}
-          >
-            All Classes
-          </button>
-          <button 
-            className={`${styles.pill} ${currentFilter === 'p' ? styles.pillActive : ''}`} 
-            data-f="p"
-            onClick={() => setCurrentFilter('p')}
-          >
-            Class 1–5 · Primary
-          </button>
-          <button 
-            className={`${styles.pill} ${currentFilter === 'i' ? styles.pillActive : ''}`} 
-            data-f="i"
-            onClick={() => setCurrentFilter('i')}
-          >
-            Class 6–9 · Intermediate
-          </button>
-          <button 
-            className={`${styles.pill} ${currentFilter === 'a' ? styles.pillActive : ''}`} 
-            data-f="a"
-            onClick={() => setCurrentFilter('a')}
-          >
-            Class 10 · Advanced
-          </button>
-        </div>
-
-        {/* Search Input */}
-        <div className="max-w-[480px] mx-auto relative mb-10 animate-[fadeInUp_0.6s_ease_0.45s_both]">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-[18px] h-[18px] text-[#5a5a6e]" />
-          <input 
-            type="text" 
-            className={styles.searchInput}
-            placeholder="Search topics... e.g. 'sensor', 'Arduino', 'AI'"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
-          <div className="text-center text-[12px] text-[#5a5a6e] mt-2 min-h-[18px]">
-            {searchQuery && `${totalMatchedTopics} topic${totalMatchedTopics !== 1 ? 's' : ''} found`}
-          </div>
-        </div>
-
-        {/* Curriculum Content Render */}
-        <div className="space-y-5">
-          {!hasResults ? (
-            <div className="text-center py-16 px-5 text-[#5a5a6e] text-[15px]">
-              <div className="text-[40px] mb-3">🔍</div>
-              No topics found for "<strong>{searchQuery}</strong>"
+          {isStudent ? (
+            <div className={styles.learnCard}>
+              <p className={styles.cardLabel}>My learning</p>
+              <div className={styles.learnRow}>
+                <Ring pct={overallPct} size={104} stroke={9} color="#ff7a38">
+                  <strong>{overallPct}%</strong><span>complete</span>
+                </Ring>
+                <div className={styles.learnFacts}>
+                  <p><strong>{totalDone}</strong> of {ALL_LESSONS.length} sessions done</p>
+                  <p><strong>{[...progress.values()].filter((p) => !p.done && p.pct > 0).length}</strong> in progress</p>
+                  <p><strong>{CLASSES.filter((c) => doneIn(c.lessons) === c.lessons.length).length}</strong> classes finished</p>
+                </div>
+              </div>
+              {continueLesson && (
+                <button type="button" className={styles.continueBtn} onClick={() => { setSelectedClass(continueLesson.cls); openLesson(continueLesson); }}>
+                  <PlayCircle size={20} />
+                  <span className={styles.continueText}>
+                    <small>{totalDone || progress.size ? 'Continue learning' : 'Start learning'} · Class {continueLesson.cls}</small>
+                    <span>{continueLesson.title}</span>
+                  </span>
+                  <ArrowRight size={18} />
+                </button>
+              )}
             </div>
           ) : (
-            filteredData.map((clsData, idx) => {
-              const meta = levelMeta[clsData.level];
-              const isOpen = openSections.has(clsData.cls);
-
-              return (
-                <div key={clsData.cls} className="animate-[fadeInUp_0.4s_ease_both]" style={{ animationDelay: `${idx * 0.05}s` }}>
-                  <div className={styles.classCard}>
-                    
-                    {/* Class Header */}
-                    <div className={styles.classHeader} onClick={() => toggleSection(clsData.cls)}>
-                      <span className={`text-[13px] font-semibold py-1 px-4 rounded-full min-w-[80px] text-center tracking-wide ${styles[meta.badgeClass]}`}>
-                        Class {clsData.cls}
-                      </span>
-                      <span className="text-[15px] font-medium text-[#eeeef0]">{meta.label}</span>
-                      <span className="ml-auto text-[12px] text-[#5a5a6e] font-medium pr-1 tabular-nums">
-                        {clsData.totalSessionsForClass} sessions
-                      </span>
-                      <ChevronRight className={`w-[18px] h-[18px] text-[#5a5a6e] transition-transform duration-300 shrink-0 ${isOpen ? 'rotate-90' : ''}`} />
-                    </div>
-
-                    {/* Class Body Expandable Content */}
-                    {isOpen && (
-                      <div className="px-6 pb-5">
-                        {clsData.filteredParts.map((part, pIdx) => (
-                          <div key={pIdx} className="mb-5 last:mb-0">
-                            <div className="text-[11px] font-semibold tracking-widest uppercase text-[#5a5a6e] mb-2.5 pl-0.5">
-                              {part.label}
-                            </div>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-1.5">
-                              {part.topics.map((topic, tIdx) => {
-                                const topicId = `cls-${clsData.cls}-p${pIdx}-t${tIdx}`;
-                                const isCompleted = completedTopics.has(topicId);
-
-                                return (
-                                  <button 
-                                    key={tIdx} 
-                                    onClick={() => setActiveVideo({ topicId, title: topic })}
-                                    className={`${styles.topicItem} text-left flex items-center justify-between group hover:bg-zinc-800/60 transition-colors border ${isCompleted ? 'border-emerald-500/30 bg-emerald-500/5' : 'border-transparent'}`}
-                                  >
-                                    <div className="flex z-[5]">
-                                      <span className="text-[11px] font-medium text-[#5a5a6e] min-w-[22px] pt-0.5 font-mono tabular-nums">
-                                        {String(tIdx + 1).padStart(2, '0')}
-                                      </span>
-                                      <span className={`flex-1 ${isCompleted ? 'text-emerald-50' : ''}`}>
-                                        {highlightText(topic, searchQuery)}
-                                      </span>
-                                    </div>
-                                    <div className="shrink-0 flex items-center z-[5] opacity-0 group-hover:opacity-100 transition-opacity">
-                                      {isCompleted ? (
-                                        <CheckCircle2 className="w-4 h-4 text-emerald-400 opacity-100" />
-                                      ) : (
-                                        <PlayCircle className="w-4 h-4 text-blue-400" />
-                                      )}
-                                    </div>
-                                    {isCompleted && <div className="absolute right-3 opacity-100 transition-opacity"><CheckCircle2 className="w-4 h-4 text-emerald-500" /></div>}
-                                  </button>
-                                );
-                              })}
-                            </div>
-                          </div>
-                        ))}
+            <div className={styles.learnCard}>
+              <p className={styles.cardLabel}>Learning path</p>
+              <ol className={styles.pathList}>
+                {(['p', 'i', 'a'] as const).map((lv) => {
+                  const cs = CLASSES.filter((c) => c.level === lv);
+                  return (
+                    <li key={lv} style={{ '--accent': LEVEL_ACCENT[lv] } as React.CSSProperties}>
+                      <span className={styles.pathDot} aria-hidden />
+                      <div>
+                        <strong>{levelMeta[lv].label}</strong>
+                        <span>Class {cs[0].cls}{cs.length > 1 ? `–${cs[cs.length - 1].cls}` : ''} · {cs.reduce((n, c) => n + c.lessons.length, 0)} sessions</span>
                       </div>
-                    )}
-                  </div>
-                </div>
-              );
-            })
+                    </li>
+                  );
+                })}
+              </ol>
+            </div>
           )}
+        </section>
+
+        {/* Toolbar: level filter + search */}
+        <div className={styles.toolbar}>
+          <div role="radiogroup" aria-label="Level" className={styles.segmented}>
+            {LEVEL_FILTERS.map((f) => (
+              <button key={f.key} type="button" role="radio" aria-checked={levelFilter === f.key}
+                className={levelFilter === f.key ? styles.segActive : ''} onClick={() => setLevelFilter(f.key)}>
+                {f.label} <span>{f.hint}</span>
+              </button>
+            ))}
+          </div>
+          <label className={styles.search}>
+            <Search size={18} aria-hidden />
+            <span className="sr-only">Search sessions</span>
+            <input type="search" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search sessions — e.g. sensor, Arduino, AI" />
+            {searchQuery && (
+              <button type="button" onClick={() => setSearchQuery('')} aria-label="Clear search"><X size={16} /></button>
+            )}
+          </label>
         </div>
+
+        {searchResults ? (
+          /* Search results across classes */
+          <section aria-live="polite" className={styles.results}>
+            <p className={styles.resultsCount}>
+              {searchResults.reduce((n, c) => n + c.lessons.length, 0)} session{searchResults.reduce((n, c) => n + c.lessons.length, 0) === 1 ? '' : 's'} match “{searchQuery.trim()}”
+            </p>
+            {searchResults.length === 0 ? (
+              <div className={styles.empty}>
+                <Search size={28} aria-hidden />
+                <p>No sessions match “{searchQuery.trim()}”.</p>
+                <button type="button" onClick={() => setSearchQuery('')}>Clear search</button>
+              </div>
+            ) : searchResults.map((c) => (
+              <div key={c.cls} className={styles.resultGroup}>
+                <h3 style={{ '--accent': LEVEL_ACCENT[c.level] } as React.CSSProperties}>
+                  <span className={styles.classBadge}>Class {c.cls}</span> {levelMeta[c.level].label}
+                </h3>
+                <div className={styles.lessonGrid}>
+                  {c.lessons.map((l) => renderLesson(l))}
+                </div>
+              </div>
+            ))}
+          </section>
+        ) : (
+          <div className={styles.layout}>
+            {/* Class picker: sidebar on desktop, scrolling chips on mobile */}
+            <nav aria-label="Classes" className={styles.sidebar}>
+              {visibleClasses.map((c) => {
+                const done = doneIn(c.lessons);
+                const isSel = c.cls === selectedClass;
+                return (
+                  <button key={c.cls} type="button" aria-current={isSel ? 'true' : undefined}
+                    className={`${styles.classTab} ${isSel ? styles.classTabActive : ''}`}
+                    style={{ '--accent': LEVEL_ACCENT[c.level] } as React.CSSProperties}
+                    onClick={() => setSelectedClass(c.cls)}>
+                    <span className={styles.classNum}>{c.cls}</span>
+                    <span className={styles.classTabText}>
+                      <strong>Class {c.cls}</strong>
+                      <small>{isStudent ? `${done}/${c.lessons.length} done` : `${c.lessons.length} sessions`}</small>
+                    </span>
+                    {isStudent && (
+                      <span className={styles.classTabBar} aria-hidden><span style={{ width: `${(100 * done) / c.lessons.length}%` }} /></span>
+                    )}
+                  </button>
+                );
+              })}
+            </nav>
+
+            {/* Selected class */}
+            <section className={styles.course} style={{ '--accent': LEVEL_ACCENT[current.level] } as React.CSSProperties} aria-labelledby="course-title">
+              <header className={styles.courseHead}>
+                <div>
+                  <span className={styles.classBadge}>{levelMeta[current.level].label}</span>
+                  <h2 id="course-title">Class {current.cls}</h2>
+                  <p>
+                    <Layers size={14} aria-hidden /> {current.modules.length} modules
+                    <span aria-hidden>·</span>
+                    <BookOpen size={14} aria-hidden /> {current.lessons.length} sessions
+                  </p>
+                </div>
+                {isStudent && (
+                  <Ring pct={Math.round((100 * currentDone) / current.lessons.length)} size={72} stroke={7} color={LEVEL_ACCENT[current.level]}>
+                    <strong>{currentDone}</strong><span>of {current.lessons.length}</span>
+                  </Ring>
+                )}
+              </header>
+
+              <ol className={styles.modules}>
+                {current.modules.map((m) => {
+                  const mDone = doneIn(m.lessons);
+                  return (
+                    <li key={m.idx} className={styles.module}>
+                      <div className={styles.moduleHead}>
+                        <span className={`${styles.moduleMarker} ${isStudent && mDone === m.lessons.length ? styles.moduleMarkerDone : ''}`} aria-hidden>
+                          {isStudent && mDone === m.lessons.length ? <CheckCircle2 size={16} /> : m.idx + 1}
+                        </span>
+                        <div className={styles.moduleText}>
+                          <small>{m.name}{m.range ? ` · ${m.range}` : ''}</small>
+                          <h3>{m.title || m.name}</h3>
+                        </div>
+                        {isStudent && <span className={styles.moduleCount}>{mDone}/{m.lessons.length}</span>}
+                      </div>
+                      <div className={styles.lessonGrid}>
+                        {m.lessons.map((l) => renderLesson(l))}
+                      </div>
+                    </li>
+                  );
+                })}
+              </ol>
+            </section>
+          </div>
+        )}
       </main>
 
-      {/* Footer */}
-      <footer className="text-center py-10 border-t border-white/5 mt-10">
-        <p className="text-[13px] text-[#5a5a6e]">
-          Built with ❤️ for <span className="font-semibold bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-cyan-400">Robotics Education</span>
-        </p>
-      </footer>
+      <footer className={styles.footer}>Radix Robotics · Composite Skill Lab</footer>
 
-      {/* Scroll to Top */}
-      <button 
-        className={`${styles.scrollTop} ${showScrollTop ? styles.scrollTopVisible : ''}`}
-        onClick={scrollToTop}
-        title="Scroll to top"
-      >
-        <ArrowUp className="w-5 h-5" />
+      <button type="button" className={`${styles.scrollTop} ${showScrollTop ? styles.scrollTopVisible : ''}`}
+        onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} aria-label="Scroll to top">
+        <ArrowUp size={20} />
       </button>
 
-      {/* Ambient Overlay for Drawer */}
-      <div 
-        className={`fixed inset-0 bg-black/70 backdrop-blur-sm z-[1900] transition-all duration-300 ${activeVideo ? 'opacity-100 visible' : 'opacity-0 invisible pointer-events-none'}`}
-        onClick={() => setActiveVideo(null)}
-      />
-
-      {/* Slide-Up Bottom Drawer */}
-      <div 
-        className={`fixed bottom-0 left-0 right-0 w-full h-[70dvh] md:h-[65dvh] bg-[#0a0a10] border-t border-white/10 shadow-[0_-10px_60px_rgba(0,0,0,0.8)] z-[2000] flex flex-col transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] rounded-t-2xl ${activeVideo ? 'translate-y-0' : 'translate-y-full'}`}
-      >
-        {activeVideo && (
+      {/* Lesson player */}
+      <div className={`${styles.scrim} ${active ? styles.scrimOpen : ''}`} onClick={() => setActiveId(null)} aria-hidden />
+      <div role="dialog" aria-modal="true" aria-labelledby="lesson-title" aria-hidden={!active}
+        className={`${styles.player} ${active ? styles.playerOpen : ''}`} style={{ '--accent': accent } as React.CSSProperties}>
+        {active && activeModule && (
           <>
-            {/* Drawer Header */}
-            <div className="shrink-0 relative">
-              {/* Color accent bar */}
-              <div className={`absolute top-0 left-0 w-full h-0.5 bg-gradient-to-r ${activeColor.from} ${activeColor.to}`} />
-
-              {/* Drag handle */}
-              <div className="flex justify-center pt-3 pb-1">
-                <div className="w-10 h-1 rounded-full bg-white/15" />
+            <header className={styles.playerHead}>
+              <div className={styles.playerTitle}>
+                <p>Class {active.cls} · {activeModule.title || activeModule.name} · Session {active.session}</p>
+                <h3 id="lesson-title">{active.title}</h3>
               </div>
+              <button type="button" onClick={() => setActiveId(null)} className={styles.iconBtn} aria-label="Close lesson" autoFocus>
+                <X size={18} />
+              </button>
+            </header>
 
-              <div className="flex items-center justify-between px-6 pb-4">
-                <div className="flex items-center gap-3 min-w-0">
-                  <span className={`text-[11px] uppercase tracking-widest font-bold px-2.5 py-1 rounded-md shrink-0 ${activeColor.bg} ${activeColor.text}`}>
-                    Class {activeClassNum}
-                  </span>
-                  <h3 className="text-white font-semibold text-base md:text-lg truncate">
-                    {activeVideo.title}
-                  </h3>
+            <div className={styles.playerBody}>
+              <div className={styles.playerMain}>
+                <div className={styles.video}>
+                  <iframe
+                    src="https://www.youtube.com/embed/MiUHjLxm3V0?autoplay=0&controls=1&rel=0"
+                    title={`Lesson video: ${active.title}`}
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                  />
                 </div>
-                <button 
-                  onClick={() => setActiveVideo(null)}
-                  className="shrink-0 w-8 h-8 flex items-center justify-center rounded-full bg-white/5 hover:bg-white/10 text-zinc-400 hover:text-white transition-colors ml-4"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
-            </div>
 
-            {/* Divider */}
-            <div className="border-b border-white/5" />
+                {isStudent && (
+                  <div className={styles.watch}>
+                    <div className={styles.watchRow}>
+                      <span>{videoProgress >= 90 ? <><CheckCircle2 size={14} /> Completed</> : 'Your progress'}</span>
+                      <strong>{videoProgress}%</strong>
+                    </div>
+                    <div className={styles.watchTrack}><span style={{ width: `${videoProgress}%` }} className={videoProgress >= 90 ? styles.watchDone : ''} /></div>
+                  </div>
+                )}
 
-            {/* Scrollable Body */}
-            <div className="flex-1 overflow-y-auto overflow-x-hidden">
-              <div className="max-w-6xl mx-auto px-6 py-6">
-
-                {/* Lesson Overview */}
                 {(() => {
-                  const desc = getTopicDescription(activeVideo.title);
+                  const desc = getTopicDescription(active.title);
                   return (
-                    <div className="mb-6">
-                      <p className="text-zinc-400 text-sm leading-relaxed mb-3">
-                        {desc.summary}
-                      </p>
-                      <div className="flex flex-wrap gap-x-6 gap-y-1.5">
-                        {desc.points.map((point, i) => (
-                          <div key={i} className="flex items-start gap-2 text-xs text-zinc-300">
-                            <span className={`mt-1.5 w-1.5 h-1.5 rounded-full shrink-0 bg-gradient-to-br ${activeColor.from} ${activeColor.to}`} />
-                            {point}
-                          </div>
-                        ))}
-                      </div>
+                    <div className={styles.overview}>
+                      <h4>About this session</h4>
+                      <p>{desc.summary}</p>
+                      <h4>You will</h4>
+                      <ul>{desc.points.map((p, i) => <li key={i}><CheckCircle2 size={16} aria-hidden />{p}</li>)}</ul>
                     </div>
                   );
                 })()}
+              </div>
 
-                {/* Main Content Grid */}
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-
-                  {/* Video Player — takes 2 cols */}
-                  <div className="lg:col-span-2">
-                    <div className="rounded-xl overflow-hidden bg-black border border-white/10">
-                      <div className="aspect-video relative">
-                        <iframe 
-                          className="absolute inset-0 w-full h-full"
-                          src="https://www.youtube.com/embed/MiUHjLxm3V0?autoplay=0&controls=1&rel=0" 
-                          title="Lesson Video" 
-                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
-                          allowFullScreen
-                        />
-                      </div>
-                    </div>
-
-                    {/* Progress Bar — directly below video */}
-                    <div className="mt-4 p-4 rounded-xl bg-[#111118] border border-white/5 relative overflow-hidden">
-                      <div className={`absolute left-0 top-0 bottom-0 w-0.5 bg-gradient-to-b ${activeColor.from} ${activeColor.to}`} />
-
-                      <div className="flex items-center justify-between text-xs font-semibold mb-2 pl-3">
-                        <span className="text-zinc-400">Progress</span>
-                        <span className={videoProgress >= 90 ? 'text-emerald-400' : activeColor.text}>{videoProgress}%</span>
-                      </div>
-                      <div className="w-full h-2 bg-[#0a0a0f] rounded-full overflow-hidden ml-3 mr-3" style={{width: 'calc(100% - 1.5rem)'}}>
-                        <div 
-                          className={`h-full rounded-full transition-all duration-700 ease-out ${videoProgress >= 90 ? 'bg-emerald-500' : 'bg-blue-500'}`}
-                          style={{ width: `${videoProgress}%` }}
-                        />
-                      </div>
-
-                      {videoProgress >= 90 && (
-                        <p className="text-xs text-emerald-400 mt-2.5 ml-3 flex items-center gap-1.5">
-                          <CheckCircle2 className="w-3.5 h-3.5" /> Completed
-                        </p>
-                      )}
-                    </div>
+              <aside className={styles.playerSide}>
+                {!showQuiz ? (
+                  <div className={styles.quizIntro}>
+                    <GraduationCap size={32} aria-hidden />
+                    <h4>Self-check</h4>
+                    <p>Two quick questions to test your understanding after the video.</p>
+                    <button type="button" disabled={isStudent && videoProgress < 90} onClick={() => setShowQuiz(true)} className={styles.primaryBtn}>
+                      {!isStudent || videoProgress >= 90 ? 'Start quiz' : `Watch to unlock (${videoProgress}%)`}
+                    </button>
                   </div>
-
-                  {/* Right Panel — Quiz/Test */}
-                  <div className="lg:col-span-1">
-                    {!showQuiz ? (
-                      <div className="rounded-xl border border-white/5 bg-[#111118] p-5 text-center h-full flex flex-col justify-center">
-                        <GraduationCap className={`w-10 h-10 mx-auto mb-3 ${activeColor.text} opacity-60`} />
-                        <h4 className="text-white font-semibold text-sm mb-1">Self-Assessment</h4>
-                        <p className="text-zinc-500 text-xs mb-5 leading-relaxed">
-                          Test your understanding after watching the video.
-                        </p>
-                        <button 
-                          disabled={videoProgress < 90}
-                          onClick={() => setShowQuiz(true)}
-                          className={`w-full py-3 rounded-lg text-sm font-bold transition-all
-                            ${videoProgress >= 90 
-                              ? `bg-gradient-to-r ${activeColor.from} ${activeColor.to} text-white hover:brightness-110 shadow-md active:scale-[0.98]` 
-                              : 'bg-zinc-800/50 text-zinc-600 cursor-not-allowed border border-white/5'
-                            }
-                          `}
-                        >
-                          {videoProgress >= 90 ? 'Start Quiz' : `Complete video first (${videoProgress}%)`}
-                        </button>
-                      </div>
+                ) : (
+                  <div className={styles.quiz}>
+                    <h4><GraduationCap size={16} aria-hidden /> Concept check</h4>
+                    {[
+                      { q: 1, text: 'What is the primary function discussed in this lesson?', opts: ['Structural Support', 'Energy Conversion', 'Data Processing', 'Aesthetic Design'] },
+                      { q: 2, text: 'How is this typically implemented in robotics?', opts: ['Via mechanical linkages', 'Using embedded AI logic', 'Through external wired power', 'Using pneumatic tubes'] },
+                    ].map(({ q, text, opts }) => (
+                      <fieldset key={q} className={styles.question}>
+                        <legend>{q}. {text}</legend>
+                        {opts.map((opt) => (
+                          <label key={opt} className={selectedAnswers[q] === opt ? styles.optionOn : ''}>
+                            <input type="radio" name={`q${q}`} value={opt} disabled={quizSubmitted} checked={selectedAnswers[q] === opt}
+                              onChange={(e) => setSelectedAnswers({ ...selectedAnswers, [q]: e.target.value })} />
+                            <span>{opt}</span>
+                          </label>
+                        ))}
+                      </fieldset>
+                    ))}
+                    {!quizSubmitted ? (
+                      <button type="button" className={styles.primaryBtn} disabled={Object.keys(selectedAnswers).length < 2}
+                        onClick={() => {
+                          setQuizSubmitted(true);
+                          let score = 0;
+                          if (selectedAnswers[1]) score += 50;
+                          if (selectedAnswers[2]) score += 50;
+                          setQuizScore(score);
+                        }}>
+                        Submit answers
+                      </button>
                     ) : (
-                      <div className={`rounded-xl border bg-[#111118] p-5 relative overflow-hidden ${activeColor.border}`}>
-                        <div className={`absolute top-0 left-0 w-full h-0.5 bg-gradient-to-r ${activeColor.from} ${activeColor.to}`} />
-                        
-                        <h4 className="text-white font-semibold text-sm mb-4 flex items-center gap-2">
-                          <GraduationCap className={`w-4 h-4 ${activeColor.text}`} />
-                          Concept Check
-                        </h4>
-
-                        {/* Q1 */}
-                        <div className="mb-5">
-                          <p className="text-xs text-zinc-300 font-medium mb-2">1. What is the primary function discussed in this lesson?</p>
-                          <div className="space-y-1.5">
-                            {['Structural Support', 'Energy Conversion', 'Data Processing', 'Aesthetic Design'].map((opt, i) => (
-                              <label key={i} className={`flex items-center gap-2.5 p-2.5 rounded-lg border cursor-pointer transition-colors text-xs ${selectedAnswers[1] === opt ? `${activeColor.bg} ${activeColor.border}` : 'bg-zinc-900/50 border-white/5 hover:bg-zinc-800/50'}`}>
-                                <input type="radio" name="q1" value={opt} disabled={quizSubmitted} onChange={(e) => setSelectedAnswers({...selectedAnswers, 1: e.target.value})} className="hidden" />
-                                <div className={`w-3.5 h-3.5 rounded-full border flex shrink-0 items-center justify-center ${selectedAnswers[1] === opt ? `${activeColor.border}` : 'border-zinc-600'}`}>
-                                  {selectedAnswers[1] === opt && <div className={`w-1.5 h-1.5 rounded-full ${activeColor.text.replace('text-','bg-')}`} />}
-                                </div>
-                                <span className="text-zinc-300">{opt}</span>
-                              </label>
-                            ))}
-                          </div>
-                        </div>
-
-                        {/* Q2 */}
-                        <div className="mb-5">
-                          <p className="text-xs text-zinc-300 font-medium mb-2">2. How is this typically implemented in robotics?</p>
-                          <div className="space-y-1.5">
-                            {['Via mechanical linkages', 'Using embedded AI logic', 'Through external wired power', 'Using pneumatic tubes'].map((opt, i) => (
-                              <label key={i} className={`flex items-center gap-2.5 p-2.5 rounded-lg border cursor-pointer transition-colors text-xs ${selectedAnswers[2] === opt ? `${activeColor.bg} ${activeColor.border}` : 'bg-zinc-900/50 border-white/5 hover:bg-zinc-800/50'}`}>
-                                <input type="radio" name="q2" value={opt} disabled={quizSubmitted} onChange={(e) => setSelectedAnswers({...selectedAnswers, 2: e.target.value})} className="hidden" />
-                                <div className={`w-3.5 h-3.5 rounded-full border shrink-0 flex items-center justify-center ${selectedAnswers[2] === opt ? `${activeColor.border}` : 'border-zinc-600'}`}>
-                                  {selectedAnswers[2] === opt && <div className={`w-1.5 h-1.5 rounded-full ${activeColor.text.replace('text-','bg-')}`} />}
-                                </div>
-                                <span className="text-zinc-300">{opt}</span>
-                              </label>
-                            ))}
-                          </div>
-                        </div>
-
-                        {/* Submit / Results */}
-                        {!quizSubmitted ? (
-                          <button 
-                            disabled={Object.keys(selectedAnswers).length < 2}
-                            onClick={() => {
-                              setQuizSubmitted(true);
-                              let score = 0;
-                              if (selectedAnswers[1]) score += 50;
-                              if (selectedAnswers[2]) score += 50;
-                              setQuizScore(score);
-                            }}
-                            className={`w-full py-2.5 rounded-lg text-sm font-bold transition-all
-                              ${Object.keys(selectedAnswers).length < 2 
-                                ? 'bg-zinc-800/50 text-zinc-600 cursor-not-allowed' 
-                                : `bg-gradient-to-r ${activeColor.from} ${activeColor.to} text-white hover:brightness-110`
-                              }`}
-                          >
-                            Submit
-                          </button>
-                        ) : (
-                          <div className={`p-3 rounded-lg border text-xs ${quizScore === 100 ? 'bg-emerald-500/10 border-emerald-500/20' : 'bg-amber-500/10 border-amber-500/20'}`}>
-                            <div className="flex items-center justify-between">
-                              <strong className={quizScore === 100 ? 'text-emerald-400' : 'text-amber-400'}>
-                                {quizScore === 100 ? 'Excellent!' : 'Good Try!'}
-                              </strong>
-                              <span className="text-white font-bold">{quizScore}%</span>
-                            </div>
-                            <p className="text-zinc-500 mt-1">You may proceed to the next module.</p>
-                          </div>
-                        )}
+                      <div className={`${styles.result} ${quizScore === 100 ? styles.resultGood : ''}`} role="status">
+                        <strong>{quizScore === 100 ? 'Excellent!' : 'Good try!'} {quizScore}%</strong>
+                        <span>You can move on to the next session.</span>
                       </div>
                     )}
                   </div>
+                )}
 
+                <div className={styles.upNext}>
+                  <p className={styles.cardLabel}>In this module</p>
+                  <ol>
+                    {activeModule.lessons.map((l) => (
+                      <li key={l.id}>
+                        <button type="button" onClick={() => openLesson(l)} aria-current={l.id === active.id ? 'true' : undefined}>
+                          {isStudent && progress.get(l.id)?.done ? <CheckCircle2 size={15} aria-hidden /> : <Circle size={15} aria-hidden />}
+                          <span>{l.title}</span>
+                        </button>
+                      </li>
+                    ))}
+                  </ol>
                 </div>
-              </div>
+              </aside>
             </div>
+
+            <footer className={styles.playerFoot}>
+              <button type="button" className={styles.ghostBtn} disabled={!prevLesson} onClick={() => prevLesson && openLesson(prevLesson)}>
+                <ArrowLeft size={16} /> <span className={styles.hideSm}>Previous</span>
+              </button>
+              <span className={styles.footPos}>Session {active.session} of {siblings.length}</span>
+              <button type="button" className={styles.primaryBtn} disabled={!nextLesson} onClick={() => nextLesson && openLesson(nextLesson)}>
+                <span className={styles.hideSm}>Next session</span> <ArrowRight size={16} />
+              </button>
+            </footer>
           </>
         )}
       </div>
-
     </div>
+  );
+}
+
+/** Circular progress ring with centred content. */
+function Ring({ pct, size, stroke, color, children }: { pct: number; size: number; stroke: number; color: string; children: React.ReactNode }) {
+  const r = (size - stroke) / 2, c = 2 * Math.PI * r;
+  return (
+    <div className={styles.ring} style={{ width: size, height: size }} role="img" aria-label={`${pct}% complete`}>
+      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} aria-hidden>
+        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth={stroke} />
+        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke={color} strokeWidth={stroke} strokeLinecap="round"
+          strokeDasharray={c} strokeDashoffset={c * (1 - pct / 100)} transform={`rotate(-90 ${size / 2} ${size / 2})`}
+          style={{ transition: 'stroke-dashoffset 0.8s cubic-bezier(0.16,1,0.3,1)' }} />
+      </svg>
+      <div className={styles.ringInner}>{children}</div>
+    </div>
+  );
+}
+
+/** Small pie showing how much of a lesson has been watched. */
+function ProgressDot({ pct }: { pct: number }) {
+  const r = 7, c = 2 * Math.PI * r;
+  return (
+    <svg width={18} height={18} viewBox="0 0 18 18">
+      <circle cx={9} cy={9} r={r} fill="none" stroke="currentColor" strokeOpacity={0.25} strokeWidth={2} />
+      <circle cx={9} cy={9} r={r} fill="none" stroke="currentColor" strokeWidth={2} strokeDasharray={c}
+        strokeDashoffset={c * (1 - pct / 100)} transform="rotate(-90 9 9)" strokeLinecap="round" />
+    </svg>
   );
 }

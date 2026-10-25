@@ -1,0 +1,1781 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Radix Arduino Lab</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700;800&family=Barlow:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600;700&display=swap">
+<style>
+/* Shared with the Starter Kit lab. Layout: one-screen workbench on a blueprint grid — icon rail | header (brand, progress, clock) /
+   breadboard stage with floating tool dock | side panel (project, Build/Parts/Overview/Quiz tabs, Try it yourself) /
+   project strip along the bottom. Quick reference opens as a drawer. Stacks on small screens. */
+:root{
+  --paper:#F6EDDD; --paper-2:#EFE3CC; --card:#FBF6EC; --card-2:#F2E8D5;
+  --ink:#1E2B45; --ink-2:#3A4560; --muted:#7A7262; --line:#E0D3BA; --line-2:#CFC0A2;
+  --teal:#1F7A80; --teal-soft:rgba(31,122,128,.12);
+  --orange:#FF6A13; --orange-ink:#B84300; --orange-soft:#FFE7D4; --on-orange:#0C0C0D;
+  --plus:#D7372A; --good:#2E8B57; --good-soft:rgba(46,139,87,.12); --bad-soft:rgba(215,55,42,.09);
+  --tile:#EFE4CF;
+  --display:"Barlow Condensed","Arial Narrow",Arial,sans-serif;
+  --body:"Barlow","Segoe UI",system-ui,sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,Menlo,Consolas,monospace;
+  color-scheme:light;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{
+  background-color:var(--paper);
+  background-image:
+    linear-gradient(rgba(30,43,69,.055) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(30,43,69,.055) 1px,transparent 1px),
+    linear-gradient(rgba(30,43,69,.025) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(30,43,69,.025) 1px,transparent 1px);
+  background-size:120px 120px,120px 120px,24px 24px,24px 24px;
+  color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased;
+}
+h1,h2,h3,h4,p{margin:0}
+button,select,input{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--teal);outline-offset:2px}
+[hidden]{display:none!important}
+.kicker{font-family:var(--display);font-size:14px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--ink)}
+.tile{background:var(--tile);border-radius:10px;display:grid;place-items:center}
+
+/* ---------- frame ---------- */
+.app{display:grid;grid-template-columns:68px minmax(0,1fr);min-height:100dvh}
+.rail{position:sticky;top:0;height:100dvh;display:flex;flex-direction:column;align-items:center;gap:10px;padding:16px 0;border-right:1px solid var(--line);background:rgba(239,227,204,.55);backdrop-filter:blur(6px);z-index:20}
+.rbtn{width:46px;height:46px;border-radius:12px;border:0;background:none;color:var(--ink);display:grid;place-items:center;position:relative;transition:background .15s}
+.rbtn svg{width:24px;height:24px}
+.rbtn:hover{background:var(--card-2)}
+.rbtn[aria-pressed="true"]{background:var(--card);box-shadow:inset 0 0 0 1.5px var(--ink)}
+.rbtn .rtip{position:absolute;left:56px;top:50%;transform:translateY(-50%);white-space:nowrap;background:var(--ink);color:var(--paper);font-family:var(--display);font-size:13px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;padding:4px 9px;border-radius:6px;opacity:0;pointer-events:none;transition:opacity .15s}
+.rbtn:hover .rtip,.rbtn:focus-visible .rtip{opacity:1}
+.rail .sep{width:28px;height:1px;background:var(--line-2);margin:4px 0}
+.credit{margin-top:auto;writing-mode:vertical-rl;transform:rotate(180deg);font-family:var(--mono);font-size:10px;font-weight:700;letter-spacing:.24em;color:var(--muted);text-transform:uppercase;padding:10px 0;border-top:1px solid var(--line-2)}
+
+.shell{
+  display:grid;min-width:0;gap:14px 18px;padding:18px 22px 18px;
+  grid-template-columns:minmax(0,1fr) 430px;
+  grid-template-rows:auto minmax(0,1fr) auto;
+  grid-template-areas:"top top" "stage panel" "strip panel";
+  height:max(100dvh,780px);
+}
+@media (max-width:1280px){.shell{grid-template-columns:minmax(0,1fr) 380px}}
+
+/* ---------- header ---------- */
+.top{grid-area:top;display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:14px}
+.brand{display:flex;align-items:center;gap:16px;min-width:0}
+.mark{width:64px;height:40px;flex:none}
+.brand h1{font-family:var(--display);font-weight:600;font-size:38px;line-height:.95;letter-spacing:.16em;text-transform:uppercase;position:relative}
+.brand h1 b{font-weight:800;color:var(--orange)}
+.brand p{margin-top:6px;font-family:var(--display);font-size:16px;font-weight:600;letter-spacing:.32em;text-transform:uppercase;color:var(--muted)}
+.brand p i{font-style:normal;color:var(--line-2);margin:0 .35em}
+.topright{display:flex;align-items:stretch;gap:12px;flex-wrap:wrap}
+.progcard{display:grid;grid-template-columns:auto minmax(0,1fr);align-items:center;gap:4px 14px;border:1.5px solid var(--line-2);border-radius:12px;padding:10px 16px;background:var(--card);min-width:250px}
+.progcard svg{grid-row:1/3;width:34px;height:34px}
+.progcard .lbl{font-family:var(--display);font-size:15px;font-weight:700;letter-spacing:.1em;text-transform:uppercase}
+.progrow{display:flex;align-items:center;gap:12px}
+.pbar{flex:1;height:8px;border-radius:8px;background:var(--paper-2);overflow:hidden;box-shadow:inset 0 0 0 1px var(--line)}
+.pbar span{display:block;height:100%;width:0;background:var(--teal);border-radius:8px;transition:width .6s cubic-bezier(.2,.8,.2,1)}
+#count{font-family:var(--display);font-size:18px;font-weight:800;font-variant-numeric:tabular-nums}
+.clock{display:flex;flex-direction:column;justify-content:center;padding:6px 16px;border:1.5px solid var(--line-2);border-radius:12px;background:var(--card);font-family:var(--mono);font-size:14px;font-weight:500;letter-spacing:.14em;color:var(--muted);text-transform:uppercase;line-height:1.55;font-variant-numeric:tabular-nums}
+
+/* ---------- stage ---------- */
+.stage{grid-area:stage;position:relative;display:flex;flex-direction:column;min-height:0;min-width:0;border:1.5px solid var(--line-2);border-radius:18px;background:rgba(251,246,236,.45);padding:12px 14px 14px}
+.stage::before,.stage::after{content:"";position:absolute;width:14px;height:14px;border:2px solid var(--ink);opacity:.35;pointer-events:none}
+.stage::before{top:8px;left:8px;border-right:0;border-bottom:0}
+.stage::after{bottom:8px;right:8px;border-left:0;border-top:0}
+.stagebar{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:10px;padding-left:10px}
+.mode{display:inline-flex;align-items:center;gap:8px;font-family:var(--display);font-size:14px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ink)}
+.mode i{width:8px;height:8px;border-radius:50%;background:var(--line-2);box-shadow:0 0 0 3px var(--paper-2)}
+.mode.run i{background:var(--orange);animation:pulse 1.6s infinite}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(255,106,19,.55)}70%{box-shadow:0 0 0 9px rgba(255,106,19,0)}100%{box-shadow:0 0 0 0 rgba(255,106,19,0)}}
+.stage-view{position:relative;flex:1;min-height:0;display:grid;place-items:center;overflow:hidden;container-type:size}
+#svgwrap{perspective:1400px;width:min(100cqw,calc(100cqh * 520 / 436))}
+#svgwrap svg{width:100%;height:auto;display:block;user-select:none;-webkit-user-select:none;touch-action:manipulation;transition:transform .55s cubic-bezier(.2,.8,.2,1);transform-origin:50% 55%}
+#svgwrap.tilt svg{transform:rotateX(38deg) rotateZ(-10deg) scale(.86)}
+#svgwrap.zoomed svg{cursor:grab}
+#svgwrap.panning svg{cursor:grabbing}
+#view3d{position:absolute;inset:0;border-radius:12px;cursor:grab;touch-action:none}
+#view3d:active{cursor:grabbing}
+#view3d.over-part{cursor:pointer}
+#view3d canvas{display:block;width:100%;height:100%;outline:none;border-radius:12px}
+#view3d canvas:focus-visible{box-shadow:inset 0 0 0 2px var(--teal)}
+.loading3d{position:absolute;inset:auto 0 12px;margin:auto;width:max-content;padding:6px 14px;border-radius:99px;background:var(--ink);color:var(--paper);font-family:var(--display);font-size:14px;font-weight:600;letter-spacing:.08em;text-transform:uppercase}
+.legend{display:flex;flex-wrap:wrap;justify-content:center;gap:14px;font-family:var(--mono);font-size:11.5px;color:var(--ink-2);margin-bottom:6px}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.legend i{width:11px;height:11px;border-radius:3px;display:inline-block}
+.dockwrap{display:flex;flex-direction:column;align-items:center;gap:8px}
+.hintpill{background:var(--ink-2);color:#F6EDDD;font-size:11.5px;font-weight:600;padding:3px 12px;border-radius:99px;opacity:.85}
+.dock{display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:4px;padding:5px;border-radius:14px;border:1.5px solid var(--line-2);background:var(--card);box-shadow:0 10px 24px -14px rgba(30,43,69,.45)}
+.dock .div{width:1px;height:22px;background:var(--line-2);margin:0 4px}
+.seg{display:inline-flex;gap:2px}
+.seg button{border:0;background:none;color:var(--ink-2);height:34px;min-width:34px;padding:0 11px;border-radius:9px;font-family:var(--display);font-weight:700;font-size:14px;letter-spacing:.06em;text-transform:uppercase;display:inline-flex;align-items:center;justify-content:center;gap:6px;transition:background .15s}
+.seg button:hover:not(:disabled){background:var(--card-2)}
+.seg button[aria-pressed="true"]{background:var(--teal-soft);color:var(--teal);box-shadow:inset 0 0 0 1.5px rgba(31,122,128,.45)}
+.seg button:disabled{opacity:.35;cursor:default}
+.seg svg{width:16px;height:16px}
+#vtabs .seg{background:var(--card);border:1.5px solid var(--line-2);border-radius:12px;padding:3px}
+.tipbox{position:absolute;pointer-events:none;background:var(--ink);color:#F6EDDD;font-size:13px;font-weight:600;padding:8px 11px;border-radius:9px;box-shadow:0 12px 28px rgba(30,43,69,.35);max-width:260px;z-index:5;line-height:1.35}
+.tipbox small{display:block;font-weight:500;color:#C9C1AE;margin-top:2px;font-size:11.5px}
+.hit{cursor:pointer}
+.spot{filter:drop-shadow(0 0 3px #FF6A13) drop-shadow(0 0 9px rgba(255,106,19,.8))}
+.ring2{fill:none;stroke:#FF6A13;stroke-width:2;animation:ring .8s ease-out infinite;transform-box:fill-box;transform-origin:center}
+@keyframes ring{from{opacity:.9;transform:scale(.75)}to{opacity:0;transform:scale(1.4)}}
+.flowline{fill:none;stroke:#FFF3E6;stroke-width:1.5;stroke-linecap:round;stroke-dasharray:1.5 9;animation:flow .9s linear infinite}
+@keyframes flow{to{stroke-dashoffset:-10.5}}
+.newring{fill:none;stroke:#FF6A13;stroke-width:1.6;animation:blink 1.2s ease-in-out infinite}
+@keyframes blink{50%{opacity:.25}}
+.xr .part{opacity:.5}
+
+/* ---------- side panel ---------- */
+.panel{grid-area:panel;display:flex;flex-direction:column;gap:12px;min-height:0;min-width:0}
+.phead{display:grid;grid-template-columns:60px minmax(0,1fr);gap:4px 14px;align-items:center;border:1.5px solid var(--line-2);border-radius:14px;background:var(--card);padding:14px}
+.phead .tile{width:60px;height:60px;grid-row:1/3;border-radius:12px}
+.phead .tile svg{width:46px;height:46px}
+.phtop{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.pnum{font-family:var(--mono);font-size:12px;font-weight:700;color:var(--orange-ink)}
+.phead h2{font-family:var(--display);font-size:28px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;line-height:1.05}
+.phead p{grid-column:1/-1;margin-top:6px;color:var(--ink-2);font-size:14.5px}
+.pill{display:inline-flex;align-items:center;gap:5px;font-family:var(--mono);font-size:10.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);border:1px solid var(--line-2);border-radius:99px;padding:2px 9px}
+.pill i{width:6px;height:6px;border-radius:2px;background:var(--line-2)}
+.pill i.on{background:var(--orange)}
+.builtbtn{grid-column:1/-1;margin-top:8px;display:inline-flex;align-items:center;justify-content:center;gap:8px;border:1.5px solid var(--ink);border-radius:10px;padding:9px 16px;min-height:42px;font-family:var(--display);font-size:15px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;background:transparent;color:var(--ink);transition:background .15s,color .15s}
+.builtbtn:hover{background:var(--ink);color:var(--paper)}
+.builtbtn[aria-pressed="true"]{background:var(--teal);border-color:var(--teal);color:#fff}
+
+.tabs{display:flex;gap:2px;border-bottom:1.5px solid var(--line-2);overflow-x:auto;scrollbar-width:none}
+.tab{border:0;background:none;padding:8px 12px 10px;font-family:var(--display);font-size:16px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);white-space:nowrap;position:relative}
+.tab:hover{color:var(--ink)}
+.tab[aria-selected="true"]{color:var(--ink);font-weight:700}
+.tab[aria-selected="true"]::after{content:"";position:absolute;left:8px;right:8px;bottom:-1.5px;height:3px;border-radius:3px;background:var(--ink)}
+.tabpanel{flex:1;min-height:0;overflow:auto;border:1.5px solid var(--line-2);border-radius:14px;background:var(--card);padding:14px 16px;scrollbar-width:thin}
+
+/* build guide */
+.ghead{display:flex;justify-content:space-between;align-items:center;font-family:var(--display);font-size:14px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:8px}
+.gprog{height:4px;background:var(--paper-2);border-radius:4px;overflow:hidden;margin-bottom:8px}
+.gprog span{display:block;height:100%;background:var(--teal);transition:width .35s ease}
+.glist{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:2px}
+.gbtn{display:grid;grid-template-columns:28px minmax(0,1fr);gap:12px;align-items:start;text-align:left;width:100%;border:0;background:none;padding:9px 8px;border-radius:10px;color:var(--ink-2);font-size:14.5px;line-height:1.45}
+.gbtn:hover{background:var(--card-2)}
+.gbtn .b{width:26px;height:26px;border-radius:50%;display:grid;place-items:center;font-family:var(--mono);font-size:12px;font-weight:700;border:1.5px solid var(--line-2);color:var(--muted);background:var(--card)}
+.gbtn.done .b{border-color:var(--teal);color:var(--teal)}
+.gbtn[aria-current="step"]{background:var(--teal-soft);color:var(--ink)}
+.gbtn[aria-current="step"] .b{background:var(--teal);border-color:var(--teal);color:#fff}
+.gbtn .t b{color:var(--ink);font-weight:700;font-family:var(--mono);font-size:13px}
+#tp-build:not([hidden]){display:flex;flex-direction:column;overflow:hidden;padding-bottom:0}
+#tp-build .glist{flex:1;min-height:0;overflow:auto;scrollbar-width:thin}
+.gctl{display:flex;align-items:center;gap:8px;padding:10px 0 12px;margin-top:6px;border-top:1.5px solid var(--line)}
+.ibtn{width:42px;height:42px;border-radius:50%;border:1.5px solid var(--line-2);background:var(--card);color:var(--ink);display:grid;place-items:center}
+.ibtn:hover:not(:disabled){border-color:var(--ink)}
+.ibtn:disabled{opacity:.35;cursor:default}
+.ibtn.play{background:var(--ink);border-color:var(--ink);color:var(--paper)}
+.ibtn svg{width:16px;height:16px}
+.gctl .hint{margin-left:auto;font-family:var(--mono);font-size:11px;color:var(--muted)}
+
+/* parts tray */
+.trayhead{display:flex;flex-direction:column;gap:2px;margin-bottom:12px}
+.trayhead span{font-size:13.5px;color:var(--muted)}
+.trayhead b{color:var(--ink)}
+.traygrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(118px,1fr));gap:10px}
+.pcard{background:var(--paper);border:1.5px solid var(--line);border-radius:12px;padding:8px 8px 10px;display:flex;flex-direction:column;gap:6px;position:relative;transition:transform .15s,border-color .15s}
+.pcard:hover,.pcard:focus-within{border-color:var(--teal);transform:translateY(-2px)}
+.pcard .tile{aspect-ratio:4/3;border-radius:9px;background:var(--card)}
+.pcard .tile svg{width:58%;height:auto}
+.pcard .pn{font-weight:700;font-size:13.5px;line-height:1.2;padding:0 2px}
+.pcard .pq{font-family:var(--mono);font-size:11px;color:var(--muted);padding:0 2px}
+.got{border:1.5px solid var(--line-2);background:var(--card);border-radius:99px;padding:5px 10px;font-size:12.5px;font-weight:700;min-height:32px;display:inline-flex;align-items:center;justify-content:center;gap:6px}
+.got[aria-pressed="true"]{background:var(--teal);border-color:var(--teal);color:#fff}
+.pcard.ok::after{content:"";position:absolute;top:12px;right:12px;width:20px;height:20px;border-radius:50%;background:var(--teal) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'%3E%3Cpath d='M2 5.2 4.2 7.4 8 3' fill='none' stroke='%23fff' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/11px no-repeat}
+
+/* overview + quiz */
+.info{display:flex;flex-direction:column;gap:12px}
+.icard{border:1.5px solid var(--line);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:8px;background:var(--paper)}
+.icard p{color:var(--ink-2)}
+.icard.ink{background:var(--ink);border-color:var(--ink)}
+.icard.ink .kicker{color:#FFB27A}
+.icard.ink p{color:#F6EDDD}
+.tipcard{background:var(--orange-soft);border-color:#F6CBA8}
+.flowbox{display:flex;flex-direction:column;gap:12px;overflow-x:auto}
+.flowlabel{font-size:12.5px;font-weight:700;color:var(--muted);margin-bottom:4px}
+.flow{display:flex;flex-wrap:wrap;align-items:center;gap:6px}
+.node{font-family:var(--mono);font-size:12px;padding:4px 9px;border-radius:7px;border:1.5px solid var(--line-2);background:var(--card);display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+.node.pos{background:var(--plus);color:#fff;border-color:transparent}
+.node.neg{background:var(--ink);color:var(--paper);border-color:transparent}
+.node.res{border-color:var(--orange)}
+.node .led{width:9px;height:9px;border-radius:50%;border:1px solid rgba(0,0,0,.25)}
+.arrow{color:var(--muted);font-family:var(--mono);font-size:13px}
+.quiz{display:flex;flex-direction:column;gap:12px}
+.quiz .q{font-family:var(--display);font-weight:700;font-size:22px;line-height:1.15}
+.opts{display:grid;gap:8px}
+.opt{text-align:left;border:1.5px solid var(--line-2);background:var(--paper);border-radius:12px;padding:11px 12px;font-weight:600;min-height:46px;display:flex;gap:10px;align-items:flex-start}
+.opt .k{font-family:var(--mono);font-size:12px;width:22px;height:22px;flex:none;border-radius:6px;border:1.5px solid var(--line-2);display:grid;place-items:center;background:var(--card)}
+.opt:hover:not(:disabled){border-color:var(--ink)}
+.opt.right{border-color:var(--good);background:var(--good-soft)}
+.opt.right .k{background:var(--good);border-color:var(--good);color:#fff}
+.opt.wrong{border-color:var(--plus);background:var(--bad-soft)}
+.opt:disabled{cursor:default}
+.qfeed{font-size:14.5px;color:var(--ink-2)}
+.qfeed b{color:var(--good)}
+.qfeed b.no{color:var(--plus)}
+
+/* try it yourself */
+.try{border:1.5px solid var(--line-2);border-radius:14px;background:var(--card);overflow:hidden}
+.tryhead{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;border-bottom:1.5px solid var(--line)}
+.runpanel{display:flex;flex-direction:column;gap:12px;padding:12px 14px 14px}
+.rp-row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.rp-label{display:none}
+.ctl{display:inline-flex;align-items:center;gap:10px;border:1.5px solid var(--line-2);background:var(--paper);color:var(--ink);border-radius:10px;padding:8px 14px;min-height:42px;font-weight:700;user-select:none;-webkit-user-select:none;touch-action:none;transition:background .12s,transform .08s}
+.ctl small{font-family:var(--mono);font-size:10px;font-weight:700;letter-spacing:.12em;color:var(--muted)}
+.ctl[aria-pressed="true"]{background:var(--orange);border-color:var(--orange);color:var(--on-orange);transform:translateY(1px)}
+.ctl[aria-pressed="true"] small{color:#3A1A05}
+.tog{width:30px;height:18px;border-radius:99px;background:var(--line-2);position:relative;flex:none}
+.tog::after{content:"";position:absolute;top:3px;left:3px;width:12px;height:12px;border-radius:50%;background:#fff;transition:left .15s}
+.ctl[aria-pressed="true"] .tog{background:var(--ink)}
+.ctl[aria-pressed="true"] .tog::after{left:15px;background:var(--orange)}
+.rng{display:flex;flex-direction:column;gap:6px;font-size:14px;font-weight:700;flex:1 1 220px;min-width:0;background:var(--paper);border:1.5px solid var(--line-2);border-radius:10px;padding:8px 12px}
+.rng span{display:flex;justify-content:space-between}
+.rng b{font-family:var(--mono);font-weight:700;color:var(--orange-ink)}
+.rng input{width:100%;accent-color:var(--orange)}
+.outs{display:flex;flex-wrap:wrap;gap:6px;padding:10px;border-radius:10px;background:var(--ink);min-height:44px;align-items:center}
+.outs:empty::before{content:"Outputs appear here";font-family:var(--mono);font-size:12px;color:#8E97AB}
+.out{display:inline-flex;align-items:center;gap:8px;font-family:var(--mono);font-size:12px;border:1px solid #33405E;border-radius:99px;padding:4px 10px;color:#AEB6C8}
+.out i{width:9px;height:9px;border-radius:50%;background:#3A3A40}
+.out.on{color:#fff;border-color:#55638A}
+.snd{display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--muted);margin-left:auto}
+.snd input{accent-color:var(--orange);width:16px;height:16px}
+.cta{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;color:var(--ink-2);font-size:14px}
+.cta button{border:0;border-radius:10px;background:var(--ink);color:var(--paper);font-family:var(--display);font-size:15px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:10px 16px;min-height:42px;display:inline-flex;align-items:center;gap:8px}
+.cta button:hover{background:var(--teal)}
+.playsq{width:34px;height:34px;border-radius:9px;border:0;background:var(--ink);color:var(--paper);display:grid;place-items:center}
+.playsq:hover{background:var(--teal)}
+.playsq svg{width:14px;height:14px}
+
+/* ---------- project strip ---------- */
+.strip{grid-area:strip;display:flex;flex-direction:column;gap:8px;min-width:0}
+.striphead{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.striphead select{background:var(--card);border:1.5px solid var(--line-2);border-radius:9px;padding:5px 10px;font-size:13.5px;min-height:34px}
+.striphead label{font-size:13px;color:var(--muted);display:flex;align-items:center;gap:8px;margin-left:auto}
+.stripnav{display:flex;gap:6px}
+.stripnav button{width:34px;height:34px;border-radius:50%;border:1.5px solid var(--line-2);background:var(--card);display:grid;place-items:center;color:var(--ink)}
+.stripnav button:hover{border-color:var(--ink)}
+.stripnav svg{width:14px;height:14px}
+#navlist{position:relative;display:flex;gap:10px;overflow-x:auto;scroll-snap-type:x proximity;padding:2px 2px 6px;scrollbar-width:thin;scroll-behavior:smooth}
+.item{flex:0 0 auto;scroll-snap-align:start;display:flex;align-items:center;gap:10px;min-width:210px;max-width:260px;padding:8px 12px 8px 8px;border:1.5px solid var(--line-2);border-radius:12px;background:var(--card);text-align:left;position:relative;transition:border-color .15s,transform .15s,box-shadow .15s}
+.item:hover{border-color:var(--ink-2);transform:translateY(-2px)}
+.item .tile{width:56px;height:56px;flex:none;background:var(--paper)}
+.item .tile svg{width:44px;height:44px}
+.item .tx{display:flex;flex-direction:column;min-width:0;flex:1}
+.item .no{font-family:var(--mono);font-size:10.5px;font-weight:700;color:var(--muted);letter-spacing:.06em}
+.item .nm{font-family:var(--display);font-weight:700;font-size:16px;letter-spacing:.06em;text-transform:uppercase;line-height:1.1}
+.item .chev{width:16px;height:16px;color:var(--muted);flex:none}
+.item[aria-current="true"]{border:2px solid var(--teal);background:#FFFBF3;box-shadow:0 8px 20px -12px rgba(31,122,128,.6)}
+.item[aria-current="true"] .chev{color:var(--teal)}
+.item.dim{opacity:.35}
+.check{position:absolute;top:-7px;right:-7px;width:20px;height:20px;border-radius:50%;background:var(--teal);display:grid;place-items:center;box-shadow:0 0 0 2px var(--paper)}
+.check svg{width:10px;height:10px}
+
+/* ---------- reference drawer ---------- */
+.scrim{position:fixed;inset:0;background:rgba(30,43,69,.35);opacity:0;visibility:hidden;transition:opacity .25s,visibility .25s;z-index:40}
+.scrim.open{opacity:1;visibility:visible}
+.drawer{position:fixed;top:0;right:0;bottom:0;width:min(760px,100%);background:var(--paper);border-left:1.5px solid var(--line-2);box-shadow:-30px 0 60px -30px rgba(30,43,69,.5);transform:translateX(100%);transition:transform .35s cubic-bezier(.2,.8,.2,1);z-index:50;display:flex;flex-direction:column}
+.drawer.open{transform:none}
+.drawerhead{display:flex;justify-content:space-between;align-items:center;padding:18px 22px;border-bottom:1.5px solid var(--line-2)}
+.drawerhead h2{font-family:var(--display);font-size:28px;font-weight:700;letter-spacing:.12em;text-transform:uppercase}
+.drawerbody{overflow:auto;padding:18px 22px 28px}
+.refgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px}
+.rcard{background:var(--card);border:1.5px solid var(--line-2);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:10px;min-width:0}
+.rcard h3{font-family:var(--display);font-size:19px;font-weight:700;letter-spacing:.08em;text-transform:uppercase}
+.rcard p,.rcard ul{margin:0;color:var(--ink-2);font-size:14.5px}
+.rcard ul{padding-left:18px;display:flex;flex-direction:column;gap:5px}
+.rcard svg{max-width:100%;height:auto}
+.rtable{width:100%;border-collapse:collapse;font-size:14px}
+.rtable td{padding:7px 0;border-bottom:1px solid var(--line)}
+.rtable td:last-child{text-align:right;font-family:var(--mono);font-variant-numeric:tabular-nums;color:var(--orange-ink);font-weight:700}
+.decoder{grid-column:1/-1}
+.dec-body{display:flex;flex-wrap:wrap;gap:20px;align-items:center}
+.selects{display:flex;flex-wrap:wrap;gap:12px}
+.sel{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--muted)}
+.sel select{background:var(--paper);border:1.5px solid var(--line-2);border-radius:9px;padding:7px 10px;min-height:40px}
+.value{font-family:var(--display);font-size:42px;font-weight:800;font-variant-numeric:tabular-nums}
+.presets{display:flex;flex-wrap:wrap;gap:6px}
+.chip{border:1.5px solid var(--line-2);background:var(--paper);border-radius:99px;padding:5px 13px;font-size:14px;font-weight:700;min-height:36px}
+.chip:hover{border-color:var(--ink)}
+.svgink{fill:none;stroke:var(--ink);stroke-width:2;stroke-linecap:round}
+.svgtext{fill:var(--ink);font-family:var(--mono);font-size:13px}
+.svgbody{fill:var(--ink)}
+
+.burst{position:fixed;width:8px;height:8px;border-radius:2px;pointer-events:none;z-index:60;animation:burst .95s cubic-bezier(.15,.7,.3,1) forwards}
+@keyframes burst{to{transform:translate(var(--dx),var(--dy)) rotate(var(--r));opacity:0}}
+
+.apptabs{display:inline-flex;gap:2px;padding:4px;border-radius:12px;border:1.5px solid var(--line-2);background:var(--card);margin-left:8px}
+.apptabs a{display:inline-flex;align-items:center;gap:8px;padding:7px 14px;border-radius:9px;font-family:var(--display);font-size:15px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);text-decoration:none;transition:background .15s,color .15s}
+.apptabs a:hover{color:var(--ink);background:var(--card-2)}
+.apptabs a[aria-current="page"]{background:var(--ink);color:var(--paper)}
+.apptabs svg{width:16px;height:16px}
+@media (max-width:1020px){.apptabs{margin-left:0}}
+
+/* ---------- small screens: stack, rail becomes a bottom tab bar ---------- */
+@media (max-width:1020px){
+  .app{grid-template-columns:minmax(0,1fr)}
+  .rail{position:fixed;top:auto;bottom:0;left:0;right:0;height:auto;flex-direction:row;justify-content:space-around;padding:6px 8px calc(6px + env(safe-area-inset-bottom,0px));border-right:0;border-top:1px solid var(--line-2);background:rgba(246,237,221,.95)}
+  .rail .sep,.credit,.rbtn .rtip{display:none}
+  .shell{height:auto;align-content:start;grid-template-columns:minmax(0,1fr);grid-template-rows:none;grid-template-areas:"top" "stage" "strip" "panel";padding:14px 14px 90px}
+  .stage-view{container-type:normal}
+  .stage-view.is3d{aspect-ratio:1/1;min-height:320px}
+  #svgwrap{width:100%}
+  #tp-build:not([hidden]){display:block;overflow:visible;padding-bottom:4px}
+  #tp-build .glist{overflow:visible}
+  .stage-view{padding:6px 0}
+  .tabpanel{max-height:none;overflow:visible}
+  .brand h1{font-size:28px}
+  .brand p{font-size:13px;letter-spacing:.24em}
+  .mark{width:48px;height:30px}
+  .progcard{flex:1;min-width:0}
+  .topright{width:100%}
+  .top .brand{flex-wrap:wrap}
+  .apptabs{width:100%}
+  .apptabs a{flex:1;justify-content:center}
+}
+@media (max-width:520px){
+  .clock{display:none}
+  .item{min-width:190px}
+  .dock .div{display:none}
+}
+@media (prefers-reduced-motion:reduce){.flowline,.ring2,.newring,.mode.run i{animation:none}#svgwrap svg,.gprog span,.pbar span,.drawer{transition:none}.burst{display:none}}
+
+/* ---------- Arduino lab additions ---------- */
+.apptabs{display:inline-flex;gap:2px;padding:4px;border-radius:12px;border:1.5px solid var(--line-2);background:var(--card);margin-left:8px}
+.apptabs a{display:inline-flex;align-items:center;gap:8px;padding:7px 14px;border-radius:9px;font-family:var(--display);font-size:15px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);text-decoration:none;transition:background .15s,color .15s}
+.apptabs a:hover{color:var(--ink);background:var(--card-2)}
+.apptabs a[aria-current="page"]{background:var(--ink);color:var(--paper)}
+.apptabs svg{width:16px;height:16px}
+@media (max-width:1020px){.apptabs{margin-left:0}}
+
+.panel{overflow-y:auto;scrollbar-width:thin;padding-right:2px}
+.panel>*{flex-shrink:0}
+.panel .tabpanel{flex:none;max-height:300px}
+.keypoints{display:grid;gap:8px;margin-top:4px}
+.keypoints li{display:flex;gap:10px;align-items:flex-start;list-style:none;padding:9px 10px;border-radius:10px;background:var(--paper);border:1.5px solid var(--line)}
+.keypoints ul{margin:0;padding:0;display:grid;gap:8px}
+.kpi{width:28px;height:28px;flex:none;border-radius:8px;display:grid;place-items:center;background:var(--teal-soft);color:var(--teal)}
+.kpi svg{width:16px;height:16px}
+.ov p{color:var(--ink-2)}
+.ov h3{font-family:var(--display);font-size:24px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;margin-bottom:4px}
+.pintable{width:100%;border-collapse:collapse;font-size:14px}
+.pintable th{text-align:left;font-family:var(--display);font-size:13px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);padding:6px 6px;border-bottom:1.5px solid var(--line-2)}
+.pintable td{padding:8px 6px;border-bottom:1px solid var(--line);vertical-align:top;color:var(--ink-2)}
+.pintable tr{cursor:default;transition:background .15s}
+.pintable tbody tr:hover{background:var(--teal-soft)}
+.pinchip{display:inline-block;font-family:var(--mono);font-size:12px;font-weight:700;padding:2px 8px;border-radius:6px;background:var(--ink);color:var(--paper);white-space:nowrap}
+.steps{margin:0;padding:0;list-style:none;display:grid;gap:8px;counter-reset:st}
+.steps li{display:grid;grid-template-columns:28px minmax(0,1fr);gap:10px;font-size:14.5px;color:var(--ink-2);counter-increment:st}
+.steps li::before{content:counter(st);width:26px;height:26px;border-radius:50%;display:grid;place-items:center;font-family:var(--mono);font-size:12px;font-weight:700;background:var(--teal);color:#fff}
+.how{margin-top:14px;padding:12px;border-radius:12px;background:var(--orange-soft);border:1.5px solid #F6CBA8}
+.how ul{margin:6px 0 0;padding-left:18px;display:grid;gap:4px;font-size:14px;color:var(--ink-2)}
+.how code,.steps code,.ov code{font-family:var(--mono);font-size:12.5px;background:var(--card);border:1px solid var(--line);border-radius:5px;padding:0 4px;color:var(--orange-ink)}
+.specgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
+.spec{padding:10px 12px;border-radius:10px;background:var(--paper);border:1.5px solid var(--line)}
+.spec small{display:block;font-family:var(--display);font-size:12px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.spec b{font-family:var(--mono);font-size:14px;color:var(--ink)}
+
+/* code editor */
+.tryhead .tools2{display:flex;gap:6px}
+.sqbtn{width:34px;height:34px;border-radius:9px;border:1.5px solid var(--line-2);background:var(--card);display:grid;place-items:center;color:var(--ink)}
+.sqbtn:hover{border-color:var(--ink)}
+.sqbtn svg{width:15px;height:15px}
+.sqbtn.run{background:var(--ink);border-color:var(--ink);color:var(--paper)}
+.sqbtn.run:hover{background:var(--teal);border-color:var(--teal)}
+.sqbtn.run.stop{background:var(--plus);border-color:var(--plus)}
+.editor{font-variant-ligatures:none;display:grid;grid-template-columns:38px minmax(0,1fr);height:230px;margin:10px 14px 0;border:1.5px solid var(--line-2);border-radius:10px;background:#FFFDF8;overflow:hidden;font-family:var(--mono);font-size:13px;line-height:1.6}
+.gutter{padding:10px 0;text-align:right;color:#B3A98F;background:var(--paper);border-right:1px solid var(--line);overflow:hidden;user-select:none}
+.gutter div{padding-right:8px}
+.gutter .err{color:#fff;background:var(--plus)}
+.codebox{position:relative;overflow:hidden}
+.codebox pre,.codebox textarea{position:absolute;inset:0;margin:0;padding:10px 12px;font:inherit;line-height:inherit;white-space:pre;tab-size:2;overflow:auto;border:0}
+.codebox pre{pointer-events:none;color:var(--ink);overflow:hidden}
+.codebox textarea{resize:none;background:transparent;color:transparent;caret-color:var(--ink);outline:none}
+.codebox textarea::selection{background:rgba(31,122,128,.25);color:transparent}
+.tk-kw{color:#7C3AED}.tk-ty{color:#1F7A80;font-weight:600}.tk-fn{color:#C2410C}.tk-k{color:#1D4ED8;font-weight:600}.tk-n{color:#0E7490}.tk-s{color:#15803D}.tk-c{color:#A0937A;font-style:italic}.tk-pp{color:#B45309}
+.inputsrow{display:flex;flex-wrap:wrap;gap:8px;padding:10px 14px 0}
+.inputsrow:empty{display:none}
+.serial{margin:10px 14px 14px;border-radius:10px;background:var(--ink);overflow:hidden}
+.serialhead{display:flex;align-items:center;gap:10px;padding:8px 12px;border-bottom:1px solid #33405E}
+.serialhead .kicker{color:#E9E0CC;font-size:13px}
+.sstat{display:inline-flex;align-items:center;gap:6px;font-family:var(--mono);font-size:11px;color:#AEB6C8;margin-left:auto}
+.sstat i{width:8px;height:8px;border-radius:50%;background:#55638A}
+.sstat.on i{background:#3DDC84;box-shadow:0 0 8px #3DDC84}
+.sstat.err i{background:#FF5A5F}
+.serialhead button{border:0;background:none;color:#AEB6C8;font-size:12px;font-weight:600}
+.serialhead button:hover{color:#fff}
+#serial{margin:0;height:104px;overflow:auto;padding:8px 12px;font-family:var(--mono);font-size:12.5px;line-height:1.5;color:#D8E2F5;white-space:pre-wrap;word-break:break-word}
+#serial .e{color:#FF8A8D}
+#serial .s{color:#7F8BA8}
+
+/* 3D hotspots */
+.hotspots{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+.hs{position:absolute;left:0;top:0;transform:translate(-50%,-50%);pointer-events:auto}
+.hs .pin{width:11px;height:11px;border-radius:50%;background:var(--teal);box-shadow:0 0 0 4px rgba(31,122,128,.25);display:block;margin:auto;animation:hsp 2s ease-in-out infinite}
+@keyframes hsp{50%{box-shadow:0 0 0 9px rgba(31,122,128,.08)}}
+.hs .card{position:absolute;left:16px;top:-6px;width:max-content;max-width:190px;padding:4px 9px;border-radius:10px;background:rgba(251,246,236,.95);border:1.5px solid var(--line-2);box-shadow:0 8px 20px -10px rgba(30,43,69,.5)}
+.hs .card b{display:block;font-family:var(--display);font-size:12.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--ink)}
+.hs .card span{display:none;font-size:12px;color:var(--ink-2);line-height:1.35;margin-top:2px}
+.hs:hover,.hs:focus{z-index:2}
+.hs.left .card{left:auto;right:18px}
+.hs:hover .card span,.hs:focus .card span{display:block}
+.bench-note{position:absolute;left:12px;top:44px;max-width:280px;padding:8px 12px;border-radius:10px;background:rgba(30,43,69,.9);color:#F6EDDD;font-size:12.5px;line-height:1.4;pointer-events:none}
+.bench-note:empty{display:none}
+.item .tile svg{width:44px;height:44px}
+.donebadge{display:inline-flex;align-items:center;gap:6px}
+@media (max-width:1020px){
+  #stageview{aspect-ratio:1/1;min-height:320px;flex:none}
+  .top .brand{flex-wrap:wrap}
+  .apptabs{width:100%}
+  .apptabs a{flex:1;justify-content:center}
+  .panel{overflow:visible}
+  .panel .tabpanel{max-height:none}
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <nav class="rail" aria-label="Lab">
+    <button class="rbtn" data-go="overview" aria-pressed="true" aria-label="Overview"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5.5C5.5 4 8.5 4 12 6c3.5-2 6.5-2 9-.5V19c-2.5-1.5-5.5-1.5-9 .5-3.5-2-6.5-2-9-.5z"/><path d="M12 6v13.5"/></svg><span class="rtip">Overview</span></button>
+    <button class="rbtn" data-go="pinout" aria-pressed="false" aria-label="Pinout"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="7" width="10" height="10" rx="1.5"/><path d="M10 3v4M14 3v4M10 17v4M14 17v4M3 10h4M3 14h4M17 10h4M17 14h4"/></svg><span class="rtip">Pinout</span></button>
+    <button class="rbtn" data-go="example" aria-pressed="false" aria-label="Wiring example"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M7 9h.01M10 9h.01M13 9h.01M16 9h.01M7 15h.01M10 15h.01M13 15h.01M16 15h.01M3 12h18"/></svg><span class="rtip">Example</span></button>
+    <button class="rbtn" data-go="specs" aria-pressed="false" aria-label="Specifications"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg><span class="rtip">Specifications</span></button>
+    <span class="sep" aria-hidden="true"></span>
+    <button class="rbtn" data-go="run" aria-label="Run the code"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2.5"/><path d="M10 9v6l5-3z" fill="currentColor"/></svg><span class="rtip">Run</span></button>
+    <button class="rbtn" data-go="components" aria-label="Components" aria-controls="drawer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 3 8l9 5 9-5z"/><path d="m3 13 9 5 9-5"/></svg><span class="rtip">Components</span></button>
+    <a class="rbtn" href="/kits" target="_top" aria-label="Starter Kit Lab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10 14 21 3M15 3h6v6"/><path d="M19 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h6"/></svg><span class="rtip">Starter Kit</span></a>
+    <a class="rbtn" href="/kits/esp" target="_top" aria-label="ESP lab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 9a15 15 0 0 1 20 0M5.5 12.5a10 10 0 0 1 13 0M9 16a5 5 0 0 1 6 0"/><circle cx="12" cy="19.5" r="1"/></svg><span class="rtip">ESP</span></a>
+    <a class="rbtn" href="/kits/pi" target="_top" aria-label="Raspberry Pi lab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21.5c-3.6 0-6-2.4-6-5.4 0-2.6 1.8-4.3 3.4-5.1-1-.6-1.6-1.4-1.6-2.4C7.8 7 9.6 6 12 6s4.2 1 4.2 2.6c0 1-.6 1.8-1.6 2.4 1.6.8 3.4 2.5 3.4 5.1 0 3-2.4 5.4-6 5.4z"/><path d="M12 6c-1.4-2.4-4-3.4-6-2.6.6 2 2.8 3.2 5 3.2M12 6c1.4-2.4 4-3.4 6-2.6-.6 2-2.8 3.2-5 3.2"/></svg><span class="rtip">Raspberry Pi</span></a>
+    <span class="credit">Radix Robotics</span>
+  </nav>
+
+  <div class="shell studio">
+    <header class="top">
+      <div class="brand">
+        <svg class="mark" viewBox="0 0 64 40" aria-hidden="true"><rect x="3" y="3" width="58" height="34" rx="17" fill="none" stroke="#1E2B45" stroke-width="5"/><path d="M16 20h12" stroke="#1E2B45" stroke-width="5" stroke-linecap="round"/><path d="M42 14v12M36 20h12" stroke="#1F7A80" stroke-width="5" stroke-linecap="round"/></svg>
+        <div>
+          <h1><b>Radix</b> Arduino Lab</h1>
+          <p>Explore<i>·</i>Understand<i>·</i>Build</p>
+        </div>
+        <nav class="apptabs" aria-label="Labs">
+          <a href="/kits" target="_top"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 12h18"/></svg>Starter Kit</a>
+          <a href="/kits/arduino" target="_top" aria-current="page"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M9 9h6v6H9zM9 1v3M15 1v3M9 20v3M15 20v3M1 9h3M1 15h3M20 9h3M20 15h3"/></svg>Arduino</a>
+          <a href="/kits/esp" target="_top"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 9a15 15 0 0 1 20 0M5.5 12.5a10 10 0 0 1 13 0M9 16a5 5 0 0 1 6 0"/><circle cx="12" cy="19.5" r="1"/></svg>ESP</a>
+          <a href="/kits/pi" target="_top"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21.5c-3.6 0-6-2.4-6-5.4 0-2.6 1.8-4.3 3.4-5.1-1-.6-1.6-1.4-1.6-2.4C7.8 7 9.6 6 12 6s4.2 1 4.2 2.6c0 1-.6 1.8-1.6 2.4 1.6.8 3.4 2.5 3.4 5.1 0 3-2.4 5.4-6 5.4z"/><path d="M12 6c-1.4-2.4-4-3.4-6-2.6.6 2 2.8 3.2 5 3.2M12 6c1.4-2.4 4-3.4 6-2.6-.6 2-2.8 3.2-5 3.2"/></svg>Pi</a>
+        </nav>
+      </div>
+      <div class="topright">
+        <div class="progcard" aria-live="polite">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#1E2B45" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 5.5C5.5 4 8.5 4 12 6c3.5-2 6.5-2 9-.5V19c-2.5-1.5-5.5-1.5-9 .5-3.5-2-6.5-2-9-.5z"/><path d="M12 6v13.5"/></svg>
+          <span class="lbl">Basics</span>
+          <span class="progrow"><span class="pbar"><span id="pbar"></span></span><span id="count">0/16</span></span>
+        </div>
+        <div class="clock" aria-hidden="true"><span id="cdate"></span><span id="ctime"></span></div>
+      </div>
+    </header>
+
+    <section class="stage" id="stage" aria-label="3D Arduino bench">
+      <div class="stagebar">
+        <span class="mode" id="mode"><i></i><span id="modetext">Board · ready</span></span>
+      </div>
+      <div class="stage-view" id="stageview">
+        <div id="view3d"></div>
+        <div class="hotspots" id="hotspots"></div>
+        <div class="bench-note" id="benchnote"></div>
+        <div class="loading3d" id="loading3d">Building the 3D bench…</div>
+      </div>
+      <div class="dockwrap">
+        <span class="hintpill" id="hint">Drag to rotate · right-drag or WASD to pan · Q/E to turn · scroll to zoom</span>
+        <div class="dock" role="toolbar" aria-label="Board view">
+          <span class="seg"><button id="v-labels" aria-pressed="true" title="Show what each part of the board does"><svg viewBox="0 0 16 16"><path d="M2 3h12v8H6l-4 3z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>Labels</button></span>
+          <span class="div" aria-hidden="true"></span>
+          <span class="seg"><button id="v-flow" aria-pressed="true" title="Show current flowing through active wires"><svg viewBox="0 0 16 16"><path d="M9 1 3 9h5l-1 6 6-8H8z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>Current</button></span>
+          <span class="div" aria-hidden="true"></span>
+          <span class="seg" role="group" aria-label="Zoom">
+            <button id="z-out" aria-label="Zoom out"><svg viewBox="0 0 16 16"><path d="M4 8h8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
+            <button id="z-in" aria-label="Zoom in"><svg viewBox="0 0 16 16"><path d="M4 8h8M8 4v8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
+            <button id="z-fit" aria-label="Reset the view"><svg viewBox="0 0 16 16"><path d="M2 6V2h4M10 2h4v4M14 10v4h-4M6 14H2v-4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+          </span>
+        </div>
+      </div>
+      <div class="tipbox" id="tipbox" hidden></div>
+    </section>
+
+    <aside class="panel" aria-label="Lesson">
+      <div id="phead" class="phead"></div>
+      <div class="tabs" role="tablist" aria-label="Lesson sections">
+        <button class="tab" role="tab" id="tab-overview" aria-controls="tp-overview" aria-selected="true">Overview</button>
+        <button class="tab" role="tab" id="tab-pinout" aria-controls="tp-pinout" aria-selected="false" tabindex="-1">Pinout</button>
+        <button class="tab" role="tab" id="tab-example" aria-controls="tp-example" aria-selected="false" tabindex="-1">Example</button>
+        <button class="tab" role="tab" id="tab-specs" aria-controls="tp-specs" aria-selected="false" tabindex="-1">Specifications</button>
+      </div>
+      <div class="tabpanel" role="tabpanel" id="tp-overview" aria-labelledby="tab-overview"></div>
+      <div class="tabpanel" role="tabpanel" id="tp-pinout" aria-labelledby="tab-pinout" hidden></div>
+      <div class="tabpanel" role="tabpanel" id="tp-example" aria-labelledby="tab-example" hidden></div>
+      <div class="tabpanel" role="tabpanel" id="tp-specs" aria-labelledby="tab-specs" hidden></div>
+      <section class="try" aria-label="Try it yourself">
+        <div class="tryhead">
+          <span class="kicker">Try it yourself</span>
+          <span class="tools2">
+            <button class="sqbtn" id="creset" title="Restore the lesson's code" aria-label="Restore the lesson's code"><svg viewBox="0 0 16 16"><path d="M3 8a5 5 0 1 0 1.6-3.7M3 2v3h3" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+            <button class="sqbtn" id="ccopy" title="Copy the code" aria-label="Copy the code"><svg viewBox="0 0 16 16"><rect x="5" y="5" width="9" height="9" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M3 11V3a1 1 0 0 1 1-1h7" fill="none" stroke="currentColor" stroke-width="1.6"/></svg></button>
+            <button class="sqbtn run" id="crun" title="Upload and run" aria-label="Upload and run"><svg viewBox="0 0 16 16" id="runicon"><path d="M4 2.5v11l9.5-5.5z" fill="currentColor"/></svg></button>
+          </span>
+        </div>
+        <div class="editor">
+          <div class="gutter" id="gutter" aria-hidden="true"></div>
+          <div class="codebox"><pre id="hl" aria-hidden="true"></pre><textarea id="code" spellcheck="false" autocapitalize="off" autocomplete="off" aria-label="Arduino code. Edit it, then press Run."></textarea></div>
+        </div>
+        <div class="inputsrow" id="inputs"></div>
+        <div class="serial">
+          <div class="serialhead"><span class="kicker">Serial monitor</span><span class="sstat" id="sstat"><i></i><span id="sstattext">Stopped</span></span><button id="sclear">Clear</button></div>
+          <pre id="serial" aria-live="polite"></pre>
+        </div>
+      </section>
+    </aside>
+
+    <section class="strip" aria-label="Lessons">
+      <div class="striphead">
+        <span class="kicker">Lessons</span>
+        <span class="stripnav" style="margin-left:auto">
+          <button id="sleft" aria-label="Scroll lessons left"><svg viewBox="0 0 16 16"><path d="M10 3 5 8l5 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+          <button id="sright" aria-label="Scroll lessons right"><svg viewBox="0 0 16 16"><path d="M6 3l5 5-5 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+        </span>
+      </div>
+      <div id="navlist"></div>
+    </section>
+  </div>
+</div>
+
+<div class="scrim" id="scrim"></div>
+<aside class="drawer" id="drawer" aria-labelledby="refh" aria-hidden="true">
+  <div class="drawerhead">
+    <h2 id="refh">Components</h2>
+    <button class="ibtn" id="refclose" aria-label="Close components"><svg viewBox="0 0 16 16"><path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
+  </div>
+  <div class="drawerbody"><div class="refgrid" id="complist"></div></div>
+</aside>
+
+<script>
+(function(){
+/* ---------- illustrations for lesson cards and the components drawer (48×48) ---------- */
+const ICON={
+ board:`<rect x="5" y="9" width="38" height="30" rx="4" fill="#1F4E8C"/><rect x="2" y="13" width="10" height="9" rx="1.5" fill="#B9BBC0"/><rect x="3" y="27" width="8" height="8" rx="1.5" fill="#1A1A1D"/><rect x="22" y="25" width="17" height="6" rx="1" fill="#111"/><path d="M16 11h24M24 37h16" stroke="#111" stroke-width="2.4"/><circle cx="34" cy="17" r="3" fill="none" stroke="#fff" stroke-width="1.4"/><circle cx="28" cy="17" r="3" fill="none" stroke="#fff" stroke-width="1.4"/>`,
+ led:`<circle cx="24" cy="19" r="14" fill="#E5484D" opacity=".16"/><path d="M17 27V17a7 7 0 0 1 14 0v10z" fill="#E5484D"/><rect x="15" y="26" width="18" height="4" rx="1.5" fill="#B83A3E"/><ellipse cx="21" cy="16" rx="2" ry="3.2" fill="#fff" opacity=".65"/><path d="M20 30v13M28 30v9" stroke="#9A9DA4" stroke-width="2.2" stroke-linecap="round"/>`,
+ btn:`<rect x="10" y="13" width="28" height="27" rx="5" fill="#1F1F23"/><circle cx="24" cy="26" r="9" fill="#FF6A13"/><circle cx="21" cy="23" r="3" fill="#fff" opacity=".35"/><path d="M13 40v5M35 40v5" stroke="#9A9DA4" stroke-width="2.2" stroke-linecap="round"/>`,
+ pot:`<rect x="8" y="9" width="32" height="25" rx="4" fill="#1F4E8C"/><circle cx="24" cy="21.5" r="9" fill="#E8E9EC"/><path d="M24 21.5l5-5" stroke="#1F4E8C" stroke-width="2.6" stroke-linecap="round"/><path d="M14 34v9M24 34v9M34 34v9" stroke="#9A9DA4" stroke-width="2.2" stroke-linecap="round"/>`,
+ rgb:`<circle cx="18" cy="18" r="9" fill="#E5484D" opacity=".55"/><circle cx="30" cy="18" r="9" fill="#2FB36A" opacity=".55"/><circle cx="24" cy="27" r="9" fill="#3E63DD" opacity=".55"/><path d="M15 36v8M21 36v9M27 36v9M33 36v8" stroke="#9A9DA4" stroke-width="2" stroke-linecap="round"/>`,
+ ldr:`<circle cx="24" cy="20" r="15" fill="#FFD43B" opacity=".25"/><circle cx="24" cy="20" r="10" fill="#E8D8B0"/><path d="M18 17h4v4h-4v4h12v-4h-4v-4h4" fill="none" stroke="#B0472E" stroke-width="1.6"/><path d="M20 30v14M28 30v14" stroke="#9A9DA4" stroke-width="2.2" stroke-linecap="round"/>`,
+ us:`<rect x="3" y="14" width="42" height="20" rx="3" fill="#2D6BD6"/><circle cx="14" cy="24" r="8" fill="#C8CBD2"/><circle cx="34" cy="24" r="8" fill="#C8CBD2"/><circle cx="14" cy="24" r="4.5" fill="#55585F"/><circle cx="34" cy="24" r="4.5" fill="#55585F"/><path d="M18 34v8M22 34v8M26 34v8M30 34v8" stroke="#C9A23B" stroke-width="2"/>`,
+ buz:`<path d="M19 35v9M29 35v9" stroke="#9A9DA4" stroke-width="2.2" stroke-linecap="round"/><circle cx="22" cy="22" r="14" fill="#1A1A1D"/><circle cx="22" cy="22" r="9.5" fill="none" stroke="#38383E"/><circle cx="22" cy="22" r="3.5" fill="#FF6A13"/><path d="M38 14a12 12 0 0 1 0 16M42 10a18 18 0 0 1 0 24" fill="none" stroke="#FF6A13" stroke-width="2" stroke-linecap="round"/>`,
+ piano:`<rect x="4" y="12" width="40" height="26" rx="3" fill="#FAFAF7" stroke="#1E2B45" stroke-width="2"/><path d="M14 12v26M24 12v26M34 12v26" stroke="#1E2B45" stroke-width="1.6"/><rect x="11" y="12" width="6" height="15" fill="#1E2B45"/><rect x="21" y="12" width="6" height="15" fill="#1E2B45"/><rect x="31" y="12" width="6" height="15" fill="#1E2B45"/>`,
+ motor:`<rect x="8" y="16" width="26" height="18" rx="4" fill="#B9BBC0"/><rect x="8" y="16" width="6" height="18" rx="2" fill="#E5D35A"/><path d="M34 25h5" stroke="#55585F" stroke-width="3"/><path d="M40 13c4 6 4 18 0 24M40 13c-4 6-4 18 0 24" fill="#FF6A13" opacity=".85"/>`,
+ tmp:`<path d="M14 27V15a10 7.5 0 0 1 20 0v12z" fill="#1F1F23"/><path d="M18 27v16M24 27v16M30 27v16" stroke="#9A9DA4" stroke-width="2.2" stroke-linecap="round"/><text x="24" y="22" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="5.5" font-weight="700" fill="#FF8C42">TMP</text><circle cx="40" cy="10" r="5" fill="#E5484D" opacity=".8"/>`,
+ servo:`<rect x="6" y="18" width="30" height="20" rx="3" fill="#2D6BD6"/><rect x="2" y="25" width="38" height="5" rx="2" fill="#2D6BD6"/><circle cx="16" cy="18" r="5" fill="#E8E9EC"/><rect x="14" y="4" width="4" height="16" rx="2" fill="#F5F5F5" stroke="#A3A8B3" transform="rotate(30 16 18)"/>`,
+ traffic:`<rect x="15" y="4" width="18" height="40" rx="6" fill="#1F1F23"/><circle cx="24" cy="13" r="4.6" fill="#E5484D"/><circle cx="24" cy="24" r="4.6" fill="#F7C619"/><circle cx="24" cy="35" r="4.6" fill="#2FB36A"/>`,
+ counter:`<rect x="6" y="10" width="36" height="22" rx="4" fill="#1E2B45"/><text x="24" y="27" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="14" font-weight="700" fill="#3DDC84">042</text><circle cx="24" cy="40" r="5" fill="#FF6A13"/>`,
+ bar:`<rect x="6" y="30" width="6" height="12" rx="1.5" fill="#2FB36A"/><rect x="15" y="24" width="6" height="18" rx="1.5" fill="#2FB36A"/><rect x="24" y="18" width="6" height="24" rx="1.5" fill="#F7C619"/><rect x="33" y="10" width="6" height="32" rx="1.5" fill="#E5484D" opacity=".35"/>`,
+ parking:`<rect x="4" y="20" width="24" height="12" rx="3" fill="#2D6BD6"/><circle cx="11" cy="26" r="4" fill="#C8CBD2"/><circle cx="21" cy="26" r="4" fill="#C8CBD2"/><path d="M31 18a10 10 0 0 1 0 16M35 14a16 16 0 0 1 0 24" fill="none" stroke="#FF6A13" stroke-width="2" stroke-linecap="round"/><rect x="40" y="8" width="5" height="32" rx="1" fill="#1E2B45"/>`,
+};
+
+/* ---------- the board's parts, for the hotspot labels (x, z in mm from the top-left corner) ---------- */
+const HOTSPOTS=[
+ {id:'usb',x:2,z:15,h:11,name:'USB port',text:'Plug in a USB cable to power the board and upload code from your computer.',side:'left'},
+ {id:'jack',x:4,z:45,h:11,name:'Power jack',text:'Runs the board from a battery or adapter (7–12 V) when there is no USB.',side:'left'},
+ {id:'mcu',x:48,z:41,h:4,name:'Microcontroller',text:'The ATmega328P chip: the brain that stores and runs your sketch.'},
+ {id:'digital',x:44,z:2.5,h:9,name:'Digital pins',text:'Pins 0–13 switch things on and off or read buttons. Pins marked ~ can also dim (PWM).'},
+ {id:'power',x:37,z:51,h:9,name:'Power pins',text:'5V, 3.3V and GND feed your sensors and parts.'},
+ {id:'analog',x:57,z:51,h:9,name:'Analog in',text:'A0–A5 measure voltages from 0–5 V as a number from 0 to 1023.'},
+ {id:'reset',x:9,z:5,h:4,name:'Reset button',text:'Restarts your sketch from the beginning.',side:'left'},
+ {id:'led13',x:26,z:12,h:2,name:'Built-in LED “L”',text:'A tiny LED already wired to pin 13. Great for your first blink.'},
+];
+
+/* ---------- lessons ---------- */
+// parts: what sits on the breadboard and which Arduino pins it uses.
+//   led {pin,color} · rgb {pins:[r,g,b]} · btn {pin,label} · pot {pin} · ldr {pin} · us {trig,echo}
+//   buz {pin} · motor {pin} · tmp {pin} · servo {pin}
+const LESSONS=[
+ {n:1,icon:'board',title:'Meet the board',lede:'The Arduino Uno is a small computer you program to sense and control the world.',
+  overview:'The Uno is built around the ATmega328P microcontroller. You write a short program (a “sketch”) on your computer, upload it over USB, and the board runs it forever: reading pins, switching pins and talking back over the serial monitor.',
+  points:['Two parts to every sketch: setup() runs once, loop() runs again and again','Digital pins are on/off; analog pins read levels from 0 to 1023','Power comes from USB or the power jack'],
+  parts:[],
+  pins:[['13','Built-in LED “L”','Already on the board, no wiring needed'],['USB','Your computer','Power and uploading'],['GND','Ground','The 0 V return path for every circuit']],
+  steps:['Plug the board into your computer with a USB cable.','The green <b>ON</b> light shows it has power.','Press <b>Run</b> to upload the blink sketch. Watch the little <b>L</b> LED next to pin 13.'],
+  how:['<code>pinMode(LED_BUILTIN, OUTPUT)</code> makes pin 13 an output','<code>digitalWrite(..., HIGH)</code> sends 5 V to the pin: the LED turns on','<code>delay(1000)</code> waits 1000 milliseconds, one second'],
+  specs:[['Microcontroller','ATmega328P'],['Operating voltage','5 V'],['Input voltage','7–12 V'],['Digital pins','14 (6 PWM)'],['Analog inputs','6'],['Flash memory','32 KB'],['Clock speed','16 MHz'],['Size','68.6 × 53.4 mm']],
+  code:`// The little "L" LED is wired to pin 13 on the board itself.
+void setup() {
+  pinMode(LED_BUILTIN, OUTPUT);
+}
+
+void loop() {
+  digitalWrite(LED_BUILTIN, HIGH);  // on
+  delay(1000);                      // wait one second
+  digitalWrite(LED_BUILTIN, LOW);   // off
+  delay(1000);
+}`},
+ {n:2,icon:'led',title:'Blink an LED',lede:'Your first circuit: an LED and a resistor on a breadboard, switched by pin 13.',
+  overview:'An LED lights when current flows from its long leg (+) to its short leg (−). The resistor limits that current so the LED doesn’t burn out. Pin 13 switches between 5 V and 0 V, so the LED blinks.',
+  points:['Long leg to the pin, short leg towards GND','Always use a resistor (220 Ω is a good choice)','Change the delay() numbers to blink faster or slower'],
+  parts:[{t:'led',pin:13,color:'red'}],
+  pins:[['13','LED long leg (via 220 Ω)','Output: HIGH = on'],['GND','LED short leg','Return path']],
+  steps:['Push the LED into the breadboard, long leg on the left.','Connect a 220 Ω resistor from the long leg’s row to <b>pin 13</b>.','Connect the short leg’s row to the blue <b>−</b> rail, and the rail to <b>GND</b>.'],
+  how:['<code>const int ledPin = 13;</code> gives the pin a name you can reuse','Two <code>delay(500)</code> calls make one blink per second','Try 100 ms for a fast flash'],
+  specs:[['LED forward voltage','~2 V (red)'],['LED current','~15 mA'],['Resistor','220 Ω'],['Pin 13 output','5 V / 0 V']],
+  code:`const int ledPin = 13;
+
+void setup() {
+  pinMode(ledPin, OUTPUT);
+}
+
+void loop() {
+  digitalWrite(ledPin, HIGH);
+  delay(500);
+  digitalWrite(ledPin, LOW);
+  delay(500);
+}`},
+ {n:3,icon:'btn',title:'Push a button',lede:'Inputs let the board sense the world. A button tells it when you press.',
+  overview:'With INPUT_PULLUP, the pin is gently held at HIGH inside the chip. Pressing the button connects it to GND, so digitalRead() returns LOW. The sketch copies that onto the LED.',
+  points:['INPUT_PULLUP means no extra resistor is needed','Pressed reads LOW, released reads HIGH','Press and hold the button in the 3D view, or use the control below'],
+  parts:[{t:'btn',pin:2},{t:'led',pin:13,color:'green'}],
+  pins:[['2','Push button','Input with pull-up'],['13','LED (via 220 Ω)','Output'],['GND','Button and LED','Shared ground']],
+  steps:['Place the button across the middle gap of the breadboard.','Wire one button leg to <b>pin 2</b> and the opposite leg to <b>GND</b>.','Wire the LED to <b>pin 13</b> through a 220 Ω resistor, short leg to GND.'],
+  how:['<code>digitalRead(buttonPin) == LOW</code> is true while pressed','The <code>if / else</code> turns the LED on or off to match','loop() runs thousands of times a second, so it feels instant'],
+  specs:[['Button type','Tactile, momentary'],['Pull-up resistor','~35 kΩ (inside the chip)'],['Bounce time','~5–20 ms']],
+  code:`const int buttonPin = 2;
+const int ledPin = 13;
+
+void setup() {
+  pinMode(buttonPin, INPUT_PULLUP);  // reads HIGH until pressed
+  pinMode(ledPin, OUTPUT);
+}
+
+void loop() {
+  if (digitalRead(buttonPin) == LOW) {   // pressed
+    digitalWrite(ledPin, HIGH);
+  } else {
+    digitalWrite(ledPin, LOW);
+  }
+}`,inputs:['btn']},
+ {n:4,icon:'pot',title:'Turn a knob',lede:'A potentiometer is a resistor with a slider. Turning it changes a voltage you can read.',
+  overview:'The pot’s outer legs go to 5V and GND; the middle leg gives a voltage in between. analogRead() turns 0–5 V into a number from 0 to 1023, and analogWrite() dims an LED on a PWM pin.',
+  points:['analogRead() gives 0–1023','analogWrite() takes 0–255, so map() converts between them','Open the serial monitor to watch the numbers change'],
+  parts:[{t:'pot',pin:'A0'},{t:'led',pin:9,color:'yellow'}],
+  pins:[['A0','Pot middle leg','Analog input'],['9 ~','LED (via 220 Ω)','PWM output'],['5V','Pot outer leg','Power'],['GND','Pot outer leg, LED','Ground']],
+  steps:['Place the pot. Outer legs to <b>5V</b> and <b>GND</b>, middle leg to <b>A0</b>.','Wire an LED to <b>pin 9</b> (marked ~) through 220 Ω.','Run the sketch and turn the knob.'],
+  how:['<code>map(value, 0, 1023, 0, 255)</code> rescales the reading','<code>analogWrite(9, brightness)</code> flickers the pin so fast it looks dimmed','<code>Serial.println(value)</code> prints each reading'],
+  specs:[['Potentiometer','10 kΩ linear'],['ADC resolution','10-bit (0–1023)'],['PWM range','0–255'],['PWM frequency','~490 Hz on pin 9']],
+  code:`void setup() {
+  Serial.begin(9600);
+  pinMode(9, OUTPUT);
+}
+
+void loop() {
+  int value = analogRead(A0);                    // 0 – 1023
+  int brightness = map(value, 0, 1023, 0, 255);
+  analogWrite(9, brightness);                    // 0 – 255
+  Serial.println(value);
+  delay(200);
+}`,inputs:['pot']},
+ {n:5,icon:'rgb',title:'Mix colours',lede:'An RGB LED is three tiny LEDs, red, green and blue, under one milky cap.',
+  overview:'Each colour has its own leg. Dimming each one with PWM mixes millions of colours, just like the pixels on a screen. The sketch uses a helper function, setColor(), to set all three at once.',
+  points:['Three PWM pins: 9, 10 and 11','255, 160, 0 makes orange; 160, 0, 255 makes purple','Write your own colours in the loop'],
+  parts:[{t:'rgb',pins:[9,10,11]}],
+  pins:[['9 ~','Red leg (via 220 Ω)','PWM'],['10 ~','Green leg (via 220 Ω)','PWM'],['11 ~','Blue leg (via 220 Ω)','PWM'],['GND','Long common leg','Common cathode']],
+  steps:['Place the RGB LED; the longest leg is the common one.','Connect the longest leg to <b>GND</b>.','Connect red, green and blue legs to <b>9</b>, <b>10</b> and <b>11</b>, each through 220 Ω.'],
+  how:['<code>void setColor(int r, int g, int b)</code> is your own function','Calling it once sets all three channels','Each <code>delay(800)</code> holds a colour for 0.8 s'],
+  specs:[['Type','Common cathode'],['Channels','Red, green, blue'],['Colours','256 × 256 × 256'],['Resistors','3 × 220 Ω']],
+  code:`const int redPin = 9, greenPin = 10, bluePin = 11;
+
+void setColor(int r, int g, int b) {
+  analogWrite(redPin, r);
+  analogWrite(greenPin, g);
+  analogWrite(bluePin, b);
+}
+
+void setup() {
+  pinMode(redPin, OUTPUT);
+  pinMode(greenPin, OUTPUT);
+  pinMode(bluePin, OUTPUT);
+}
+
+void loop() {
+  setColor(255, 0, 0);   delay(800);  // red
+  setColor(0, 255, 0);   delay(800);  // green
+  setColor(0, 0, 255);   delay(800);  // blue
+  setColor(255, 160, 0); delay(800);  // orange
+  setColor(160, 0, 255); delay(800);  // purple
+}`},
+ {n:6,icon:'ldr',title:'Sense light',lede:'A light-dependent resistor lets more current through the brighter it gets.',
+  overview:'Paired with a 10 kΩ resistor, the LDR makes a voltage that rises with light. The sketch reads it on A0 and switches a lamp on when it gets dark: an automatic night light.',
+  points:['Bright light gives a high reading, darkness a low one','Change threshold to set when the lamp switches','Slide the light level below to test it'],
+  parts:[{t:'ldr',pin:'A0'},{t:'led',pin:13,color:'white'}],
+  pins:[['A0','LDR + 10 kΩ junction','Analog input'],['13','Lamp LED (via 220 Ω)','Output'],['5V','LDR','Power'],['GND','10 kΩ resistor, LED','Ground']],
+  steps:['Connect the LDR from <b>5V</b> to a free row.','Add a 10 kΩ resistor from that row to <b>GND</b>, and a wire from the row to <b>A0</b>.','Wire an LED to <b>pin 13</b> through 220 Ω.'],
+  how:['<code>analogRead(sensorPin)</code> reads the light level','<code>if (light < threshold)</code> means it is dark','<code>Serial.print</code> then <code>Serial.println</code> prints on one line'],
+  specs:[['Dark resistance','~1 MΩ'],['Bright resistance','~1 kΩ'],['Fixed resistor','10 kΩ'],['Response time','~20–30 ms']],
+  code:`const int sensorPin = A0;
+const int ledPin = 13;
+const int threshold = 400;   // try changing this
+
+void setup() {
+  Serial.begin(9600);
+  pinMode(ledPin, OUTPUT);
+}
+
+void loop() {
+  int light = analogRead(sensorPin);
+  Serial.print("Light: ");
+  Serial.println(light);
+  if (light < threshold) {
+    digitalWrite(ledPin, HIGH);   // dark: lamp on
+  } else {
+    digitalWrite(ledPin, LOW);
+  }
+  delay(300);
+}`,inputs:['ldr']},
+ {n:7,icon:'us',title:'Measure distance',lede:'The ultrasonic sensor shouts a click too high to hear and times the echo.',
+  overview:'A 10 µs pulse on TRIG sends out ultrasound. ECHO then stays HIGH for as long as the sound took to bounce back. Sound travels about 1 cm every 29 µs, there and back, so dividing by 58 gives centimetres.',
+  points:['pulseIn() measures how long a pin stays HIGH','Distance (cm) = echo time ÷ 58','Move the obstacle with the slider and watch the waves'],
+  parts:[{t:'us',trig:9,echo:10}],
+  pins:[['9','TRIG','Output: starts a ping'],['10','ECHO','Input: echo time'],['5V','VCC','Power'],['GND','GND','Ground']],
+  steps:['Plug the HC-SR04 into the breadboard with its “eyes” facing out.','Wire <b>VCC</b> to 5V and <b>GND</b> to GND.','Wire <b>TRIG</b> to pin 9 and <b>ECHO</b> to pin 10.'],
+  how:['The three <code>digitalWrite</code> lines make a clean 10 µs ping','<code>pulseIn(echoPin, HIGH)</code> returns microseconds','<code>duration / 58.0</code> converts to centimetres'],
+  specs:[['Range','2–400 cm'],['Accuracy','~3 mm'],['Frequency','40 kHz'],['Supply','5 V, 15 mA']],
+  code:`const int trigPin = 9;
+const int echoPin = 10;
+
+void setup() {
+  Serial.begin(9600);
+  pinMode(trigPin, OUTPUT);
+  pinMode(echoPin, INPUT);
+}
+
+void loop() {
+  digitalWrite(trigPin, LOW);
+  delayMicroseconds(2);
+  digitalWrite(trigPin, HIGH);      // 10 µs ping
+  delayMicroseconds(10);
+  digitalWrite(trigPin, LOW);
+
+  long duration = pulseIn(echoPin, HIGH);   // echo time in µs
+  float cm = duration / 58.0;
+  Serial.print("Distance: ");
+  Serial.print(cm);
+  Serial.println(" cm");
+  delay(500);
+}`,inputs:['us']},
+ {n:8,icon:'buz',title:'Make a sound',lede:'A piezo buzzer clicks every time its pin flips. Flip it fast enough and you hear a note.',
+  overview:'tone() flips a pin on and off at a frequency you choose: 262 times a second is middle C. An array holds the notes of a scale and a for loop plays them in order.',
+  points:['tone(pin, frequency, duration) plays a note','Arrays hold lists of values, like notes[]','Turn your sound on to hear it'],
+  parts:[{t:'buz',pin:8}],
+  pins:[['8','Buzzer +','Output: the tone'],['GND','Buzzer −','Ground']],
+  steps:['Place the buzzer; the longer leg is +.','Wire + to <b>pin 8</b> and − to <b>GND</b>.','Run the sketch to play a scale.'],
+  how:['<code>int notes[] = {...}</code> stores eight frequencies','<code>for (int i = 0; i < 8; i++)</code> steps through them','<code>noTone(buzzerPin)</code> stops the sound'],
+  specs:[['Type','Passive piezo'],['Frequency range','~100 Hz – 10 kHz'],['Middle C','262 Hz'],['A above middle C','440 Hz']],
+  code:`const int buzzerPin = 8;
+int notes[] = {262, 294, 330, 349, 392, 440, 494, 523};  // C D E F G A B C
+
+void setup() {
+  pinMode(buzzerPin, OUTPUT);
+}
+
+void loop() {
+  for (int i = 0; i < 8; i++) {
+    tone(buzzerPin, notes[i], 250);
+    delay(300);
+  }
+  noTone(buzzerPin);
+  delay(1000);
+}`},
+ {n:9,icon:'piano',title:'Mini piano',lede:'Four buttons and a buzzer make a tiny piano you can play.',
+  overview:'Each key is a button with INPUT_PULLUP. The loop checks every key and plays its note while it is held. If nothing is pressed, the buzzer goes quiet.',
+  points:['Arrays keep the key pins and notes together','A bool remembers whether anything is playing','Hold the keys in 3D or with the controls'],
+  parts:[{t:'btn',pin:2,label:'C'},{t:'btn',pin:3,label:'E'},{t:'btn',pin:4,label:'G'},{t:'btn',pin:5,label:'C'},{t:'buz',pin:8}],
+  pins:[['2–5','Four keys','Inputs with pull-up'],['8','Buzzer +','Tone output'],['GND','Keys and buzzer','Ground']],
+  steps:['Place four buttons across the gap.','Wire them to <b>pins 2, 3, 4, 5</b>, other legs to <b>GND</b>.','Wire the buzzer to <b>pin 8</b> and GND.'],
+  how:['<code>keys[i]</code> and <code>notes[i]</code> share the same index','<code>tone(buzzerPin, notes[i])</code> plays until noTone()','<code>!playing</code> means “not playing”'],
+  specs:[['Keys','4 tactile buttons'],['Notes','C4, E4, G4, C5'],['Polyphony','One note at a time']],
+  code:`const int buzzerPin = 8;
+int keys[]  = {2, 3, 4, 5};
+int notes[] = {262, 330, 392, 523};   // C, E, G, high C
+
+void setup() {
+  for (int i = 0; i < 4; i++) {
+    pinMode(keys[i], INPUT_PULLUP);
+  }
+}
+
+void loop() {
+  bool playing = false;
+  for (int i = 0; i < 4; i++) {
+    if (digitalRead(keys[i]) == LOW) {
+      tone(buzzerPin, notes[i]);
+      playing = true;
+    }
+  }
+  if (!playing) {
+    noTone(buzzerPin);
+  }
+}`,inputs:['btn']},
+ {n:10,icon:'motor',title:'Spin a motor',lede:'A pin can’t power a motor by itself, so a transistor does the heavy lifting.',
+  overview:'The pin drives the transistor’s base through a 1 kΩ resistor. The transistor switches the motor’s bigger current. PWM on pin 9 sets the speed, and a diode protects against the motor’s kick-back.',
+  points:['Never connect a motor straight to a pin','PWM controls speed: 0 stops, 255 is full speed','Watch the fan speed up and slow down'],
+  parts:[{t:'motor',pin:9}],
+  pins:[['9 ~','Transistor base (via 1 kΩ)','PWM output'],['5V','Motor +','Motor power'],['GND','Transistor emitter','Ground']],
+  steps:['Place a TIP120 or 2N2222 transistor.','Pin 9 → 1 kΩ → base. Emitter → GND.','Motor between 5V and the collector, with a diode across the motor (stripe to 5V).'],
+  how:['<code>speed += 5</code> ramps up in small steps','<code>analogWrite(motorPin, speed)</code> sets the duty cycle','Two for loops: one speeds up, one slows down'],
+  specs:[['Motor','3–6 V DC hobby motor'],['Transistor','NPN (2N2222 / TIP120)'],['Base resistor','1 kΩ'],['Diode','1N4007']],
+  code:`const int motorPin = 9;   // to the transistor's base, through 1 kΩ
+
+void setup() {
+  pinMode(motorPin, OUTPUT);
+}
+
+void loop() {
+  for (int speed = 0; speed <= 255; speed += 5) {   // speed up
+    analogWrite(motorPin, speed);
+    delay(40);
+  }
+  delay(1000);
+  for (int speed = 255; speed >= 0; speed -= 5) {   // slow down
+    analogWrite(motorPin, speed);
+    delay(40);
+  }
+  delay(1000);
+}`},
+ {n:11,icon:'tmp',title:'Sense heat',lede:'The TMP36 turns temperature into a voltage you can read.',
+  overview:'It outputs 0.5 V at 0 °C and 10 mV more for every degree. The sketch converts the reading back into volts, then into degrees Celsius.',
+  points:['Flat side facing you: 5V, signal, GND','°C = (volts − 0.5) × 100','Change the temperature with the slider'],
+  parts:[{t:'tmp',pin:'A0'}],
+  pins:[['A0','TMP36 middle leg','Analog input'],['5V','Left leg','Power'],['GND','Right leg','Ground']],
+  steps:['Place the TMP36 with its flat face towards you.','Left leg to <b>5V</b>, right leg to <b>GND</b>.','Middle leg to <b>A0</b>.'],
+  how:['<code>reading * 5.0 / 1023.0</code> converts to volts','<code>(volts - 0.5) * 100.0</code> converts to °C','Using 5.0 (not 5) keeps the decimals'],
+  specs:[['Range','−40 to 125 °C'],['Accuracy','±2 °C'],['Output at 0 °C','0.5 V'],['Scale','10 mV / °C']],
+  code:`void setup() {
+  Serial.begin(9600);
+}
+
+void loop() {
+  int reading = analogRead(A0);
+  float volts = reading * 5.0 / 1023.0;
+  float celsius = (volts - 0.5) * 100.0;
+  Serial.print("Temperature: ");
+  Serial.print(celsius);
+  Serial.println(" C");
+  delay(1000);
+}`,inputs:['tmp']},
+ {n:12,icon:'servo',title:'Sweep a servo',lede:'A servo is a motor that knows where it is. Tell it an angle and it goes there.',
+  overview:'The Servo library sends the pulses for you. write(90) points the arm straight up; 0 and 180 are the two ends. Two loops sweep it back and forth.',
+  points:['#include <Servo.h> adds the library','Servo arm; creates a servo object','arm.write(angle) moves it from 0 to 180°'],
+  parts:[{t:'servo',pin:9}],
+  pins:[['9','Signal (orange)','Pulses'],['5V','Power (red)','Power'],['GND','Ground (brown)','Ground']],
+  steps:['Connect the servo’s orange wire to <b>pin 9</b>.','Red wire to <b>5V</b>, brown wire to <b>GND</b>.','Run the sketch and watch the arm sweep.'],
+  how:['<code>arm.attach(9)</code> connects the servo to pin 9','<code>angle += 2</code> with <code>delay(15)</code> makes a smooth sweep','Change 180 to 90 for a smaller wave'],
+  specs:[['Model','SG90 micro servo'],['Range','0–180°'],['Speed','~0.1 s / 60°'],['Torque','1.8 kg·cm']],
+  code:`#include <Servo.h>
+
+Servo arm;
+
+void setup() {
+  arm.attach(9);
+}
+
+void loop() {
+  for (int angle = 0; angle <= 180; angle += 2) {
+    arm.write(angle);
+    delay(15);
+  }
+  for (int angle = 180; angle >= 0; angle -= 2) {
+    arm.write(angle);
+    delay(15);
+  }
+}`},
+ {n:13,icon:'traffic',title:'Traffic light',lede:'Three LEDs and some careful timing make a working traffic light.',
+  overview:'A helper function, light(), sets all three LEDs and waits. The loop then reads like the traffic-light sequence itself: stop, get ready, go, slow down.',
+  points:['Functions make long sketches easy to read','HIGH and LOW can be passed as values','Change the timings to make your own junction'],
+  parts:[{t:'led',pin:12,color:'red'},{t:'led',pin:11,color:'yellow'},{t:'led',pin:10,color:'green'}],
+  pins:[['12','Red LED (via 220 Ω)','Output'],['11','Yellow LED (via 220 Ω)','Output'],['10','Green LED (via 220 Ω)','Output'],['GND','All short legs','Ground']],
+  steps:['Place red, yellow and green LEDs in a row.','Wire them to <b>pins 12, 11 and 10</b> through 220 Ω each.','Connect all short legs to <b>GND</b>.'],
+  how:['<code>light(HIGH, LOW, LOW, 3000)</code> = red for 3 s','Each call sets the lights and then waits','Four calls make one full cycle'],
+  specs:[['LEDs','Red, yellow, green'],['Resistors','3 × 220 Ω'],['Cycle time','8 s']],
+  code:`const int red = 12, yellow = 11, green = 10;
+
+void light(int r, int y, int g, int ms) {
+  digitalWrite(red, r);
+  digitalWrite(yellow, y);
+  digitalWrite(green, g);
+  delay(ms);
+}
+
+void setup() {
+  pinMode(red, OUTPUT);
+  pinMode(yellow, OUTPUT);
+  pinMode(green, OUTPUT);
+}
+
+void loop() {
+  light(HIGH, LOW, LOW, 3000);   // stop
+  light(HIGH, HIGH, LOW, 1000);  // get ready
+  light(LOW, LOW, HIGH, 3000);   // go
+  light(LOW, HIGH, LOW, 1000);   // slow down
+}`},
+ {n:14,icon:'counter',title:'Count presses',lede:'Remembering the last state lets you count each press exactly once.',
+  overview:'A press is the moment the pin goes from HIGH to LOW. By saving lastState each time round the loop, the sketch spots that moment, adds one to the count and prints it.',
+  points:['Detect the change, not the level','count++ adds one','A short delay ignores the button’s bounce'],
+  parts:[{t:'btn',pin:2},{t:'led',pin:13,color:'blue'}],
+  pins:[['2','Push button','Input with pull-up'],['13','LED (via 220 Ω)','Toggles each press'],['GND','Button, LED','Ground']],
+  steps:['Wire a button between <b>pin 2</b> and <b>GND</b>.','Wire an LED to <b>pin 13</b> through 220 Ω.','Open the serial monitor and press the button.'],
+  how:['<code>state == LOW && lastState == HIGH</code> is the press','<code>count % 2</code> is 1 for odd counts, so the LED toggles','<code>lastState = state</code> remembers for next time'],
+  specs:[['Debounce','30 ms'],['Counter','int, up to 32 767']],
+  code:`const int buttonPin = 2;
+int count = 0;
+int lastState = HIGH;
+
+void setup() {
+  Serial.begin(9600);
+  pinMode(buttonPin, INPUT_PULLUP);
+  pinMode(13, OUTPUT);
+}
+
+void loop() {
+  int state = digitalRead(buttonPin);
+  if (state == LOW && lastState == HIGH) {   // just pressed
+    count++;
+    Serial.print("Presses: ");
+    Serial.println(count);
+    digitalWrite(13, count % 2);             // toggle the LED
+    delay(30);                               // ignore switch bounce
+  }
+  lastState = state;
+}`,inputs:['btn']},
+ {n:15,icon:'bar',title:'Level meter',lede:'Turn a knob and watch a bar of LEDs rise and fall.',
+  overview:'map() turns the 0–1023 reading into a level from 0 to 4. A for loop then lights every LED below that level, like the volume meter on a speaker.',
+  points:['One reading drives five outputs','map() can shrink any range into another','Try reversing the order of the LEDs'],
+  parts:[{t:'pot',pin:'A0'},{t:'led',pin:2,color:'green'},{t:'led',pin:3,color:'green'},{t:'led',pin:4,color:'yellow'},{t:'led',pin:5,color:'red'}],
+  pins:[['A0','Pot middle leg','Analog input'],['2–5','Four LEDs (via 220 Ω)','Outputs'],['5V / GND','Pot outer legs','Power']],
+  steps:['Place the pot: outer legs to <b>5V</b> and <b>GND</b>, middle to <b>A0</b>.','Place four LEDs and wire them to <b>pins 2, 3, 4, 5</b> through 220 Ω.','Connect all short legs to <b>GND</b>.'],
+  how:['<code>map(analogRead(A0), 0, 1023, 0, 4)</code> gives 0–4','<code>i < level</code> lights the LEDs below the level','<code>delay(50)</code> keeps it smooth'],
+  specs:[['LEDs','2 green, 1 yellow, 1 red'],['Levels','0–4'],['Potentiometer','10 kΩ']],
+  code:`int leds[] = {2, 3, 4, 5};
+
+void setup() {
+  for (int i = 0; i < 4; i++) {
+    pinMode(leds[i], OUTPUT);
+  }
+}
+
+void loop() {
+  int level = map(analogRead(A0), 0, 1023, 0, 4);
+  for (int i = 0; i < 4; i++) {
+    if (i < level) {
+      digitalWrite(leds[i], HIGH);
+    } else {
+      digitalWrite(leds[i], LOW);
+    }
+  }
+  delay(50);
+}`,inputs:['pot']},
+ {n:16,icon:'parking',title:'Parking sensor',lede:'Put it all together: a distance sensor, traffic-light LEDs and a beeper.',
+  overview:'Like the sensor in a car bumper: green when there’s room, yellow when you get close, red and beeping when you should stop. A function, readDistance(), keeps the main loop short.',
+  points:['Functions can return values: long readDistance()','Comparisons like cm > 50 are true or false, HIGH or LOW','Slide the obstacle closer to hear it beep'],
+  parts:[{t:'us',trig:9,echo:10},{t:'led',pin:4,color:'green'},{t:'led',pin:5,color:'yellow'},{t:'led',pin:6,color:'red'},{t:'buz',pin:8}],
+  pins:[['9 / 10','Sensor TRIG / ECHO','Ping / echo'],['4, 5, 6','Green, yellow, red LEDs','Outputs'],['8','Buzzer +','Beeps'],['5V / GND','Sensor power','Power']],
+  steps:['Wire the HC-SR04 as in lesson 7 (TRIG 9, ECHO 10).','Wire green, yellow and red LEDs to <b>4, 5, 6</b> through 220 Ω.','Wire the buzzer to <b>8</b>. All grounds to <b>GND</b>.'],
+  how:['<code>return pulseIn(echoPin, HIGH) / 58;</code> sends back centimetres','<code>digitalWrite(green, cm > 50)</code> lights green when far','The ternary <code>cm <= 20 ? 150 : 300</code> beeps faster when close'],
+  specs:[['Green','> 50 cm'],['Yellow','21–50 cm'],['Red + beep','≤ 20 cm'],['Update rate','3–6 times a second']],
+  code:`const int trigPin = 9, echoPin = 10;
+const int green = 4, yellow = 5, red = 6, buzzer = 8;
+
+long readDistance() {
+  digitalWrite(trigPin, LOW);
+  delayMicroseconds(2);
+  digitalWrite(trigPin, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(trigPin, LOW);
+  return pulseIn(echoPin, HIGH) / 58;
+}
+
+void setup() {
+  Serial.begin(9600);
+  pinMode(trigPin, OUTPUT);
+  pinMode(echoPin, INPUT);
+  pinMode(green, OUTPUT);
+  pinMode(yellow, OUTPUT);
+  pinMode(red, OUTPUT);
+}
+
+void loop() {
+  long cm = readDistance();
+  Serial.println(cm);
+  digitalWrite(green, cm > 50);
+  digitalWrite(yellow, cm > 20 && cm <= 50);
+  digitalWrite(red, cm <= 20);
+  if (cm <= 20) {
+    tone(buzzer, 880, 100);   // beep faster as you get closer
+  }
+  delay(cm <= 20 ? 150 : 300);
+}`,inputs:['us']},
+];
+
+const COMPONENTS=[
+ ['board','Arduino Uno','The microcontroller board that runs your sketch. 14 digital pins, 6 analog inputs, USB and power jack.'],
+ ['led','LED','Lights when current flows from the long leg (+) to the short leg (−). Always add a resistor.'],
+ ['rgb','RGB LED','Red, green and blue LEDs in one. Mix them with PWM for any colour.'],
+ ['btn','Push button','A momentary switch. Use INPUT_PULLUP and read LOW when pressed.'],
+ ['pot','Potentiometer','A knob that gives any voltage between 0 and 5 V on its middle leg.'],
+ ['ldr','Light sensor (LDR)','Its resistance drops in bright light. Pair it with 10 kΩ to read light levels.'],
+ ['us','HC-SR04 distance sensor','Times an ultrasonic echo to measure 2–400 cm.'],
+ ['buz','Piezo buzzer','Plays notes with tone(). Higher frequency, higher pitch.'],
+ ['motor','DC motor','Spins when powered. Drive it through a transistor, never straight from a pin.'],
+ ['tmp','TMP36 temperature sensor','0.5 V at 0 °C plus 10 mV per degree.'],
+ ['servo','Micro servo','Turns to an exact angle from 0 to 180° using the Servo library.'],
+];
+
+/* ---------- Arduino mini-simulator ----------
+   Translates a sketch into JavaScript generator functions so delay() can pause
+   without blocking the page. Covers the Arduino calls used in the lessons plus
+   arrays, your own functions and the Servo library. */
+const CTYPES='(?:unsigned\\s+long|unsigned\\s+int|unsigned\\s+char|long\\s+long|long|int|float|double|bool|boolean|byte|char|word|short|String|uint8_t|uint16_t|uint32_t|int8_t|int16_t|int32_t|size_t)';
+const INT_TYPES=/^(?:unsigned\s+long|unsigned\s+int|unsigned\s+char|long\s+long|long|int|byte|word|short|uint8_t|uint16_t|uint32_t|int8_t|int16_t|int32_t|size_t)$/;
+
+function matchParen(s,i){
+  let d=0,q=null;
+  for(let j=i;j<s.length;j++){const c=s[j];
+    if(q){if(c==='\\'){j++;continue;}if(c===q)q=null;continue;}
+    if(c==='"'||c==="'"){q=c;continue;}
+    if(c==='('||c==='[')d++;else if(c===')'||c===']'){d--;if(d===0)return j;}}
+  return -1;
+}
+/** Remove comments, keeping strings and line breaks (so line numbers stay put). */
+function stripComments(s){
+  let out='',q=null;
+  for(let i=0;i<s.length;i++){const c=s[i],n=s[i+1];
+    if(q){out+=c;if(c==='\\'){out+=n;i++;}else if(c===q)q=null;continue;}
+    if(c==='"'||c==="'"){q=c;out+=c;continue;}
+    if(c==='/'&&n==='/'){while(i<s.length&&s[i]!=='\n')i++;out+='\n';continue;}
+    if(c==='/'&&n==='*'){i+=2;while(i<s.length&&!(s[i]==='*'&&s[i+1]==='/')){if(s[i]==='\n')out+='\n';i++;}i++;continue;}
+    out+=c;}
+  return out;
+}
+/** Replace every call `name(args)` using make(args) — args are transformed recursively. */
+function wrapCalls(s,name,make,skipIf){
+  const re=new RegExp('\\b'+name+'\\s*\\(','g');let out='',i=0,m;
+  while((m=re.exec(s))){
+    if(skipIf&&skipIf(s,m.index)){continue;}
+    const open=m.index+m[0].length-1,close=matchParen(s,open);if(close<0)break;
+    out+=s.slice(i,m.index)+make(wrapCalls(s.slice(open+1,close),name,make,skipIf));i=close+1;re.lastIndex=close+1;}
+  return out+s.slice(i);
+}
+/** Split on commas that are not inside brackets or strings. */
+function topSplit(s){const parts=[];let d=0,q=null,start=0;
+  for(let i=0;i<s.length;i++){const c=s[i];if(q){if(c==='\\')i++;else if(c===q)q=null;continue;}
+    if(c==='"'||c==="'")q=c;else if('([{'.includes(c))d++;else if(')]}'.includes(c))d--;else if(c===','&&d===0){parts.push(s.slice(start,i));start=i+1;}}
+  parts.push(s.slice(start));return parts;}
+
+function transpile(src){
+  let s=stripComments(src).replace(/^[ \t]*#.*$/gm,'');
+  // Servo objects
+  s=s.replace(/\bServo\s+(\w+)\s*;/g,'let $1 = new Servo();');
+  // Function definitions → generators (so they can pause in delay()).
+  const fnNames=[];
+  s=s.replace(new RegExp('\\b(?:static\\s+|inline\\s+)?(void|'+CTYPES+')\\s+(\\w+)\\s*\\(([^)]*)\\)\\s*\\{','g'),(all,ret,name,params)=>{
+    if(['if','for','while','switch','return'].includes(name))return all;
+    fnNames.push(name);
+    const ps=params.trim()==='void'?'':params.split(',').map(p=>{const m=p.trim().match(/(\w+)\s*(\[\s*\])?$/);return m?m[1]:'';}).filter(Boolean).join(', ');
+    return `function* ${name}(${ps}) {`;});
+  // C strings: const char* ssid = "..."
+  s=s.replace(/\b(?:const\s+)?(?:unsigned\s+)?char\s*\*\s*(?=[A-Za-z_])/g,'let ');
+  // Library objects with constructor arguments: WebServer server(80); DHT dht(4, DHT22);
+  s=s.replace(/\b(WebServer|ESP8266WebServer|DHT)\s+(\w+)\s*\(([^)]*)\)\s*;/g,'let $2 = new $1($3);');
+  // Arrays: int a[] = {1, 2}; and int a[4];
+  s=s.replace(new RegExp('\\b(?:const\\s+|static\\s+)*'+CTYPES+'\\s+(\\w+)\\s*\\[\\s*\\w*\\s*\\]\\s*=\\s*\\{([^}]*)\\}','g'),'let $1 = [$2]');
+  s=s.replace(new RegExp('\\b(?:const\\s+|static\\s+)*'+CTYPES+'\\s+(\\w+)\\s*\\[\\s*(\\w+)\\s*\\]\\s*;','g'),'let $1 = new Array($2).fill(0);');
+  // Declarations. Whole-number types truncate like C does (int x = 7 / 2 → 3); a missing value starts at 0.
+  s=s.replace(new RegExp('\\b((?:const\\s+|static\\s+|volatile\\s+)*)('+CTYPES+')\\s+(?=[A-Za-z_])','g'),(all,mods,type)=>`let/*${INT_TYPES.test(type.replace(/\s+/g,' '))?'i':'n'}*/ `);
+  s=s.replace(/let\/\*([in])\*\/ ([^;]*);/g,(all,kind,body)=>'let '+topSplit(body).map(d=>{const m=d.match(/^\s*(\w+)\s*=\s*([\s\S]+)$/);
+    if(m)return kind==='i'?`${m[1]} = __int(${m[2]})`:`${m[1]} = ${m[2]}`;return /^\s*\w+\s*$/.test(d)?`${d.trim()} = 0`:d.trim();}).join(', ')+';');
+  // Casts
+  s=s.replace(/\(\s*(?:int|long|byte|unsigned\s+long)\s*\)\s*/g,'__int').replace(/\(\s*(?:float|double)\s*\)\s*/g,'');
+  // Infinite-loop guard at the start of every for/while body.
+  { let out='',i=0;const re=/\b(?:for|while)\s*\(/g;let m;
+    while((m=re.exec(s))){const open=m.index+m[0].length-1,close=matchParen(s,open);if(close<0)break;
+      let j=close+1;while(j<s.length&&/\s/.test(s[j]))j++;
+      if(s[j]==='{'){out+=s.slice(i,j+1)+' __guard();';i=j+1;}
+      re.lastIndex=close+1;}
+    s=out+s.slice(i); }
+  // Pausing calls.
+  s=wrapCalls(s,'delayMicroseconds',a=>`(yield __us(${a}))`);
+  s=wrapCalls(s,'delay',a=>`(yield __ms(${a}))`);
+  // Calls to your own functions run as generators too.
+  fnNames.filter(n=>n!=='setup'&&n!=='loop').forEach(n=>{
+    s=wrapCalls(s,n,a=>`(yield* ${n}(${a}))`,(str,at)=>/function\*\s*$/.test(str.slice(Math.max(0,at-12),at)));});
+  return s;
+}
+
+const RT_NAMES=['HIGH','LOW','INPUT','OUTPUT','INPUT_PULLUP','LED_BUILTIN','A0','A1','A2','A3','A4','A5','DEC','HEX','BIN',
+  'D0','D1','D2','D3','D4','D5','D6','D7','D8','T0','T1','T2','T3','T4','T5','T6','T7','T8','T9','RGB_BUILTIN',
+  'WiFi','WebServer','ESP8266WebServer','DHT','DHT11','DHT22','touchRead','rgbLedWrite','String',
+  'WL_IDLE_STATUS','WL_NO_SSID_AVAIL','WL_SCAN_COMPLETED','WL_CONNECTED','WL_CONNECT_FAILED','WL_CONNECTION_LOST','WL_DISCONNECTED','WIFI_STA','WIFI_AP','WIFI_AP_STA','WIFI_OFF',
+  'pinMode','digitalWrite','digitalRead','analogRead','analogWrite','millis','micros','map','constrain','abs','min','max','pow','sqrt','sq',
+  'random','randomSeed','tone','noTone','pulseIn','Serial','Servo','__ms','__us','__int','__guard'];
+
+/** Runs a sketch. io connects it to the bench: read pins, analog values, echoes, serial and redraws.
+    board (optional) supplies board constants such as LED_BUILTIN, A0 or D1, and Wi-Fi networks. */
+function createSim(io,board){
+  let gen=null,timer=null,running=false;
+  const st={pins:{},mode:{},pwm:{},tones:{},servos:{},rgb:{},simMs:0,ops:0,serial:0};
+  const wifi={status:0,target:null,result:0,at:0,scan:[],announced:0};
+  const nets=()=>(board&&board.networks)||[];
+  const jitter=v=>v+Math.round((Math.random()-.5)*4);
+  function wifiStatus(){
+    if(wifi.target&&st.simMs>=wifi.at&&wifi.status!==wifi.result){wifi.status=wifi.result;if(io.wifi)io.wifi(wifi.status===3?'connected':'failed',wifi);}
+    return wifi.status;}
+  const runToEnd=(r)=>{if(!r||typeof r.next!=='function')return r;let n=0;for(;;){const x=r.next();if(x.done)return x.value;if(++n>100000)throw new Error('A web handler ran too long.');}};
+  class WebServer{
+    constructor(port){this.port=port||80;this.routes={};this.notFound=null;this.queue=[];this.args={};this.resp=null;this.started=false;}
+    on(path,fn){this.routes[path]=fn;}
+    onNotFound(fn){this.notFound=fn;}
+    begin(){this.started=true;if(io.server)io.server(this);}
+    handleClient(){const req=this.queue.shift();if(!req)return;this.args=req.args||{};this.resp=null;this.path=req.path;
+      const fn=this.routes[req.path]||this.notFound;if(fn)runToEnd(fn());
+      req.done(this.resp||(fn?{code:200,type:'text/plain',body:''}:{code:404,type:'text/plain',body:'Not found: '+req.path}));}
+    send(code,type,body){this.resp={code:+code||200,type:type||'text/plain',body:body===undefined?'':String(body)};}
+    arg(n){return this.args[n]??'';}
+    hasArg(n){return n in this.args;}
+    uri(){return this.path||'/';}
+  }
+  class DHT{constructor(pin,type){this.pin=pin;this.type=type;}begin(){}
+    readTemperature(){const v=io.dht?io.dht():{t:22,h:50};return Math.round((v.t+(Math.random()-.5)*.2)*10)/10;}
+    readHumidity(){const v=io.dht?io.dht():{t:22,h:50};return Math.round((v.h+(Math.random()-.5)*.6)*10)/10;}}
+  const fmt=(x,base)=>{if(typeof x==='boolean')return x?'1':'0';if(typeof x==='number'){if(base===16)return Math.trunc(x).toString(16).toUpperCase();if(base===2)return Math.trunc(x).toString(2);return Number.isInteger(x)?String(x):x.toFixed(2);}return String(x);};
+  const pinNo=p=>typeof p==='string'?(/^A\d$/.test(p)?14+(+p[1]):+p):p;
+  const rt={HIGH:1,LOW:0,INPUT:0,OUTPUT:1,INPUT_PULLUP:2,LED_BUILTIN:13,A0:14,A1:15,A2:16,A3:17,A4:18,A5:19,DEC:10,HEX:16,BIN:2,
+    pinMode(p,m){st.mode[pinNo(p)]=m;io.changed(st);},
+    digitalWrite(p,v){p=pinNo(p);st.pwm[p]=null;st.pins[p]=v?1:0;io.changed(st);},
+    digitalRead(p){p=pinNo(p);if(st.mode[p]===1)return st.pins[p]?1:0;return io.read(p,st.mode[p]);},
+    analogRead(p){p=pinNo(p);return io.analog(p<14?p+14:p);},
+    analogWrite(p,v){p=pinNo(p);v=Math.max(0,Math.min(255,Math.round(+v||0)));st.pwm[p]=v;st.pins[p]=v>0?1:0;io.changed(st);},
+    millis(){return Math.floor(st.simMs);},micros(){return Math.floor(st.simMs*1000);},
+    map(x,a,b,c,d){return Math.trunc((x-a)*(d-c)/(b-a)+c);},
+    constrain(x,a,b){return Math.min(b,Math.max(a,x));},abs:Math.abs,min:Math.min,max:Math.max,pow:Math.pow,sqrt:Math.sqrt,sq:x=>x*x,
+    random(a,b){if(b===undefined){b=a;a=0;}return Math.floor(a+Math.random()*(b-a));},randomSeed(){},
+    tone(p,f,d){p=pinNo(p);st.tones[p]={f:+f,until:d?st.simMs+ +d:Infinity};io.changed(st);},
+    noTone(p){delete st.tones[pinNo(p)];io.changed(st);},
+    pulseIn(p){return io.pulse(pinNo(p));},
+    Serial:{begin(){},end(){},available(){return 0;},read(){return -1;},
+      print(x,base){if(x!==undefined)io.print(fmt(x,base),false);st.serial++;},
+      println(x,base){io.print(x===undefined?'':fmt(x,base),true);st.serial++;}},
+    Servo:class{attach(p){this.p=pinNo(p);this.a=90;st.servos[this.p]=90;io.changed(st);}
+      write(a){this.a=Math.max(0,Math.min(180,+a||0));if(this.p!==undefined){st.servos[this.p]=this.a;io.changed(st);}}
+      read(){return this.a??90;}detach(){}},
+    touchRead(p){return io.touch?io.touch(pinNo(p)):0;},
+    rgbLedWrite(p,r,g,b){p=pinNo(p);st.rgb[p]=[+r||0,+g||0,+b||0];st.pwm[p]=null;st.pins[p]=(r||g||b)?1:0;io.changed(st);},
+    String(v,dec){if(typeof v==='number'){if(dec!==undefined&&(!Number.isInteger(v)||![2,10,16].includes(dec)))return v.toFixed(dec);if(dec===16)return Math.trunc(v).toString(16).toUpperCase();if(dec===2)return Math.trunc(v).toString(2);return Number.isInteger(v)?String(v):v.toFixed(2);}
+      if(typeof v==='boolean')return v?'1':'0';return v===undefined?'':String(v);},
+    WL_IDLE_STATUS:0,WL_NO_SSID_AVAIL:1,WL_SCAN_COMPLETED:2,WL_CONNECTED:3,WL_CONNECT_FAILED:4,WL_CONNECTION_LOST:5,WL_DISCONNECTED:6,
+    WIFI_OFF:0,WIFI_STA:1,WIFI_AP:2,WIFI_AP_STA:3,DHT11:11,DHT22:22,
+    WebServer,ESP8266WebServer:WebServer,DHT,
+    WiFi:{
+      mode(){},setHostname(){},persistent(){},setAutoReconnect(){},
+      begin(ssid,pass){const n=nets().find(x=>x.ssid===String(ssid));wifi.target=String(ssid);wifi.status=6;wifi.at=st.simMs+1800+Math.random()*700;
+        wifi.result=!n?1:(n.pass===''||n.pass===String(pass??''))?3:4;if(io.wifi)io.wifi('connecting',wifi);return wifi.status;},
+      status(){return wifiStatus();},
+      disconnect(){wifi.target=null;wifi.status=6;if(io.wifi)io.wifi('disconnected',wifi);},
+      isConnected(){return wifiStatus()===3;},
+      localIP(){const ok=wifiStatus()===3;return{toString:()=>ok?'192.168.1.42':'0.0.0.0'};},
+      macAddress(){return 'A4:CF:12:9B:3E:01';},
+      SSID(i){return i===undefined?(wifi.status===3?wifi.target:''):(wifi.scan[i]?wifi.scan[i].ssid:'');},
+      RSSI(i){if(i===undefined){const n=nets().find(x=>x.ssid===wifi.target);return wifi.status===3&&n?jitter(n.rssi):0;}return wifi.scan[i]?wifi.scan[i].rssi:0;},
+      encryptionType(i){return wifi.scan[i]?wifi.scan[i].enc:0;},
+      channel(i){return wifi.scan[i]?wifi.scan[i].ch:0;},
+      scanNetworks(){wifi.scan=nets().map(n=>({...n,rssi:jitter(n.rssi)})).sort((a,b)=>b.rssi-a.rssi);if(io.wifi)io.wifi('scan',wifi);return wifi.scan.length;},
+      scanDelete(){wifi.scan=[];},
+    },
+    __ms:x=>Math.max(0,+x||0),__us:x=>Math.max(0,+x||0)/1000,
+    __int:x=>typeof x==='boolean'?+x:Math.trunc(x),
+    __guard(){if(++st.ops>300000)throw new Error('A loop ran 300,000 times without delay(). Add a delay() inside it, or check its condition.');},
+  };
+  if(board&&board.consts)Object.assign(rt,board.consts);
+  function expireTones(){let ch=false;for(const p in st.tones)if(st.tones[p].until<=st.simMs){delete st.tones[p];ch=true;}if(ch)io.changed(st);}
+  function slice(){
+    if(!running)return;const budget=performance.now()+10;let steps=0;
+    try{
+      for(;;){st.ops=0;const r=gen.next();
+        if(r.done){running=false;io.status('done');io.changed(st);return;}
+        const ms=r.value||0;st.simMs+=ms>0?ms:.02;expireTones();
+        if(ms>=1){timer=setTimeout(slice,ms);return;}
+        if(++steps>20000||performance.now()>budget){timer=setTimeout(slice,4);return;}
+      }
+    }catch(e){running=false;io.status('error',e);io.changed(st);}
+  }
+  return{
+    state:st,
+    start(code){
+      let fns;
+      try{fns=new Function('__rt',`const {${RT_NAMES.join(',')}} = __rt;\n${transpile(code)}\nreturn {setup: typeof setup==='function'?setup:null, loop: typeof loop==='function'?loop:null};`)(rt);}
+      catch(e){io.status('error',e);return false;}
+      if(!fns.setup&&!fns.loop){io.status('error',new Error('No setup() or loop() found. Every sketch needs both.'));return false;}
+      gen=(function*(){if(fns.setup)yield* fns.setup();if(!fns.loop)return;for(;;){yield* fns.loop();yield 0;}})();
+      running=true;io.status('running');io.changed(st);slice();return true;
+    },
+    stop(){running=false;clearTimeout(timer);gen=null;Object.assign(st,{pins:{},mode:{},pwm:{},tones:{},servos:{},rgb:{}});Object.assign(wifi,{status:0,target:null,scan:[]});if(io.wifi)io.wifi('off',wifi);if(io.server)io.server(null);io.status('stopped');io.changed(st);},
+    get running(){return running;},
+  };
+}
+
+/** Catches what an Arduino compiler would reject but JavaScript forgives: a statement without its ; */
+function lintSketch(src){
+  const ls=stripComments(src).split('\n');
+  const nextLine=i=>{for(let j=i+1;j<ls.length;j++){const t=ls[j].trim();if(t)return t;}return '';};
+  for(let i=0;i<ls.length;i++){
+    const t=ls[i].trim();if(!t||t.startsWith('#'))continue;
+    if(!/[\w)\]"']$/.test(t))continue;                                  // ends with ; { } , or an operator
+    if(/^(if|else|for|while|switch|do|case|default)\b/.test(t))continue;  // control lines
+    if(/^(?:static\s+|inline\s+)?\w[\w\s]*\s+\w+\s*\([^;]*\)$/.test(t)&&!/=/.test(t))continue; // function header
+    if(/^[{.?:+\-*/%&|<>=)]/.test(nextLine(i)))continue;                 // statement continues on the next line
+    return{line:i+1,msg:`Line ${i+1}: missing ; at the end of “${t.length>40?t.slice(0,40)+'…':t}”.`};
+  }
+  return null;
+}
+
+/* ---------- 3D bench: an Arduino Uno and a breadboard (three.js) ---------- */
+function createBench(host,api){
+  const T=window.THREE,UP=new T.Vector3(0,1,0);
+  const reduce=matchMedia('(prefers-reduced-motion:reduce)').matches;
+  const ease=t=>1-Math.pow(1-Math.min(1,Math.max(0,t)),3);
+
+  const renderer=new T.WebGLRenderer({antialias:true,alpha:true});
+  renderer.setPixelRatio(Math.min(2,window.devicePixelRatio||1));
+  renderer.shadowMap.enabled=true;renderer.shadowMap.type=T.PCFSoftShadowMap;renderer.outputEncoding=T.sRGBEncoding;
+  host.appendChild(renderer.domElement);
+  const scene=new T.Scene(),camera=new T.PerspectiveCamera(32,1,.1,200);
+  const VIEW_ALL={pos:new T.Vector3(-1.6,13.5,12.5),target:new T.Vector3(-.4,0,.9)},VIEW_BOARD={pos:new T.Vector3(-5.2,8.2,7.6),target:new T.Vector3(-4.1,0,.2)};
+  let HOME=VIEW_ALL;
+  camera.position.copy(HOME.pos);
+  const controls=new T.OrbitControls(camera,renderer.domElement);
+  controls.target.copy(HOME.target);controls.enableDamping=true;controls.dampingFactor=.08;controls.minDistance=4;controls.maxDistance=40;controls.maxPolarAngle=Math.PI*.48;controls.screenSpacePanning=true;controls.update();
+  let camAnim=null;
+  scene.add(new T.HemisphereLight(0xfff6e6,0x7d6c52,.62));
+  const sun=new T.DirectionalLight(0xffffff,.9);sun.position.set(-8,20,10);sun.castShadow=true;sun.shadow.mapSize.set(2048,2048);
+  Object.assign(sun.shadow.camera,{left:-14,right:14,top:12,bottom:-12,near:1,far:60});sun.shadow.bias=-.0006;scene.add(sun);
+  const fill=new T.DirectionalLight(0xffe8d0,.25);fill.position.set(10,8,-8);scene.add(fill);
+  const ground=new T.Mesh(new T.PlaneGeometry(80,80),new T.ShadowMaterial({opacity:.16}));ground.rotation.x=-Math.PI/2;ground.receiveShadow=true;scene.add(ground);
+
+  /* helpers */
+  const M=(color,o)=>new T.MeshStandardMaterial(Object.assign({color,roughness:.55,metalness:0},o||{}));
+  const metal=()=>M(0xC3C6CC,{metalness:.7,roughness:.3});
+  const mesh=(g,m,sh=true)=>{const x=new T.Mesh(g,m);x.castShadow=sh;x.receiveShadow=true;return x;};
+  const along=(o,a,b)=>{const d=new T.Vector3().subVectors(b,a);o.position.copy(a).addScaledVector(d,.5);o.quaternion.setFromUnitVectors(UP,d.clone().normalize());return o;};
+  const rod=(a,b,r,m)=>along(mesh(new T.CylinderGeometry(r,r,a.distanceTo(b),10),m),a,b);
+  const box=(w,h,d,m)=>mesh(new T.BoxGeometry(w,h,d),m);
+  const V=(x,y,z)=>new T.Vector3(x,y,z);
+  function rrect(c,x,y,w,h,r){c.beginPath();c.moveTo(x+r,y);c.lineTo(x+w-r,y);c.quadraticCurveTo(x+w,y,x+w,y+r);c.lineTo(x+w,y+h-r);c.quadraticCurveTo(x+w,y+h,x+w-r,y+h);c.lineTo(x+r,y+h);c.quadraticCurveTo(x,y+h,x,y+h-r);c.lineTo(x,y+r);c.quadraticCurveTo(x,y,x+r,y);c.closePath();}
+  function label(text,o){
+    o=Object.assign({fg:'#1E2B45',bg:'rgba(251,246,236,.95)',size:.32},o||{});
+    const c=document.createElement('canvas'),x=c.getContext('2d'),font='700 56px "JetBrains Mono", monospace';
+    x.font=font;const w=Math.ceil(x.measureText(text).width)+36;c.width=w;c.height=84;x.font=font;
+    if(o.bg){x.fillStyle=o.bg;rrect(x,2,2,w-4,80,22);x.fill();}x.fillStyle=o.fg;x.textBaseline='middle';x.fillText(text,18,45);
+    const t=new T.CanvasTexture(c);t.encoding=T.sRGBEncoding;
+    const s=new T.Sprite(new T.SpriteMaterial({map:t,transparent:true,depthWrite:false}));s.scale.set(o.size*w/84,o.size,1);s.renderOrder=10;return s;}
+  const glowTex=(()=>{const c=document.createElement('canvas');c.width=c.height=128;const x=c.getContext('2d'),g=x.createRadialGradient(64,64,0,64,64,64);
+    g.addColorStop(0,'rgba(255,255,255,1)');g.addColorStop(.35,'rgba(255,255,255,.45)');g.addColorStop(1,'rgba(255,255,255,0)');x.fillStyle=g;x.fillRect(0,0,128,128);
+    const t=new T.CanvasTexture(c);t.encoding=T.sRGBEncoding;return t;})();
+  const glow=c=>{const s=new T.Sprite(new T.SpriteMaterial({map:glowTex,color:c,transparent:true,depthWrite:false}));s.renderOrder=8;return s;};
+
+  /* ---------- Arduino Uno (mm → units ×0.1; origin = the board's top-left corner) ---------- */
+  const BX=-7.6,BZ=-2.67,BOARD_Y=.3,PCB=.16,TOPY=BOARD_Y+PCB;
+  const U=(x,z,h=TOPY)=>V(BX+x*.1,h,BZ+z*.1);
+  const DIG_X=n=>n<=7?64.8-n*2.54:43.0-(n-8)*2.54;
+  const TOP_EXTRA={GND:27.8,AREF:25.3,SDA:22.7,SCL:20.2};
+  const POWER_PINS=['NC','IOREF','RESET','3.3V','5V','GND2','GND3','VIN'];
+  const HEADER_H=.85;
+  /** Top of a header socket for a pin name/number. */
+  function pinPos(p){
+    if(typeof p==='number'&&p<=13)return U(DIG_X(p),2.5,TOPY+HEADER_H);
+    if(typeof p==='string'&&/^A\d$/.test(p))return U(50.8+(+p[1])*2.54,50.9,TOPY+HEADER_H);
+    if(typeof p==='number'&&p>=14)return U(50.8+(p-14)*2.54,50.9,TOPY+HEADER_H);
+    if(p==='GND')return U(TOP_EXTRA.GND,2.5,TOPY+HEADER_H);
+    const i=POWER_PINS.indexOf(p);if(i>=0)return U(27.9+i*2.54,50.9,TOPY+HEADER_H);
+    return U(30,25,TOPY);
+  }
+  const pcbTex=(()=>{const S=12,c=document.createElement('canvas');c.width=68.6*S;c.height=53.4*S;const x=c.getContext('2d');
+    const g=x.createLinearGradient(0,0,c.width,c.height);g.addColorStop(0,'#235596');g.addColorStop(1,'#1B4682');x.fillStyle=g;x.fillRect(0,0,c.width,c.height);
+    x.strokeStyle='rgba(120,170,230,.18)';x.lineWidth=S*.5;
+    [[12,20,30,20,30,30],[34,8,34,18,46,18],[16,30,16,40,28,40],[50,24,60,24,60,34],[40,30,52,30],[20,12,24,8,40,8]].forEach(pts=>{x.beginPath();x.moveTo(pts[0]*S,pts[1]*S);for(let i=2;i<pts.length;i+=2)x.lineTo(pts[i]*S,pts[i+1]*S);x.stroke();});
+    x.fillStyle='#F2F4F8';x.strokeStyle='#F2F4F8';x.textAlign='center';x.textBaseline='middle';
+    const txt=(t,X,Y,sz,rot=0,w=600)=>{x.save();x.translate(X*S,Y*S);x.rotate(rot);x.font=`${w} ${sz*S}px "JetBrains Mono", monospace`;x.fillText(t,0,0);x.restore();};
+    for(let n=0;n<=13;n++){const pwm=[3,5,6,9,10,11].includes(n);txt((pwm?'~':'')+n,DIG_X(n),7.2,1.55,-Math.PI/2);}
+    Object.entries(TOP_EXTRA).forEach(([k,X])=>txt(k,X,7.2,1.35,-Math.PI/2));
+    ['','IOREF','RESET','3.3V','5V','GND','GND','VIN'].forEach((t,i)=>t&&txt(t,27.9+i*2.54,45.6,1.3,-Math.PI/2));
+    for(let i=0;i<6;i++)txt('A'+i,50.8+i*2.54,46,1.4,-Math.PI/2);
+    txt('DIGITAL (PWM ~)',48,11.2,1.7,0,700);txt('POWER',36.8,40.6,1.6,0,700);txt('ANALOG IN',57.2,40.6,1.6,0,700);
+    x.lineWidth=S*.45;x.beginPath();x.arc(40*S,24*S,3.2*S,0,Math.PI*2);x.stroke();x.beginPath();x.arc(47*S,24*S,3.2*S,0,Math.PI*2);x.stroke();
+    txt('−',40,24,3,0,800);txt('+',47,24,3,0,800);txt('UNO',53.5,30.5,3.4,0,800);txt('RADIX',43.5,30.5,2,0,800);
+    txt('L',29.4,12,1.5);txt('TX',29.9,16.5,1.3);txt('RX',29.9,19,1.3);txt('ON',61.5,22,1.4);
+    x.strokeStyle='rgba(242,244,248,.85)';x.lineWidth=S*.3;
+    [[20.2-1.3,0.9,25.5,3.2],[47-1.3+.3,0.9,19.6,3.2],[27.9-1.3,49.3,20.9,3.2],[50.8-1.3,49.3,15.4,3.2]].forEach(([a,b,w,h])=>x.strokeRect(a*S,b*S,w*S,h*S));
+    [[14,2.5],[15.3,50.7],[66.1,7.6],[66.1,35.5]].forEach(([X,Y])=>{x.fillStyle='#C8CDD6';x.beginPath();x.arc(X*S,Y*S,1.7*S,0,Math.PI*2);x.fill();x.fillStyle='#16325c';x.beginPath();x.arc(X*S,Y*S,1.1*S,0,Math.PI*2);x.fill();});
+    const t=new T.CanvasTexture(c);t.encoding=T.sRGBEncoding;t.anisotropy=renderer.capabilities.getMaxAnisotropy();return t;})();
+  const uno=new T.Group();scene.add(uno);
+  { const shape=new T.Shape(),W=68.6,Hh=53.4,r=2;
+    shape.moveTo(r,0);shape.lineTo(W-r,0);shape.quadraticCurveTo(W,0,W,-r);shape.lineTo(W,-Hh+r);shape.quadraticCurveTo(W,-Hh,W-r,-Hh);shape.lineTo(r,-Hh);shape.quadraticCurveTo(0,-Hh,0,-Hh+r);shape.lineTo(0,-r);shape.quadraticCurveTo(0,0,r,0);
+    const geo=new T.ExtrudeGeometry(shape,{depth:1.6,bevelEnabled:false});geo.rotateX(-Math.PI/2);geo.scale(.1,.1,.1);
+    pcbTex.repeat.set(1/68.6,1/53.4);pcbTex.offset.set(0,1);
+    const pcb=mesh(geo,[M(0xffffff,{map:pcbTex,roughness:.6}),M(0x173c70,{roughness:.6})]);pcb.position.set(BX,BOARD_Y,BZ);uno.add(pcb);
+    [[14,2.5],[15.3,50.7],[66.1,7.6],[66.1,35.5]].forEach(([x,z])=>{const f=mesh(new T.CylinderGeometry(.22,.22,BOARD_Y,12),M(0x2a2a2e));f.position.copy(U(x,z,BOARD_Y/2));uno.add(f);});
+  }
+  // USB-B socket and DC jack
+  { const usb=box(1.6,1.1,1.2,metal());usb.position.copy(U(1.7,15.5,TOPY+.55));uno.add(usb);
+    const hole=box(.05,.62,.8,M(0x1a1a1d));hole.position.copy(U(-6.3,15.5,TOPY+.55));uno.add(hole);
+    const jack=box(1.4,1.1,.9,M(0x1A1A1D,{roughness:.4}));jack.position.copy(U(5.2,44.5,TOPY+.55));uno.add(jack);
+    const jh=mesh(new T.CylinderGeometry(.28,.28,.06,20),M(0x0b0b0d));jh.rotation.z=Math.PI/2;jh.position.copy(U(-1.85,44.5,TOPY+.58));uno.add(jh);
+    const rb=box(.6,.3,.6,metal());rb.position.copy(U(9,5,TOPY+.15));uno.add(rb);
+    const rc=mesh(new T.CylinderGeometry(.18,.18,.16,16),M(0xD63A2F));rc.position.copy(U(9,5,TOPY+.38));uno.add(rc);
+  }
+  // ATmega328P in its socket, the USB chip, crystal, regulator and capacitors
+  { const sock=box(3.62,.22,.86,M(0x26262a));sock.position.copy(U(47.5,41,TOPY+.11));uno.add(sock);
+    const chip=box(3.55,.38,.74,M(0x141416,{roughness:.35}));chip.position.copy(U(47.5,41,TOPY+.41));uno.add(chip);
+    for(let i=0;i<14;i++){const x=31.0+i*2.54;[37.4,44.6].forEach(z=>{const l=box(.08,.3,.12,metal());l.position.copy(U(x,z,TOPY+.3));uno.add(l);});}
+    const ct=label('ATMEGA328P',{fg:'#9aa0aa',bg:null,size:.16});ct.position.copy(U(47.5,41,TOPY+.62));uno.add(ct);
+    const u2=box(.5,.1,.5,M(0x141416));u2.position.copy(U(24,22,TOPY+.05));uno.add(u2);
+    const xt=along(mesh(new T.CapsuleGeometry(.16,.4,6,12),metal()),U(20,35,TOPY+.18),U(26,35,TOPY+.18));uno.add(xt);
+    const reg=box(.6,.35,.5,M(0x141416));reg.position.copy(U(16,38,TOPY+.18));uno.add(reg);
+    [[15.5,45.5],[20.5,45.5]].forEach(([x,z])=>{const cp=mesh(new T.CylinderGeometry(.3,.3,.6,20),M(0x2D2D33,{roughness:.4}));cp.position.copy(U(x,z,TOPY+.3));uno.add(cp);
+      const top=mesh(new T.CylinderGeometry(.3,.3,.02,20),metal());top.position.copy(U(x,z,TOPY+.61));uno.add(top);});
+    for(let i=0;i<3;i++)for(let j=0;j<2;j++){const p=box(.07,.6,.07,M(0xD6B04A,{metalness:.6,roughness:.3}));p.position.copy(U(63.3+j*2.54,26+i*2.54,TOPY+.3));uno.add(p);}
+  }
+  // Female headers with every pin hoverable
+  const pinMeshes=[];
+  function header(names,posFn){
+    names.forEach(n=>{const p=posFn(n);const b=box(.254,HEADER_H,.254,M(0x1A1A1D,{roughness:.5}));b.position.copy(p).setY(TOPY+HEADER_H/2);b.userData.pin=n;uno.add(b);pinMeshes.push(b);
+      const h=box(.11,.02,.11,M(0x050506));h.position.copy(p).setY(TOPY+HEADER_H+.005);uno.add(h);});
+  }
+  header([13,12,11,10,9,8,7,6,5,4,3,2,1,0],pinPos);header(['GND','AREF','SDA','SCL'],pinPos);
+  header(POWER_PINS,pinPos);header(['A0','A1','A2','A3','A4','A5'],pinPos);
+  // On-board LEDs: L (pin 13), TX, RX and ON
+  function smd(x,z,color){const m=M(new T.Color(color).multiplyScalar(.45),{emissive:new T.Color(color),emissiveIntensity:0});const l=box(.16,.08,.1,m);l.position.copy(U(x,z,TOPY+.04));uno.add(l);
+    const g=glow(new T.Color(color));g.position.copy(U(x,z,TOPY+.18));g.scale.setScalar(.9);g.material.opacity=0;uno.add(g);return{m,g};}
+  const ledL=smd(26,12,'#FFB020'),ledTX=smd(26,16.5,'#FFB020'),ledRX=smd(26,19,'#FFB020'),ledON=smd(58,22,'#3DDC84');
+  ledON.m.emissiveIntensity=1.6;ledON.g.material.opacity=.7;
+
+  /* ---------- breadboard ---------- */
+  const BB={x0:.3,x1:10.0,z0:-2.75,z1:2.75,top:.5},COL=c=>BB.x0+.55+c*.254;
+  const ROW={a:-1.9,b:-1.65,c:-1.4,d:-1.15,e:-.9,f:.9,g:1.15,h:1.4,i:1.65,j:1.9,minus:-2.45,plus:2.45};
+  const BBP=(c,r,h=BB.top)=>V(COL(c),h,ROW[r]);
+  const bbTex=(()=>{const S=40,w=(BB.x1-BB.x0),d=(BB.z1-BB.z0),c=document.createElement('canvas');c.width=w*S;c.height=d*S;const x=c.getContext('2d');
+    x.fillStyle='#FAFAF7';x.fillRect(0,0,c.width,c.height);const tx=X=>(X-BB.x0)*S,tz=Z=>(Z-BB.z0)*S;
+    x.fillStyle='#E4E2DA';x.fillRect(0,tz(-.22),c.width,.44*S);
+    x.strokeStyle='#1E2B45';x.lineWidth=2;x.beginPath();x.moveTo(tx(BB.x0+.3),tz(-2.25));x.lineTo(tx(BB.x1-.3),tz(-2.25));x.stroke();
+    x.strokeStyle='#D7372A';x.beginPath();x.moveTo(tx(BB.x0+.3),tz(2.25));x.lineTo(tx(BB.x1-.3),tz(2.25));x.stroke();
+    x.fillStyle='#1E2B45';x.font=`700 ${.32*S}px "JetBrains Mono", monospace`;x.fillText('−',tx(BB.x0+.08),tz(-2.35));x.fillStyle='#D7372A';x.fillText('+',tx(BB.x0+.08),tz(2.55));
+    for(let cc=0;cc<36;cc++){Object.values(ROW).forEach(z=>{x.fillStyle='#C9C7C0';x.fillRect(tx(COL(cc))-4,tz(z)-4,8,8);x.fillStyle='#3E4046';x.fillRect(tx(COL(cc))-2.5,tz(z)-2.5,5,5);});}
+    x.fillStyle='#8C8F96';x.font=`${.17*S}px "JetBrains Mono", monospace`;x.textAlign='center';for(let cc=0;cc<36;cc+=5)x.fillText(String(cc+1),tx(COL(cc)),tz(-2.1)+4);
+    const t=new T.CanvasTexture(c);t.encoding=T.sRGBEncoding;t.anisotropy=renderer.capabilities.getMaxAnisotropy();return t;})();
+  const side=M(0xECE8DE,{roughness:.8});
+  const bboard=mesh(new T.BoxGeometry(BB.x1-BB.x0,BB.top,BB.z1-BB.z0),[side,side,M(0xffffff,{map:bbTex,roughness:.75}),side,side,side]);
+  bboard.position.set((BB.x0+BB.x1)/2,BB.top/2,0);scene.add(bboard);
+
+  /* ---------- wires ---------- */
+  const WIRE_COLORS=['#FF6A13','#14A39A','#8B6CF6','#E0A800','#3E8EF7','#E2459A'];
+  function wire(a,b,color,parent){
+    const d=a.distanceTo(b),lift=Math.max(a.y,b.y)+.35+d*.13;
+    const curve=new T.CatmullRomCurve3([a,a.clone().setY(a.y+.35),a.clone().lerp(b,.5).setY(lift),b.clone().setY(b.y+.35),b],false,'centripetal');
+    parent.add(mesh(new T.TubeGeometry(curve,64,.06,8,false),M(new T.Color(color),{roughness:.38})));
+    [a,b].forEach(p=>{const tip=mesh(new T.CylinderGeometry(.075,.075,.25,10),M(0x2A2A2E));tip.position.copy(p).setY(p.y+.18);parent.add(tip);});
+    return curve;
+  }
+  const legM=metal();
+
+  /* ---------- lesson parts ---------- */
+  const partsRoot=new T.Group();scene.add(partsRoot);
+  let parts=[],wires=[],extras=[];
+  const WIDTH={led:4,rgb:4,btn:3,pot:3,ldr:4,us:4,buz:3,motor:3,tmp:3,servo:3};
+  function ledModel(g,anode,cathode,color,partRef){
+    const mid=anode.clone().lerp(cathode,.5),base=1.25;
+    [[anode,.75],[cathode,.62]].forEach(([h,bend])=>{const up=h.clone().setY(BB.top+bend*.6),p=mid.clone().addScaledVector(new T.Vector3().subVectors(h,mid).setY(0).normalize(),.1).setY(base);g.add(rod(h.clone().setY(h.y-.15),up,.03,legM));g.add(rod(up,p,.03,legM));});
+    const onC=new T.Color(color),offC=onC.clone().multiplyScalar(color.toLowerCase()==='#f6f7fa'?.85:.55);
+    const mat=M(offC.clone(),{roughness:.25,emissive:onC.clone(),emissiveIntensity:0});
+    const can=mesh(new T.CylinderGeometry(.24,.24,.42,24),mat);can.position.copy(mid).setY(base+.25);
+    const dome=mesh(new T.SphereGeometry(.24,24,12,0,Math.PI*2,0,Math.PI/2),mat);dome.position.copy(mid).setY(base+.46);
+    const rim=mesh(new T.CylinderGeometry(.28,.28,.08,24),mat);rim.position.copy(mid).setY(base+.04);
+    const halo=glow(onC);halo.position.copy(mid).setY(base+.35);halo.material.opacity=0;
+    const light=new T.PointLight(onC,0,5,2);light.position.copy(mid).setY(base+.7);
+    g.add(can,dome,rim,halo,light);
+    let lv=0;partRef.setLevel=t=>{partRef.target=t;};partRef.target=0;
+    partRef.tick=(now,dt)=>{lv+=(partRef.target-lv)*Math.min(1,dt*14);mat.emissiveIntensity=lv*.9;mat.color.copy(offC).lerp(onC,lv);halo.material.opacity=Math.min(.7,lv*.7);halo.scale.setScalar(.5+2*lv);light.intensity=lv*1.6;};
+  }
+  function resistor(g,a,b){const y=BB.top+.35,m1=a.clone().setY(y),m2=b.clone().setY(y);g.add(rod(a.clone().setY(a.y-.1),m1,.03,legM),rod(b.clone().setY(b.y-.1),m2,.03,legM));
+    const dir=new T.Vector3().subVectors(m2,m1),L=Math.min(.55,dir.length()*.6),mid=m1.clone().lerp(m2,.5);dir.normalize();
+    g.add(rod(m1,m2,.03,legM));g.add(along(mesh(new T.CapsuleGeometry(.12,L-.24,6,12),M(0xDCC6A0)),mid.clone().addScaledVector(dir,-L/2),mid.clone().addScaledVector(dir,L/2)));}
+  const LEDC={red:'#E5484D',green:'#2FB36A',blue:'#3E63DD',yellow:'#F7C619',white:'#F6F7FA'};
+
+  function buildPart(p,c0,idx){
+    const g=new T.Group(),ref={p,g,flows:[],tip:''};const pinLabel=n=>typeof n==='string'?n:'pin '+n;
+    const sigColor=WIRE_COLORS[idx%WIRE_COLORS.length];
+    const toRail=(c,r,rail,cl)=>{ref.flows.push({curve:wire(BBP(c,r),BBP(c,rail),cl,g),kind:rail});};
+    const fromPin=(pin,c,r,dir='out')=>{const curve=wire(pinPos(pin),BBP(c,r),sigColor,g);ref.flows.push({curve,kind:'sig',pin,dir});};
+    if(p.t==='led'){fromPin(p.pin,c0,'a');resistor(g,BBP(c0,'c'),BBP(c0+2,'c'));ledModel(g,BBP(c0+2,'e'),BBP(c0+3,'e'),LEDC[p.color],ref);toRail(c0+3,'a','minus','#1A1A1D');
+      ref.tip=`${p.color[0].toUpperCase()+p.color.slice(1)} LED on ${pinLabel(p.pin)}`;ref.read=st=>{const v=st.pwm[p.pin];return v!=null?v/255:(st.pins[p.pin]?1:0);};}
+    else if(p.t==='rgb'){p.pins.forEach((pin,i)=>{const c=[c0,c0+2,c0+3][i];const curve=wire(pinPos(pin),BBP(c,'a'),['#E5484D','#2FB36A','#3E63DD'][i],g);ref.flows.push({curve,kind:'sig',pin,dir:'out'});});toRail(c0+1,'a','minus','#1A1A1D');
+      const mid=BBP(c0+1.5,'e'),base=1.25;[0,1,2,3].forEach(i=>{const h=BBP(c0+i,'e');g.add(rod(h.clone().setY(h.y-.15),mid.clone().add(V((i-1.5)*.08,0,0)).setY(base),.03,legM));});
+      const mat=M(0xF4F2EC,{roughness:.35,transparent:true,opacity:.95,emissive:new T.Color(0),emissiveIntensity:1});
+      const can=mesh(new T.CylinderGeometry(.27,.27,.45,24),mat);can.position.copy(mid).setY(base+.25);const dome=mesh(new T.SphereGeometry(.27,24,12,0,Math.PI*2,0,Math.PI/2),mat);dome.position.copy(mid).setY(base+.47);
+      const halo=glow(0xffffff);halo.position.copy(mid).setY(base+.4);halo.material.opacity=0;const light=new T.PointLight(0xffffff,0,5,2);light.position.copy(mid).setY(base+.8);g.add(can,dome,halo,light);
+      const cur=new T.Color(0),tgt=new T.Color(0);ref.tip='RGB LED on pins '+p.pins.join(', ');
+      ref.read=st=>p.pins.map(pin=>{const v=st.pwm[pin];return v!=null?v/255:(st.pins[pin]?1:0);});
+      ref.setLevel=v=>{tgt.setRGB(v[0],v[1],v[2]);};ref.tick=(now,dt)=>{cur.lerp(tgt,Math.min(1,dt*14));mat.emissive.copy(cur);const m=Math.max(cur.r,cur.g,cur.b);halo.material.color.copy(cur);halo.material.opacity=Math.min(.75,m*.75);halo.scale.setScalar(.5+2*m);light.color.copy(cur);light.intensity=m*1.6;};}
+    else if(p.t==='btn'){fromPin(p.pin,c0,'a','in');toRail(c0+2,'a','minus','#1A1A1D');
+      const cx=(COL(c0)+COL(c0+2))/2,base=box(.72,.3,.72,M(0x1F1F23));base.position.set(cx,BB.top+.15,0);g.add(base);
+      [[c0,'e'],[c0+2,'e'],[c0,'f'],[c0+2,'f']].forEach(([c,r])=>{const h=BBP(c,r);g.add(rod(h.clone().setY(h.y-.12),V(h.x,BB.top+.12,h.z*.4),.03,legM));});
+      const capM=M(0x3A3B41,{roughness:.35});const cap=mesh(new T.CylinderGeometry(.25,.28,.22,24),capM);cap.position.set(cx,BB.top+.42,0);g.add(cap);
+      if(p.label){const l=label(p.label,{size:.34});l.position.set(cx,BB.top+1,0);g.add(l);}
+      ref.tip=`Push button on ${pinLabel(p.pin)}${p.label?' ('+p.label+')':''}`;ref.hold=p.pin;let y=BB.top+.42;
+      ref.read=()=>api.pressed(p.pin)?1:0;ref.setLevel=v=>{ref.target=v;capM.color.set(v?0xFF6A13:0x3A3B41);};ref.target=0;
+      ref.tick=(now,dt)=>{y+=((ref.target?BB.top+.33:BB.top+.42)-y)*Math.min(1,dt*18);cap.position.y=y;};}
+    else if(p.t==='pot'||p.t==='tmp'){
+      toRail(c0,'a','plus','#D7372A');fromPin(p.pin,c0+1,'a','in');toRail(c0+2,'a','minus','#1A1A1D');
+      [0,1,2].forEach(i=>{const h=BBP(c0+i,'e');g.add(rod(h.clone().setY(h.y-.12),h.clone().setY(BB.top+.3).add(V(0,0,.25)),.03,legM));});
+      const cx=COL(c0+1);
+      if(p.t==='pot'){const body=box(1,.45,.8,M(0x1F4E8C));body.position.set(cx,BB.top+.5,-.55);g.add(body);
+        const knob=new T.Group();knob.position.set(cx,BB.top+.85,-.55);g.add(knob);knob.add(mesh(new T.CylinderGeometry(.3,.33,.3,28),M(0xE8E9EC,{roughness:.4})));
+        const ptr=box(.05,.04,.26,M(0x1F4E8C));ptr.position.set(0,.17,-.12);knob.add(ptr);let a=0;
+        ref.tip=`10 kΩ potentiometer on ${pinLabel(p.pin)}`;ref.read=()=>api.inputs.pot/1023;ref.setLevel=v=>{ref.target=v;};ref.target=0;
+        ref.tick=(now,dt)=>{a+=((-(-135+270*ref.target)*Math.PI/180)-a)*Math.min(1,dt*12);knob.rotation.y=a;};}
+      else{const m=M(0x1F1F23,{roughness:.4});const half=mesh(new T.CylinderGeometry(.3,.3,.55,24,1,false,Math.PI/2,Math.PI),m);half.position.set(cx,BB.top+.75,-.6);g.add(half);
+        const face=box(.6,.55,.02,m);face.position.set(cx,BB.top+.75,-.6);g.add(face);const l=label('TMP36',{fg:'#FF8C42',bg:null,size:.22});l.position.set(cx,BB.top+.78,-.56);g.add(l);
+        const th=glow(0x3E8EF7);th.position.set(cx,BB.top+1.4,-.6);th.scale.setScalar(1.2);g.add(th);
+        ref.tip=`TMP36 temperature sensor on ${pinLabel(p.pin)}`;ref.read=()=>(api.inputs.temp+10)/60;ref.setLevel=v=>{th.material.color.setHSL((1-Math.min(1,Math.max(0,v)))*.62,.9,.55);th.material.opacity=.75;};}
+    }
+    else if(p.t==='ldr'){toRail(c0,'a','plus','#D7372A');fromPin(p.pin,c0+1,'a','in');resistor(g,BBP(c0+1,'c'),BBP(c0+3,'c'));toRail(c0+3,'a','minus','#1A1A1D');
+      const mid=BBP(c0+.5,'e');[c0,c0+1].forEach(c=>{const h=BBP(c,'e');g.add(rod(h.clone().setY(h.y-.12),mid.clone().setY(BB.top+.8).add(V((c-c0-.5)*.12,0,0)),.03,legM));});
+      const disc=mesh(new T.CylinderGeometry(.26,.26,.12,24),M(0xE8D8B0));disc.rotation.x=Math.PI/2;disc.position.copy(mid).setY(BB.top+1.05);g.add(disc);
+      const sunG=glow(0xFFD43B);sunG.position.copy(mid).setY(BB.top+1.6);g.add(sunG);
+      ref.tip=`Light sensor (LDR) on ${pinLabel(p.pin)}`;ref.read=()=>api.inputs.light/100;ref.setLevel=v=>{sunG.material.opacity=.15+.65*v;sunG.scale.setScalar(.8+2.4*v);};}
+    else if(p.t==='buz'){fromPin(p.pin,c0,'a');toRail(c0+2,'a','minus','#1A1A1D');
+      const cx=COL(c0+1),body=new T.Group();g.add(body);
+      [c0,c0+2].forEach(c=>{const h=BBP(c,'e');g.add(rod(h.clone().setY(h.y-.12),h.clone().setY(BB.top+.25),.03,legM));});
+      const can=mesh(new T.CylinderGeometry(.6,.6,.45,32),M(0x18181B,{roughness:.35}));can.position.set(cx,BB.top+.47,ROW.e);body.add(can);
+      const dotM=M(0x3A3B41);const dot=mesh(new T.CylinderGeometry(.12,.12,.03,16),dotM,false);dot.position.set(cx,BB.top+.71,ROW.e);body.add(dot);
+      const waves=[0,1,2].map(()=>{const w=mesh(new T.TorusGeometry(.65,.025,6,40),new T.MeshBasicMaterial({color:0xFF6A13,transparent:true,opacity:0}),false);w.rotation.x=-Math.PI/2;w.position.set(cx,BB.top+.75,ROW.e);g.add(w);return w;});
+      ref.tip=`Piezo buzzer on ${pinLabel(p.pin)}`;ref.read=st=>st.tones[p.pin]?1:0;ref.target=0;ref.setLevel=v=>{ref.target=v;dotM.color.set(v?0xFF6A13:0x3A3B41);};
+      ref.tick=now=>{body.position.x=ref.target&&!reduce?Math.sin(now*.09)*.02:0;waves.forEach((w,i)=>{if(!ref.target){w.material.opacity=0;return;}const u=((now/700)+i/3)%1;w.scale.setScalar(1+u*1.6);w.material.opacity=(1-u)*.8;});};}
+    else if(p.t==='us'){toRail(c0,'a','plus','#D7372A');
+      const tc=wire(pinPos(p.trig),BBP(c0+1,'a'),sigColor,g);ref.flows.push({curve:tc,kind:'sig',pin:p.trig,dir:'out'});
+      const ec=wire(pinPos(p.echo),BBP(c0+2,'a'),WIRE_COLORS[(idx+1)%WIRE_COLORS.length],g);ref.flows.push({curve:ec,kind:'sig',pin:p.echo,dir:'in'});
+      toRail(c0+3,'a','minus','#1A1A1D');
+      const cx=(COL(c0)+COL(c0+3))/2,pcb=box(1.6,.75,.06,M(0x2D6BD6));pcb.position.set(cx,BB.top+.75,ROW.e+.15);g.add(pcb);
+      [0,1,2,3].forEach(i=>{const h=BBP(c0+i,'e');g.add(rod(h.clone().setY(h.y-.12),V(h.x,BB.top+.38,ROW.e+.15),.025,M(0xD6B04A,{metalness:.6})));});
+      [-.42,.42].forEach(dx=>{const eye=mesh(new T.CylinderGeometry(.27,.27,.35,24),metal());eye.rotation.x=Math.PI/2;eye.position.set(cx+dx,BB.top+.78,ROW.e+.35);g.add(eye);
+        const mesh2=mesh(new T.CylinderGeometry(.2,.2,.02,20),M(0x55585F));mesh2.rotation.x=Math.PI/2;mesh2.position.set(cx+dx,BB.top+.78,ROW.e+.53);g.add(mesh2);});
+      const wall=box(2.2,1.6,.2,M(0xE8A33D,{roughness:.6}));g.add(wall);const wl=label('obstacle',{size:.28});g.add(wl);
+      const waves=[0,1,2].map(()=>{const w=mesh(new T.TorusGeometry(.4,.02,6,32,Math.PI),new T.MeshBasicMaterial({color:0x14A39A,transparent:true,opacity:0}),false);w.position.set(cx,BB.top+.78,ROW.e+.6);g.add(w);return w;});
+      ref.tip=`HC-SR04 distance sensor (TRIG ${p.trig}, ECHO ${p.echo})`;ref.read=st=>st.pins[p.trig]?1:0;ref.target=0;let ping=0;ref.setLevel=v=>{if(v)ping=performance.now();};
+      ref.tick=now=>{const dz=.6+api.inputs.dist*.03;wall.position.set(cx,.8,ROW.e+.6+dz);wl.position.set(cx,1.9,ROW.e+.6+dz);
+        const active=api.running();waves.forEach((w,i)=>{if(!active){w.material.opacity=0;return;}const u=((now/900)+i/3)%1;w.position.z=ROW.e+.6+u*dz;w.scale.setScalar(1+u*1.2);w.material.opacity=(1-u)*.8;});};}
+    else if(p.t==='motor'){fromPin(p.pin,c0+1,'a');toRail(c0+2,'a','minus','#1A1A1D');
+      const m=M(0x1F1F23,{roughness:.4}),cx=COL(c0+1);const half=mesh(new T.CylinderGeometry(.3,.3,.55,24,1,false,Math.PI/2,Math.PI),m);half.position.set(cx,BB.top+.75,ROW.e);g.add(half);
+      const face=box(.6,.55,.02,m);face.position.set(cx,BB.top+.75,ROW.e);g.add(face);[0,1,2].forEach(i=>{const h=BBP(c0+i,'e');g.add(rod(h.clone().setY(h.y-.12),V(COL(c0+1)+(i-1)*.15,BB.top+.48,ROW.e),.03,legM));});
+      const motor=new T.Group();motor.position.set(cx+.4,.45,ROW.plus+1.3);g.add(motor);
+      const can=mesh(new T.CylinderGeometry(.42,.42,1.2,28),metal());can.rotation.z=Math.PI/2;motor.add(can);
+      const capE=mesh(new T.CylinderGeometry(.43,.43,.2,28),M(0xE5D35A));capE.rotation.z=Math.PI/2;capE.position.x=-.62;motor.add(capE);
+      const shaft=mesh(new T.CylinderGeometry(.04,.04,.4,10),metal());shaft.rotation.z=Math.PI/2;shaft.position.x=.8;motor.add(shaft);
+      const fan=new T.Group();fan.position.x=1.0;motor.add(fan);[0,1,2].forEach(i=>{const b=box(.03,.85,.22,M(0xFF6A13,{roughness:.4}));b.position.y=0;b.rotation.x=i*Math.PI*2/3;b.translateY(.4);fan.add(b);});
+      ref.flows.push({curve:wire(BBP(c0,'b'),V(cx+.4-.6,.5,ROW.plus+1.1),'#1A1A1D',g),kind:'motor'});ref.flows.push({curve:wire(BBP(c0+2,'plus'),V(cx+.4-.6,.5,ROW.plus+1.5),'#D7372A',g),kind:'motor'});
+      ref.tip=`DC motor driven by a transistor on ${pinLabel(p.pin)}`;ref.read=st=>{const v=st.pwm[p.pin];return v!=null?v/255:(st.pins[p.pin]?1:0);};ref.target=0;ref.setLevel=v=>{ref.target=v;};let spd=0;
+      ref.tick=(now,dt)=>{spd+=(ref.target-spd)*Math.min(1,dt*3);fan.rotation.x+=spd*dt*28;};}
+    else if(p.t==='servo'){const cx=COL(c0+1),z=ROW.plus+1.4,sv=new T.Group();sv.position.set(cx,0,z);g.add(sv);
+      const body=box(1.2,.9,.6,M(0x2D6BD6,{roughness:.45}));body.position.y=.45;sv.add(body);const tab=box(1.7,.08,.6,M(0x2D6BD6));tab.position.y=.7;sv.add(tab);
+      const hub=mesh(new T.CylinderGeometry(.2,.2,.25,20),M(0xE8E9EC));hub.position.set(-.3,1.0,0);sv.add(hub);
+      const horn=new T.Group();horn.position.set(-.3,1.15,0);sv.add(horn);const arm=box(.16,.06,1.1,M(0xF5F5F5,{roughness:.4}));arm.position.z=-.45;horn.add(arm);
+      const sigC=wire(pinPos(p.pin),V(cx-.4,.8,z-.3),'#FF8C00',g);ref.flows.push({curve:sigC,kind:'sig',pin:p.pin,dir:'out'});
+      ref.flows.push({curve:wire(BBP(c0,'plus'),V(cx-.2,.8,z-.3),'#D7372A',g),kind:'plus'});ref.flows.push({curve:wire(BBP(c0+2,'minus'),V(cx,.8,z-.3),'#6B3E26',g),kind:'minus'});
+      ref.tip=`Micro servo on ${pinLabel(p.pin)}`;ref.read=st=>st.servos[p.pin]??90;ref.target=90;let ang=90;ref.setLevel=v=>{ref.target=v;};
+      ref.tick=(now,dt)=>{ang+=(ref.target-ang)*Math.min(1,dt*10);horn.rotation.y=(ang-90)*Math.PI/180;};}
+    g.traverse(o=>{o.userData.part=ref;});
+    return ref;
+  }
+
+  let railFlows=[];
+  function setLesson(lesson){
+    partsRoot.clear();parts=[];railFlows=[];
+    let c0=2;lesson.parts.forEach((p,i)=>{const ref=buildPart(p,c0,i);partsRoot.add(ref.g);parts.push(ref);c0+=WIDTH[p.t]+2;});
+    if(parts.length){const needsPlus=lesson.parts.some(p=>['pot','tmp','ldr','us','servo','motor'].includes(p.t));
+      railFlows.push({curve:wire(pinPos('GND'),V(BB.x0+.35,BB.top,ROW.minus),'#1A1A1D',partsRoot),kind:'gnd'});
+      if(needsPlus)railFlows.push({curve:wire(pinPos('5V'),V(BB.x0+.35,BB.top,ROW.plus),'#D7372A',partsRoot),kind:'5v'});}
+    pinRings.clear();
+    HOME=parts.length?VIEW_ALL:VIEW_BOARD;camAnim={t0:performance.now(),p0:camera.position.clone(),p1:HOME.pos.clone(),q0:controls.target.clone(),q1:HOME.target.clone()};
+  }
+
+  /* ---------- pin highlight rings (Pinout tab) ---------- */
+  const pinRings=new T.Group();scene.add(pinRings);
+  function highlightPins(list){pinRings.clear();(list||[]).forEach(n=>{const p=pinPos(n);const r=mesh(new T.TorusGeometry(.22,.035,8,28),new T.MeshBasicMaterial({color:0xFF6A13,transparent:true}),false);r.rotation.x=-Math.PI/2;r.position.copy(p).setY(p.y+.03);r.userData.ring=true;pinRings.add(r);
+    const l=label(typeof n==='number'?'D'+n:n,{fg:'#0C0C0D',bg:'#FF6A13',size:.3});l.position.copy(p).setY(p.y+.75);pinRings.add(l);});}
+
+  /* ---------- current-flow dots ---------- */
+  const MAXP=500,dots=new T.InstancedMesh(new T.SphereGeometry(.065,10,8),new T.MeshBasicMaterial({color:0xFFE14D}),MAXP);dots.count=0;dots.frustumCulled=false;scene.add(dots);
+  const halos=new T.InstancedMesh(new T.PlaneGeometry(.34,.34),new T.MeshBasicMaterial({map:glowTex,color:0xFF6A13,transparent:true,opacity:.75,depthWrite:false}),MAXP);halos.count=0;halos.frustumCulled=false;scene.add(halos);
+  let flows=[],phase=0,showFlow=true;const tm=new T.Matrix4(),tq=new T.Quaternion(),ts=new T.Vector3(1,1,1);
+
+  /* ---------- state from the simulator ---------- */
+  let lastState=null,txUntil=0;
+  function update(st){
+    lastState=st;const any=[];
+    const l13=st.pwm[13]!=null?st.pwm[13]/255:(st.pins[13]?1:0);ledL.m.emissiveIntensity=l13*2;ledL.g.material.opacity=l13*.8;
+    parts.forEach(ref=>{if(!ref.read)return;const v=ref.read(st);if(ref.setLevel)ref.setLevel(v);const on=Array.isArray(v)?v.some(x=>x>0):(ref.p.t==='servo'?api.running():v>0);if(on)any.push(ref);});
+    flows=[];if(!api.running())return;
+    parts.forEach(ref=>{const on=any.includes(ref);ref.flows.forEach(f=>{
+      if(f.kind==='sig'){const pinOn=st.pwm[f.pin]!=null?st.pwm[f.pin]>0:!!st.pins[f.pin]||!!st.tones[f.pin];
+        if(f.dir==='in'?(on||ref.p.t==='pot'||ref.p.t==='ldr'||ref.p.t==='tmp'||ref.p.t==='us'):pinOn)flows.push({curve:f.curve,rev:f.dir==='in'});}
+      else if(on)flows.push({curve:f.curve,rev:f.kind==='plus'?false:false});});});
+    if(any.length)railFlows.forEach(f=>flows.push({curve:f.curve,rev:f.kind==='gnd'}));
+    flows.forEach(f=>{f.len=f.curve.getLength();f.n=Math.max(2,Math.round(f.len/.45));});
+  }
+  function serialBlink(){txUntil=performance.now()+90;}
+
+  /* ---------- hover + presses ---------- */
+  const ray=new T.Raycaster(),ndc=new T.Vector2(),cv=renderer.domElement;cv.tabIndex=0;
+  cv.setAttribute('aria-label','3D Arduino bench. Drag to rotate, right-drag or W A S D to pan, Q and E to turn, plus and minus to zoom, 0 to reset.');
+  function pick(e){const r=cv.getBoundingClientRect();ndc.set(((e.clientX-r.left)/r.width)*2-1,-((e.clientY-r.top)/r.height)*2+1);ray.setFromCamera(ndc,camera);
+    const hit=ray.intersectObjects([partsRoot,...pinMeshes],true)[0];if(!hit)return null;if(hit.object.userData.pin!==undefined)return{pin:hit.object.userData.pin};return hit.object.userData.part?{part:hit.object.userData.part}:null;}
+  const tip=document.getElementById('tipbox'),stageEl=document.getElementById('stage');
+  const PIN_INFO=n=>typeof n==='number'?`Digital pin ${n}${[3,5,6,9,10,11].includes(n)?' · PWM ~':''}${n===13?' · built-in LED':''}${n<=1?(n?' · TX':' · RX'):''}`:/^A\d$/.test(n)?`Analog input ${n}`:n.startsWith('GND')?'GND · ground (0 V)':n==='5V'?'5V · power out':n==='3.3V'?'3.3 V · power out':n==='VIN'?'VIN · input from the power jack':n==='RESET'?'RESET · restarts the sketch':n==='AREF'?'AREF · analog reference':n==='SDA'||n==='SCL'?`${n} · I²C bus`:n==='IOREF'?'IOREF · I/O voltage':'Not connected';
+  function showTip(e,h){if(!h){tip.hidden=true;return;}const r0=stageEl.getBoundingClientRect();
+    tip.innerHTML=h.pin!==undefined?`${PIN_INFO(String(h.pin).replace(/^GND\d$/,'GND').match(/^\d+$/)?+h.pin:String(h.pin).replace(/^GND\d$/,'GND'))}<small>Header socket on the Arduino</small>`:`${h.part.tip}<small>${h.part.hold!==undefined?'Press and hold to test':'Part of this lesson’s circuit'}</small>`;
+    tip.hidden=false;const tw=tip.offsetWidth;let x=e.clientX-r0.left+14;if(x+tw>r0.width-8)x=e.clientX-r0.left-tw-14;tip.style.left=Math.max(8,x)+'px';tip.style.top=(e.clientY-r0.top+16)+'px';}
+  let down=null,holding=null;
+  cv.addEventListener('pointermove',e=>{if(down&&Math.abs(e.clientX-down.x)+Math.abs(e.clientY-down.y)>5)down.moved=true;if(down&&down.moved){tip.hidden=true;return;}
+    const h=pick(e);host.classList.toggle('over-part',!!(h&&h.part&&h.part.hold!==undefined));showTip(e,h);});
+  cv.addEventListener('pointerleave',()=>{tip.hidden=true;});
+  cv.addEventListener('pointerdown',e=>{down={x:e.clientX,y:e.clientY,moved:false};cv.focus({preventScroll:true});const h=pick(e);
+    if(h&&h.part&&h.part.hold!==undefined){holding=h.part.hold;controls.enabled=false;api.press(holding,true);}});
+  window.addEventListener('pointerup',()=>{if(holding!==null){api.press(holding,false);holding=null;controls.enabled=true;}down=null;});
+  cv.addEventListener('keydown',e=>{const k=e.key.toLowerCase();const fwd=new T.Vector3().subVectors(controls.target,camera.position).setY(0).normalize(),right=new T.Vector3().crossVectors(fwd,UP).normalize();
+    let mv=null;if(k==='w')mv=fwd.multiplyScalar(.6);if(k==='s')mv=fwd.multiplyScalar(-.6);if(k==='d')mv=right.multiplyScalar(.6);if(k==='a')mv=right.multiplyScalar(-.6);
+    if(mv){camera.position.add(mv);controls.target.add(mv);e.preventDefault();return;}
+    if(k==='q'||k==='e'){const off=new T.Vector3().subVectors(camera.position,controls.target).applyAxisAngle(UP,(k==='q'?1:-1)*Math.PI/18);camera.position.copy(controls.target).add(off);e.preventDefault();return;}
+    if(k==='+'||k==='='){zoomBy(1/1.25);e.preventDefault();}if(k==='-'){zoomBy(1.25);e.preventDefault();}if(k==='0'){reset();e.preventDefault();}});
+  function zoomBy(f){const off=new T.Vector3().subVectors(camera.position,controls.target).multiplyScalar(f);const d=off.length();if(d<controls.minDistance||d>controls.maxDistance)return;
+    camAnim={t0:performance.now(),p0:camera.position.clone(),p1:controls.target.clone().add(off),q0:controls.target.clone(),q1:controls.target.clone()};}
+  function reset(){camAnim={t0:performance.now(),p0:camera.position.clone(),p1:HOME.pos.clone(),q0:controls.target.clone(),q1:HOME.target.clone()};}
+
+  /* ---------- hotspot labels (HTML, projected every frame) ---------- */
+  const hsWrap=document.getElementById('hotspots');let showLabels=true,mini=false;
+  const hsEls=HOTSPOTS.map(h=>{const el=document.createElement('div');el.className='hs'+(h.side==='left'?' left':'');el.tabIndex=0;el.innerHTML=`<span class="pin"></span><span class="card"><b>${h.name}</b><span>${h.text}</span></span>`;hsWrap.appendChild(el);return{el,p:U(h.x,h.z,TOPY+h.h*.1+.05)};});
+  const proj=new T.Vector3();
+  function placeHotspots(){if(!showLabels){hsWrap.hidden=true;return;}hsWrap.hidden=false;const w=host.clientWidth,h=host.clientHeight;
+    hsEls.forEach(({el,p})=>{proj.copy(p).project(camera);const vis=proj.z<1&&Math.abs(proj.x)<1.05&&Math.abs(proj.y)<1.05;el.style.display=vis?'':'none';
+      el.style.transform=`translate(${((proj.x+1)/2*w).toFixed(1)}px,${((1-proj.y)/2*h).toFixed(1)}px) translate(-50%,-50%)`;el.classList.toggle('mini',mini);});}
+
+  /* ---------- size + loop ---------- */
+  function resize(){const w=host.clientWidth||1,h=host.clientHeight||1;renderer.setSize(w,h,false);camera.aspect=w/h;camera.fov=w/h<1.05?48:32;camera.updateProjectionMatrix();}
+  new ResizeObserver(resize).observe(host);resize();
+  function frame(now){requestAnimationFrame(frame);const dt=Math.min(.05,(now-(frame.last||now))/1000);frame.last=now;
+    if(camAnim){const u=ease((now-camAnim.t0)/550);camera.position.lerpVectors(camAnim.p0,camAnim.p1,u);controls.target.lerpVectors(camAnim.q0,camAnim.q1,u);if(u>=1)camAnim=null;}
+    parts.forEach(r=>r.tick&&r.tick(now,dt));
+    pinRings.children.forEach(o=>{if(o.userData.ring){const s=1+.4*(.5+.5*Math.sin(now*.006));o.scale.setScalar(s);o.material.opacity=1-.5*(s-1)/.4;}});
+    const tx=now<txUntil?1:0;ledTX.m.emissiveIntensity=tx*2;ledTX.g.material.opacity=tx*.8;
+    phase+=dt*(reduce?.5:1);let n=0;
+    if(showFlow)for(const f of flows){for(let i=0;i<f.n&&n<MAXP;i++,n++){let u=((phase*1.6/f.len)+i/f.n)%1;if(f.rev)u=1-u;const p=f.curve.getPointAt(u);tm.compose(p,tq,ts);dots.setMatrixAt(n,tm);tm.compose(p,camera.quaternion,ts);halos.setMatrixAt(n,tm);}}
+    dots.count=n;halos.count=n;dots.instanceMatrix.needsUpdate=true;halos.instanceMatrix.needsUpdate=true;
+    controls.update();renderer.render(scene,camera);placeHotspots();}
+  requestAnimationFrame(frame);
+  return{setLesson,update,highlightPins,serialBlink,zoom:f=>zoomBy(f>1?1/1.35:1.35),reset,
+    setLabels(on,isMini){showLabels=on;mini=!!isMini;},setFlow(on){showFlow=on;}};
+}
+
+/* ---------- page state ---------- */
+const $=s=>document.querySelector(s);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const pad2=n=>String(n).padStart(2,'0');
+const load=(k,d)=>{try{const v=localStorage.getItem(k);return v===null?d:JSON.parse(v);}catch(e){return d;}};
+const store=(k,v)=>{try{if(v===undefined)localStorage.removeItem(k);else localStorage.setItem(k,JSON.stringify(v));}catch(e){}};
+const svgI=(inner,lbl)=>`<svg viewBox="0 0 48 48" ${lbl?`role="img" aria-label="${esc(lbl)}"`:'aria-hidden="true"'}>${inner}</svg>`;
+const CHECK='<svg viewBox="0 0 10 10"><path d="M2 5.2 4.2 7.4 8 3" fill="none" stroke="#FFFFFF" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+const CHEV='<svg class="chev" viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3l5 5-5 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+const KP_ICONS=['<path d="M4 8h8M8 4v8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>','<path d="M3 8.5 6.5 12 13 4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>','<path d="M9 1 3 9h5l-1 6 6-8H8z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>'];
+
+let labelsOn=true,flowOn=true,labelsTouched=false;
+let current=1,bench=null,done=new Set(load('radix-arduino-done',[])),soundOn=load('radix-arduino-sound',true);
+const inputs={pot:512,light:70,dist:80,temp:22};
+const pressed=new Set();
+const lesson=()=>LESSONS.find(l=>l.n===current);
+
+/* ---------- serial monitor ---------- */
+let lines=[],partial='',serialDirty=false;
+function serialPrint(t,nl){partial+=t;if(nl){lines.push({t:partial});partial='';if(lines.length>400)lines=lines.slice(-400);}serialDirty=true;if(bench)bench.serialBlink();}
+function serialNote(t,cls){if(partial){lines.push({t:partial});partial='';}lines.push({t,cls});serialDirty=true;}
+function renderSerial(){if(!serialDirty)return;serialDirty=false;const el=$('#serial');const atEnd=el.scrollTop+el.clientHeight>=el.scrollHeight-8;
+  el.innerHTML=lines.map(l=>l.cls?`<span class="${l.cls}">${esc(l.t)}</span>`:esc(l.t)).join('\n')+(partial?(lines.length?'\n':'')+esc(partial):'');if(atEnd)el.scrollTop=el.scrollHeight;}
+$('#sclear').onclick=()=>{lines=[];partial='';serialDirty=true;renderSerial();};
+
+/* ---------- sound for tone() ---------- */
+let actx=null,osc=null,gain=null;
+function setTone(freq){
+  if(!soundOn)freq=0;
+  if(freq>0){try{actx=actx||new(window.AudioContext||window.webkitAudioContext)();if(!osc){gain=actx.createGain();gain.gain.value=.03;osc=actx.createOscillator();osc.type='square';osc.connect(gain).connect(actx.destination);osc.start();}osc.frequency.setValueAtTime(freq,actx.currentTime);}catch(e){}}
+  else if(osc){try{osc.stop();}catch(e){}osc=null;}
+}
+
+/* ---------- simulator wiring ---------- */
+const partOn=(pred)=>lesson().parts.find(pred);
+const pinNo=p=>typeof p==='string'&&/^A\d$/.test(p)?14+(+p[1]):p;
+let benchQueued=false;
+function queueBench(){if(benchQueued)return;benchQueued=true;requestAnimationFrame(()=>{benchQueued=false;const st=sim.state;if(bench)bench.update(st);
+  const t=Object.values(st.tones)[0];setTone(sim.running&&t?t.f:0);renderSerial();});}
+const io={
+  changed:queueBench,
+  read(p,mode){const b=partOn(x=>x.t==='btn'&&x.pin===p);if(b){const pr=pressed.has(p);return mode===2?(pr?0:1):(pr?1:0);}return mode===2?1:0;},
+  analog(p){const part=partOn(x=>(x.t==='pot'||x.t==='ldr'||x.t==='tmp')&&pinNo(x.pin)===p);if(!part)return 280+Math.floor(Math.random()*60);
+    if(part.t==='pot')return Math.round(inputs.pot);if(part.t==='ldr')return Math.round(30+inputs.light*9.6);
+    return Math.max(0,Math.min(1023,Math.round((.5+inputs.temp/100)/5*1023)));},
+  pulse(p){const us=partOn(x=>x.t==='us'&&x.echo===p);return us?Math.round(inputs.dist*58*(1+(Math.random()-.5)*.01)):0;},
+  print:serialPrint,
+  status(s,e){const el=$('#sstat');el.classList.toggle('on',s==='running');el.classList.toggle('err',s==='error');
+    $('#sstattext').textContent={running:'Running',done:'Finished',error:'Error',stopped:'Stopped'}[s];
+    $('#mode').classList.toggle('run',s==='running');$('#modetext').textContent=s==='running'?`Running · ${lesson().title}`:'Board · ready';
+    const run=$('#crun');run.classList.toggle('stop',s==='running');run.setAttribute('aria-label',s==='running'?'Stop':'Upload and run');run.title=s==='running'?'Stop':'Upload and run';
+    $('#runicon').innerHTML=s==='running'?'<rect x="4" y="4" width="8" height="8" rx="1" fill="currentColor"/>':'<path d="M4 2.5v11l9.5-5.5z" fill="currentColor"/>';
+    if(s==='error'&&e){let msg=e&&e.message||String(e);if(e instanceof SyntaxError)msg+=' — check for a missing ; ( ) { } or a typo.';serialNote('Error: '+msg,'e');}
+    if(s==='done')serialNote('— sketch finished (no loop) —','s');
+    $('#benchnote').hidden=s==='running';
+    if(s!=='running')setTone(0);queueBench();},
+};
+const sim=createSim(io);
+
+/* ---------- code editor ---------- */
+const codeEl=$('#code'),hlEl=$('#hl'),gutter=$('#gutter');
+const TOK=/(\/\/[^\n]*|\/\*[\s\S]*?\*\/)|("(?:\\.|[^"\\\n])*"|'(?:\\.|[^'\\\n])*')|(^[ \t]*#[^\n]*)|(\b\d+(?:\.\d+)?\b)|([A-Za-z_]\w*)/gm;
+const KW=new Set('if else for while do return break continue switch case default const static true false new'.split(' '));
+const TY=new Set('void int long float double bool boolean byte char unsigned String word short'.split(' '));
+const FN=new Set('pinMode digitalWrite digitalRead analogRead analogWrite delay delayMicroseconds millis micros map constrain random tone noTone pulseIn setup loop attach write read begin print println abs min max'.split(' '));
+const KC=new Set('HIGH LOW INPUT OUTPUT INPUT_PULLUP LED_BUILTIN A0 A1 A2 A3 A4 A5 Serial Servo'.split(' '));
+function highlight(src){let out='',i=0;src.replace(TOK,(m,c,s,pp,n,id,at)=>{out+=esc(src.slice(i,at));i=at+m.length;
+  const cls=c?'c':s?'s':pp?'pp':n?'n':KW.has(id)?'kw':TY.has(id)?'ty':FN.has(id)?'fn':KC.has(id)?'k':null;
+  out+=cls?`<span class="tk-${cls}">${esc(m)}</span>`:esc(m);return m;});return out+esc(src.slice(i))+'\n';}
+function renderCode(){hlEl.innerHTML=highlight(codeEl.value);const n=codeEl.value.split('\n').length;gutter.innerHTML=Array.from({length:n},(_,i)=>`<div${i+1===badLine?' class="err"':''}>${i+1}</div>`).join('');syncScroll();}
+let badLine=0;
+function markLine(n){badLine=n;gutter.querySelectorAll('div').forEach((d,i)=>d.classList.toggle('err',i+1===n));}
+function syncScroll(){hlEl.scrollTop=codeEl.scrollTop;hlEl.scrollLeft=codeEl.scrollLeft;gutter.scrollTop=codeEl.scrollTop;}
+let saveT=0;
+codeEl.addEventListener('input',()=>{badLine=0;renderCode();clearTimeout(saveT);saveT=setTimeout(()=>store('radix-arduino-code-'+current,codeEl.value===lesson().code?undefined:codeEl.value),400);});
+codeEl.addEventListener('scroll',syncScroll);
+codeEl.addEventListener('keydown',e=>{if(e.key==='Tab'&&!e.shiftKey){e.preventDefault();const a=codeEl.selectionStart,b=codeEl.selectionEnd;codeEl.setRangeText('  ',a,b,'end');renderCode();}
+  if((e.ctrlKey||e.metaKey)&&e.key==='Enter'){e.preventDefault();toggleRun();}});
+$('#creset').onclick=()=>{codeEl.value=lesson().code;store('radix-arduino-code-'+current,undefined);renderCode();};
+$('#ccopy').onclick=()=>{try{navigator.clipboard.writeText(codeEl.value);serialNote('Code copied to the clipboard.','s');renderSerial();}catch(e){}};
+
+function toggleRun(){
+  if(sim.running){sim.stop();return;}
+  lines=[];partial='';markLine(0);
+  const lint=lintSketch(codeEl.value);
+  if(lint){serialNote(`Compiling “${lesson().title}”… error.`,'s');serialNote(lint.msg,'e');markLine(lint.line);io.status('error');return renderSerial();}
+  serialNote(`Uploading “${lesson().title}”… done.`,'s');
+  if(sim.start(codeEl.value)){if(!done.has(current)){done.add(current);store('radix-arduino-done',[...done]);renderProgress();renderStrip();renderHead();}}
+  renderSerial();
+}
+$('#crun').onclick=toggleRun;
+
+/* ---------- inputs ---------- */
+function renderInputs(){
+  const L=lesson(),el=$('#inputs'),h=[];
+  L.parts.filter(p=>p.t==='btn').forEach(p=>h.push(`<button class="ctl" data-hold="${p.pin}" aria-pressed="false">${esc(p.label?`Key ${p.label}`:'Press button')} <small>PIN ${p.pin}</small></button>`));
+  const rng=(id,label,min,max,val,fmt)=>`<label class="rng" for="in-${id}"><span>${label} <b id="val-${id}">${fmt(val)}</b></span><input type="range" id="in-${id}" data-input="${id}" min="${min}" max="${max}" value="${val}"></label>`;
+  if(L.parts.some(p=>p.t==='pot'))h.push(rng('pot','Knob (A0)',0,1023,inputs.pot,v=>v));
+  if(L.parts.some(p=>p.t==='ldr'))h.push(rng('light','Light level',0,100,inputs.light,v=>v+'%'));
+  if(L.parts.some(p=>p.t==='us'))h.push(rng('dist','Obstacle distance',2,200,inputs.dist,v=>v+' cm'));
+  if(L.parts.some(p=>p.t==='tmp'))h.push(rng('temp','Temperature',-10,50,inputs.temp,v=>v+' °C'));
+  if(L.parts.some(p=>p.t==='buz'))h.push(`<label class="snd" for="snd"><input type="checkbox" id="snd" ${soundOn?'checked':''}> Sound</label>`);
+  el.innerHTML=h.join('');
+  el.querySelectorAll('[data-input]').forEach(r=>r.oninput=()=>{const id=r.dataset.input;inputs[id]=+r.value;const f={pot:v=>v,light:v=>v+'%',dist:v=>v+' cm',temp:v=>v+' °C'}[id];$('#val-'+id).textContent=f(+r.value);queueBench();});
+  el.querySelectorAll('[data-hold]').forEach(b=>{const pin=+b.dataset.hold;
+    const on=e=>{if(e)e.preventDefault();press(pin,true);},off=()=>press(pin,false);
+    b.addEventListener('pointerdown',on);['pointerup','pointerleave','pointercancel'].forEach(t=>b.addEventListener(t,off));
+    b.addEventListener('keydown',e=>{if((e.key===' '||e.key==='Enter')&&!e.repeat){e.preventDefault();press(pin,true);}});
+    b.addEventListener('keyup',e=>{if(e.key===' '||e.key==='Enter')press(pin,false);});});
+  const snd=$('#snd');if(snd)snd.onchange=()=>{soundOn=snd.checked;store('radix-arduino-sound',soundOn);queueBench();};
+}
+function press(pin,on){if(on)pressed.add(pin);else pressed.delete(pin);document.querySelectorAll(`#inputs [data-hold="${pin}"]`).forEach(b=>b.setAttribute('aria-pressed',on));queueBench();}
+
+/* ---------- lesson panel ---------- */
+const TABS=['overview','pinout','example','specs'];
+function setTab(name,focus){
+  TABS.forEach(t=>{const on=t===name,b=$('#tab-'+t);b.setAttribute('aria-selected',on);b.tabIndex=on?0:-1;$('#tp-'+t).hidden=!on;});
+  document.querySelectorAll('.rbtn[data-go]').forEach(b=>{if(TABS.includes(b.dataset.go))b.setAttribute('aria-pressed',b.dataset.go===name);});
+  if(focus)$('#tab-'+name).focus();
+  if(bench)bench.highlightPins(name==='pinout'?lessonPins():[]);
+}
+TABS.forEach((t,i)=>{const b=$('#tab-'+t);b.onclick=()=>setTab(t);b.onkeydown=e=>{if(e.key==='ArrowRight'||e.key==='ArrowLeft'){e.preventDefault();setTab(TABS[(i+(e.key==='ArrowRight'?1:TABS.length-1))%TABS.length],true);}};});
+function parsePins(s){const out=[];String(s).replace(/~/g,'').split(/[,/]/).forEach(tok=>{tok=tok.trim();const r=tok.match(/^(\d+)\s*[–-]\s*(\d+)$/);
+  if(r){for(let i=+r[1];i<=+r[2];i++)out.push(i);}else if(/^\d+$/.test(tok))out.push(+tok);else if(/^A\d$/.test(tok)||['5V','GND','3.3V','VIN'].includes(tok))out.push(tok);});return out;}
+const lessonPins=()=>[...new Set(lesson().pins.flatMap(p=>parsePins(p[0])))];
+function renderHead(){const L=lesson(),isD=done.has(L.n);
+  $('#phead').innerHTML=`<div class="tile">${svgI(ICON[L.icon])}</div><div class="phtop"><span class="pnum">LESSON ${pad2(L.n)}</span><span class="pill"><i class="${isD?'on':''}"></i>${isD?'Done':'Basics'}</span></div><h2>${esc(L.title)}</h2><p>${esc(L.lede)}</p>`;}
+function renderTabs(){const L=lesson();
+  $('#tp-overview').innerHTML=`<div class="ov"><h3>${esc(L.title)}</h3><p>${esc(L.overview)}</p></div><ul class="keypoints" style="margin:12px 0 0;padding:0;display:grid;gap:8px">${L.points.map((p,i)=>`<li><span class="kpi"><svg viewBox="0 0 16 16">${KP_ICONS[i%3]}</svg></span><span>${esc(p)}</span></li>`).join('')}</ul>`;
+  $('#tp-pinout').innerHTML=`<table class="pintable"><thead><tr><th>Pin</th><th>Connects to</th><th>Role</th></tr></thead><tbody>${L.pins.map((p,i)=>`<tr data-row="${i}" tabindex="0"><td><span class="pinchip">${esc(p[0])}</span></td><td>${esc(p[1])}</td><td>${esc(p[2])}</td></tr>`).join('')}</tbody></table><p style="margin-top:10px;font-size:13px;color:var(--muted)">Hover a row to find that pin on the board.</p>`;
+  $('#tp-pinout').querySelectorAll('[data-row]').forEach(tr=>{const pins=parsePins(L.pins[+tr.dataset.row][0]);
+    const on=()=>bench&&bench.highlightPins(pins),off=()=>bench&&bench.highlightPins(lessonPins());
+    tr.addEventListener('pointerenter',on);tr.addEventListener('pointerleave',off);tr.addEventListener('focus',on);tr.addEventListener('blur',off);});
+  $('#tp-example').innerHTML=`<span class="kicker">Wire it up</span><ol class="steps" style="margin-top:8px">${L.steps.map(s=>`<li><span>${s}</span></li>`).join('')}</ol><div class="how"><span class="kicker">How the code works</span><ul>${L.how.map(h=>`<li>${h}</li>`).join('')}</ul></div>`;
+  $('#tp-specs').innerHTML=`<div class="specgrid">${L.specs.map(([k,v])=>`<div class="spec"><small>${esc(k)}</small><b>${esc(v)}</b></div>`).join('')}</div>`;}
+function renderStrip(){const nl=$('#navlist');
+  nl.innerHTML=LESSONS.map(L=>`<button class="item" data-n="${L.n}" aria-current="${L.n===current}" aria-label="Lesson ${L.n}: ${esc(L.title)}${done.has(L.n)?', done':''}"><span class="tile">${svgI(ICON[L.icon])}</span><span class="tx"><span class="no">${pad2(L.n)} · Basics</span><span class="nm">${esc(L.title)}</span></span>${CHEV}${done.has(L.n)?`<span class="check">${CHECK}</span>`:''}</button>`).join('');
+  nl.querySelectorAll('.item').forEach(b=>b.onclick=()=>select(+b.dataset.n));
+  const cur=nl.querySelector('.item[aria-current="true"]');if(cur)nl.scrollTo({left:cur.offsetLeft-nl.clientWidth/2+cur.offsetWidth/2});}
+function renderProgress(){$('#count').textContent=`${done.size}/${LESSONS.length}`;$('#pbar').style.width=(100*done.size/LESSONS.length)+'%';}
+function select(n){
+  if(sim.running)sim.stop();pressed.clear();current=n;
+  codeEl.value=load('radix-arduino-code-'+n,null)??lesson().code;renderCode();
+  lines=[];partial='';serialDirty=true;renderSerial();
+  renderHead();renderTabs();renderStrip();renderInputs();
+  const tabNow=TABS.find(t=>$('#tab-'+t).getAttribute('aria-selected')==='true')||'overview';
+  if(!labelsTouched){labelsOn=n===1;$('#v-labels').setAttribute('aria-pressed',labelsOn);}
+  if(bench){bench.setLesson(lesson());bench.setLabels(labelsOn,n!==1);bench.highlightPins(tabNow==='pinout'?lessonPins():[]);bench.update(sim.state);}
+  $('#benchnote').textContent=n===1?'':`${lesson().parts.length?'Parts for this lesson are on the breadboard. ':''}Press ▶ to run the code.`;
+  try{history.replaceState(null,'','#l'+n);}catch(e){}
+}
+
+/* ---------- rail, drawer, strip, clock, view tools ---------- */
+const drawer=$('#drawer'),scrim=$('#scrim');let lastFocus=null;
+function openDrawer(o){drawer.classList.toggle('open',o);scrim.classList.toggle('open',o);drawer.setAttribute('aria-hidden',!o);if(o){lastFocus=document.activeElement;$('#refclose').focus();}else if(lastFocus)lastFocus.focus();}
+$('#refclose').onclick=()=>openDrawer(false);scrim.onclick=()=>openDrawer(false);
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&drawer.classList.contains('open'))openDrawer(false);});
+$('#complist').innerHTML=COMPONENTS.map(([ic,name,text])=>`<div class="rcard"><div class="tile" style="width:64px;height:64px">${svgI(ICON[ic])}</div><h3>${esc(name)}</h3><p>${esc(text)}</p></div>`).join('');
+const narrow=()=>matchMedia('(max-width:1020px)').matches;
+document.querySelectorAll('.rbtn[data-go]').forEach(b=>b.onclick=()=>{const g=b.dataset.go;
+  if(g==='components'){openDrawer(true);return;}
+  if(g==='run'){toggleRun();if(narrow())document.querySelector('.try').scrollIntoView({behavior:'smooth',block:'start'});return;}
+  setTab(g);if(narrow())document.querySelector('.panel').scrollIntoView({behavior:'smooth',block:'start'});});
+$('#sleft').onclick=()=>$('#navlist').scrollBy({left:-460,behavior:'smooth'});
+$('#sright').onclick=()=>$('#navlist').scrollBy({left:460,behavior:'smooth'});
+const MON=['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
+function tick(){const d=new Date();$('#cdate').textContent=`${MON[d.getMonth()]} ${pad2(d.getDate())}, ${d.getFullYear()}`;$('#ctime').textContent=[d.getHours(),d.getMinutes(),d.getSeconds()].map(pad2).join(':');}
+tick();setInterval(tick,1000);
+$('#v-labels').onclick=()=>{labelsTouched=true;labelsOn=!labelsOn;$('#v-labels').setAttribute('aria-pressed',labelsOn);if(bench)bench.setLabels(labelsOn,current!==1);};
+$('#v-flow').onclick=()=>{flowOn=!flowOn;$('#v-flow').setAttribute('aria-pressed',flowOn);if(bench)bench.setFlow(flowOn);};
+$('#z-in').onclick=()=>bench&&bench.zoom(1.5);$('#z-out').onclick=()=>bench&&bench.zoom(1/1.5);$('#z-fit').onclick=()=>bench&&bench.reset();
+setInterval(renderSerial,120);
+
+/* ---------- start ---------- */
+const THREE_URLS=['https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js','https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/controls/OrbitControls.js'];
+function loadScript(src){return new Promise((res,rej)=>{const s=document.createElement('script');s.src=src;s.crossOrigin='anonymous';s.onload=res;s.onerror=()=>rej(new Error(src));document.head.appendChild(s);});}
+const hm=(location.hash||'').match(/^#l(\d{1,2})$/);
+renderProgress();select(hm&&LESSONS.some(l=>l.n===+hm[1])?+hm[1]:1);
+(async()=>{
+  try{if(!window.THREE)await loadScript(THREE_URLS[0]);if(!THREE.OrbitControls)await loadScript(THREE_URLS[1]);
+    bench=createBench($('#view3d'),{pressed:p=>pressed.has(p),press,inputs,running:()=>sim.running});
+    $('#loading3d').hidden=true;bench.setLesson(lesson());bench.setLabels(labelsOn,current!==1);bench.update(sim.state);}
+  catch(e){$('#loading3d').textContent='The 3D bench needs an internet connection. The lessons and code still work.';}
+})();
+
+})();
+</script>
+</body>
+</html>

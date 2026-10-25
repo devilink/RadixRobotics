@@ -5,11 +5,18 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/utils/supabase/client";
 import { autoAssignSuperAdmin, getUserRoleById } from "@/app/actions/superAdminActions";
 import { getAvailableSchools, queueStudentForApproval } from "@/app/actions/studentActions";
+import { hasErpAccess } from "@/app/erp/actions";
+
+// Only same-site ERP paths are accepted as post-login destinations (no open redirects).
+function erpNextPath(): string | null {
+  const next = new URLSearchParams(window.location.search).get("next");
+  return next && /^\/erp(\/[A-Za-z0-9/_-]*)?$/.test(next) ? next : null;
+}
 
 export default function LoginPage() {
   const [activeTab, setActiveTab] = useState<"admin" | "school" | "student">("admin");
   const [studentMode, setStudentMode] = useState<"login" | "register" | "forgot">("login");
-  const [schools, setSchools] = useState<{custom_id: string, school_name: string}[]>([]);
+  const [schools, setSchools] = useState<{token: string, school_name: string}[]>([]);
   const [selectedSchool, setSelectedSchool] = useState("");
   const [schoolId, setSchoolId] = useState("");
   
@@ -63,6 +70,7 @@ export default function LoginPage() {
       // 2. REGISTER FLOW
       if (activeTab === "student" && studentMode === "register") {
         if (!selectedSchool) throw new Error("Please select your school before registering.");
+        if (email.trim().toLowerCase().endsWith("@radix.school")) throw new Error("This email domain is reserved for school logins.");
 
         const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
           email,
@@ -86,7 +94,7 @@ export default function LoginPage() {
       let loginEmail = email;
 
       if (activeTab === "school") {
-        if (!schoolId.trim()) throw new Error("Please enter your School ID.");
+        if (!schoolId.trim()) throw new Error("Please enter your School or Center ID.");
         loginEmail = `${schoolId.trim().toLowerCase()}@radix.school`;
       }
 
@@ -110,7 +118,7 @@ export default function LoginPage() {
       if (err.message?.includes("Email not confirmed")) {
         setError("Please check your inbox and confirm your email address before logging in.");
       } else if (err.message?.includes("Invalid login credentials")) {
-        setError(activeTab === "school" ? "Invalid School ID or password." : "Invalid email or password.");
+        setError(activeTab === "school" ? "Invalid ID or password." : "Invalid email or password.");
       } else {
         setError(err.message || "An unexpected error occurred.");
       }
@@ -121,25 +129,22 @@ export default function LoginPage() {
 
 
   const routeUser = async (userId: string) => {
-    // Super Admin & School Admin email bypass
-    const { data: { user: currentUser } } = await supabase.auth.getUser();
-    const email = currentUser?.email || '';
-    
-    if (email === 'princedas000555@gmail.com') {
-      router.push("/super-admin");
-      return;
-    }
-    
-    if (email.endsWith('@radix.school')) {
-      const schoolId = email.replace('@radix.school', '').toUpperCase();
-      router.push(`/curriculum/${schoolId}`);
+    // ERP deep link (e.g. /login?next=/erp/attendance) for users with an ERP role.
+    const erpNext = erpNextPath();
+    if (erpNext && (await hasErpAccess())) {
+      router.push(erpNext);
       return;
     }
 
-    // Fetch User Role cleanly from server back-end escaping RLS blocks
+    // Fetch the stored role (roles are never inferred from the email address)
     const roleData = await getUserRoleById(userId);
 
     if (!roleData) {
+      // Staff with ERP roles only (teachers, instructors, HR, centre staff, ...).
+      if (await hasErpAccess()) {
+        router.push("/erp");
+        return;
+      }
       setError("No role has been assigned to your account. Contact your administrator.");
       setLoading(false);
       return;
@@ -152,8 +157,13 @@ export default function LoginPage() {
       return;
     }
 
-    // Route approved students to their school's curriculum
-    if (roleData.role === 'student' && roleData.school_id) {
+    if (roleData.role === 'super_admin') {
+      router.push("/super-admin");
+      return;
+    }
+
+    // School admins and approved students go to their school's curriculum
+    if ((roleData.role === 'school_admin' || roleData.role === 'student') && roleData.school_id) {
       router.push(`/curriculum/${roleData.school_id}`);
       return;
     }
@@ -194,13 +204,13 @@ export default function LoginPage() {
 
         <div className="mb-6">
           <h1 className="text-xl font-bold text-white mb-1">
-            {activeTab === "admin" ? "Super Admin Login" : activeTab === "school" ? "School Login" : studentMode === "login" ? "Student Login" : "Student Registration"}
+            {activeTab === "admin" ? "Staff & Admin Login" : activeTab === "school" ? "School / Center Login" : studentMode === "login" ? "Student Login" : "Student Registration"}
           </h1>
           <p className="text-zinc-500 text-xs leading-relaxed">
             {activeTab === "admin" 
-              ? "Sign in with your administrator email and password."
+              ? "Sign in with your Radix staff or administrator email and password."
               : activeTab === "school" 
-                ? "Sign in with the School ID and password provided by the Admin." 
+                ? "Sign in with the School or Center ID and password provided by the Admin." 
                 : studentMode === "login"
                    ? "Log in to access your assigned robotics curriculum."
                    : "Register for your student account. Requires admin approval."}
@@ -221,7 +231,7 @@ export default function LoginPage() {
         <form onSubmit={handleAuth} className="space-y-4">
           {activeTab === "school" ? (
             <div>
-              <label className="text-zinc-400 text-sm font-medium mb-1.5 block">School ID</label>
+              <label className="text-zinc-400 text-sm font-medium mb-1.5 block">School / Center ID</label>
               <input 
                 type="text" 
                 required 
@@ -280,7 +290,7 @@ export default function LoginPage() {
               >
                 <option value="" disabled>-- Choose your enrolled school --</option>
                 {schools.map(s => (
-                  <option key={s.custom_id} value={s.custom_id}>{s.school_name}</option>
+                  <option key={s.token} value={s.token}>{s.school_name}</option>
                 ))}
               </select>
             </div>

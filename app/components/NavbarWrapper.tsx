@@ -9,11 +9,13 @@ export default function NavbarWrapper() {
   // List of path prefixes where the global Navbar should NOT be shown
   const hiddenPaths = [
     '/super-admin',
+    '/erp',
     '/school-admin',
     '/login',
     '/update-password',
     '/student',
     '/curriculum',
+    '/kits',
     '/auth'
   ];
 

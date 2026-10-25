@@ -15,6 +15,19 @@
   --color-accent-blue: #45B7D1;
   --color-accent-pink: #F8A5C2;
 
+  /* Radix brand orange (home page #ff5400). Accent colour of the admin panels. */
+  --color-brand-50: #fff4ed;
+  --color-brand-100: #ffe6d4;
+  --color-brand-200: #ffc9a8;
+  --color-brand-300: #ffa370;
+  --color-brand-400: #ff7a38;
+  --color-brand-500: #ff5400;
+  --color-brand-600: #ee4700;
+  --color-brand-700: #c53500;
+  --color-brand-800: #9c2c06;
+  --color-brand-900: #7e2708;
+  --color-brand-950: #441002;
+
   --font-caveat: var(--font-caveat);
 
   --animate-marquee: marquee 30s linear infinite;
@@ -555,5 +568,16 @@
 @media (min-width: 768px) {
   .core-team-grid {
     grid-template-columns: repeat(3, 1fr) !important;
+  }
+}
+
+/* ERP: the portal uses the dark admin theme on screen but prints black on white. */
+@media print {
+  .erp-root,
+  .erp-root * {
+    color: #000 !important;
+    background: transparent !important;
+    border-color: #d4d4d8 !important;
+    box-shadow: none !important;
   }
 }

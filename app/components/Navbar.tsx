@@ -5,6 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { ArrowRight, Menu, X, ChevronRight } from 'lucide-react';
 import { createClient } from '@/utils/supabase/client';
+import { getPortalPath } from '@/app/actions/portalActions';
 
 export interface NavLink {
   name: string;
@@ -25,6 +26,7 @@ const defaultNavLinks: NavLink[] = [
 
 export default function Navbar({ navLinks = defaultNavLinks, darkHero = false }: NavbarProps) {
   const [user, setUser] = useState<any>(null);
+  const [portalUrl, setPortalUrl] = useState('/login');
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const supabase = createClient();
@@ -54,16 +56,11 @@ export default function Navbar({ navLinks = defaultNavLinks, darkHero = false }:
     window.location.reload();
   };
 
-  const getSchoolPortalUrl = () => {
-    if (!user) return '/login';
-    const email = user.email || '';
-    if (email === 'princedas000555@gmail.com') return '/super-admin';
-    if (email.endsWith('@radix.school')) {
-      const schoolId = email.replace('@radix.school', '').toUpperCase();
-      return `/curriculum/${schoolId}`;
-    }
-    return '/login';
-  };
+  // The portal link is resolved on the server from stored roles, never from the email.
+  useEffect(() => {
+    if (!user) return;
+    getPortalPath().then(setPortalUrl).catch(() => setPortalUrl('/login'));
+  }, [user]);
 
   // Determine if elements should be dark based on scroll and darkHero prop
   const isDarkContent = scrolled || !darkHero;
@@ -122,7 +119,7 @@ export default function Navbar({ navLinks = defaultNavLinks, darkHero = false }:
                     Logout
                   </button>
                   <Link
-                    href={getSchoolPortalUrl()}
+                    href={user ? portalUrl : '/login'}
                     className="px-5 py-2.5 rounded-lg text-xs font-bold uppercase tracking-wider flex items-center gap-2 transition-all shadow-sm bg-[#1a1a1a] text-white hover:bg-[#333]"
                   >
                     Portal <ArrowRight size={14} />
@@ -195,7 +192,7 @@ export default function Navbar({ navLinks = defaultNavLinks, darkHero = false }:
           {user ? (
             <>
               <Link
-                href={getSchoolPortalUrl()}
+                href={user ? portalUrl : '/login'}
                 onClick={() => setMobileMenuOpen(false)}
                 className="w-full py-3.5 rounded-lg bg-[#1a1a1a] text-white font-bold text-center uppercase tracking-widest text-xs flex items-center justify-center gap-2"
               >

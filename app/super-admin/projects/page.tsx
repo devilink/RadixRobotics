@@ -173,7 +173,7 @@ export default function ContactLandingPage() {
   };
 
   return (
-    <div className="min-h-screen bg-white p-3 sm:p-4 md:p-6 font-inter text-gray-900 flex flex-col gap-8">
+    <div className="min-h-screen bg-zinc-950 [color-scheme:dark] p-3 sm:p-4 md:p-6 font-inter text-zinc-100 flex flex-col gap-8">
       
       {/* Hero Section */}
       <div className="relative w-full rounded-2xl sm:rounded-3xl overflow-hidden min-h-[calc(100dvh-24px)] sm:min-h-[calc(100dvh-32px)] md:min-h-[calc(100dvh-48px)] lg:h-[calc(100dvh-48px)] shadow-2xl shrink-0">
@@ -223,46 +223,46 @@ export default function ContactLandingPage() {
             </p>
 
             <div className="w-full lg:w-[45%] lg:max-w-[480px] shrink-0">
-              <div className="bg-white rounded-2xl sm:rounded-3xl shadow-2xl overflow-hidden p-4 sm:p-6 flex flex-col gap-4">
+              <div className="bg-zinc-900 rounded-2xl sm:rounded-3xl shadow-2xl overflow-hidden p-4 sm:p-6 flex flex-col gap-4">
                 
                 {sent ? (
                   <div className="flex flex-col items-center text-center py-6 gap-3">
-                    <div className="w-12 h-12 rounded-full bg-green-50 flex items-center justify-center text-xl text-green-600">
+                    <div className="w-12 h-12 rounded-full bg-emerald-500/10 flex items-center justify-center text-xl text-emerald-400">
                       ✓
                     </div>
-                    <h3 className="text-base font-semibold text-gray-900">Project Initialized!</h3>
-                    <p className="text-sm text-gray-500">The initiative has been added to the registry.</p>
+                    <h3 className="text-base font-semibold text-zinc-100">Project Initialized!</h3>
+                    <p className="text-sm text-zinc-400">The initiative has been added to the registry.</p>
                     <button 
                       onClick={() => { setSent(false); setProjectName(""); setProjectDescription(""); setStatus("Upcoming"); }}
-                      className="mt-4 text-xs font-medium text-gray-400 hover:text-gray-600 transition-colors"
+                      className="mt-4 text-xs font-medium text-zinc-500 hover:text-zinc-300 transition-colors"
                     >
                       Add another project
                     </button>
                   </div>
                 ) : (
                   <>
-                    <h2 className="text-xl sm:text-2xl font-semibold text-black tracking-tight">New Initiative 🚀</h2>
+                    <h2 className="text-xl sm:text-2xl font-semibold text-white tracking-tight">New Initiative 🚀</h2>
                     
-                    <div className="flex flex-row items-center justify-between gap-3 bg-gray-50 rounded-2xl px-4 py-2.5">
+                    <div className="flex flex-row items-center justify-between gap-3 bg-zinc-950/50 rounded-2xl px-4 py-2.5">
                       <div className="flex flex-col">
-                        <span className="text-[10px] sm:text-xs font-semibold text-gray-400 uppercase tracking-wider mb-0.5">System Admin</span>
-                        <span className="text-sm text-blue-600 font-semibold truncate">princedas000555@gmail.com</span>
+                        <span className="text-[10px] sm:text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-0.5">System Admin</span>
+                        <span className="text-sm text-brand-400 font-semibold truncate">princedas000555@gmail.com</span>
                       </div>
                       <div className="flex items-center gap-1.5 shrink-0">
-                        <SocialBtn icon={Circle} className="bg-pink-100 text-pink-500 hover:bg-pink-200" />
-                        <SocialBtn icon={InstagramIcon} className="bg-orange-100 text-orange-400 hover:bg-orange-200" />
+                        <SocialBtn icon={Circle} className="bg-pink-500/10 text-pink-400 hover:bg-pink-500/20" />
+                        <SocialBtn icon={InstagramIcon} className="bg-brand-500/10 text-brand-400 hover:bg-brand-500/20" />
                       </div>
                     </div>
 
                     <div className="flex items-center gap-3 py-1">
-                      <div className="flex-1 h-px bg-gray-200" />
-                      <span className="text-gray-400 font-medium text-sm">PARAMS</span>
-                      <div className="flex-1 h-px bg-gray-200" />
+                      <div className="flex-1 h-px bg-zinc-700" />
+                      <span className="text-zinc-500 font-medium text-sm">PARAMS</span>
+                      <div className="flex-1 h-px bg-zinc-700" />
                     </div>
 
                     <form onSubmit={handleSubmit} className="flex flex-col gap-4">
                       <div>
-                        <label className="block text-sm font-medium text-black mb-3">Define project parameters</label>
+                        <label className="block text-sm font-medium text-white mb-3">Define project parameters</label>
                         <div className="flex flex-col gap-2 mb-2">
                           <input 
                             type="text" 
@@ -270,20 +270,20 @@ export default function ContactLandingPage() {
                             placeholder="Project Name (e.g. Nexus Core)" 
                             value={projectName}
                             onChange={(e) => setProjectName(e.target.value)}
-                            className="w-full text-sm px-3 py-2.5 rounded-xl border border-gray-200 bg-transparent placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent transition"
+                            className="w-full text-sm px-3 py-2.5 rounded-xl border border-zinc-800 bg-zinc-950/50 text-white placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent transition"
                           />
                           <input 
                             type="text" 
                             placeholder="Project Desc" 
                             value={projectDescription}
                             onChange={(e) => setProjectDescription(e.target.value)}
-                            className="w-full text-sm px-3 py-2.5 rounded-xl border border-gray-200 bg-transparent placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent transition"
+                            className="w-full text-sm px-3 py-2.5 rounded-xl border border-zinc-800 bg-zinc-950/50 text-white placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent transition"
                           />
                         </div>
                       </div>
 
                       <div>
-                        <label className="block text-xs font-medium text-gray-500 mb-2">Project Status</label>
+                        <label className="block text-xs font-medium text-zinc-400 mb-2">Project Status</label>
                         <div className="flex flex-wrap gap-1.5">
                           {STATUSES.map(s => (
                             <button
@@ -292,8 +292,8 @@ export default function ContactLandingPage() {
                               onClick={() => setStatus(s)}
                               className={`text-xs font-medium px-3 py-2 rounded-lg border transition-all ${
                                 status === s
-                                  ? 'bg-gray-100 text-black border-black shadow-sm'
-                                  : 'bg-white text-gray-700 border-gray-200 hover:border-gray-400 hover:bg-gray-50'
+                                  ? 'bg-brand-500/15 text-brand-300 border-brand-500 shadow-sm'
+                                  : 'bg-zinc-900 text-zinc-300 border-zinc-800 hover:border-zinc-600 hover:bg-zinc-800'
                               }`}
                             >
                               {s}
@@ -305,7 +305,7 @@ export default function ContactLandingPage() {
                       <button 
                         type="submit"
                         disabled={sending || !projectName}
-                        className="w-full bg-black text-white text-sm font-semibold py-3 rounded-2xl hover:bg-gray-800 transition-colors disabled:opacity-60"
+                        className="w-full bg-brand-500 text-zinc-950 text-sm font-semibold py-3 rounded-2xl hover:bg-brand-400 transition-colors disabled:opacity-60"
                       >
                         {sending ? 'Initializing...' : 'Initialize Project'}
                       </button>
@@ -321,15 +321,15 @@ export default function ContactLandingPage() {
 
       {/* Projects Dashboard Section */}
       <section id="projects" className="w-full max-w-7xl mx-auto py-12 px-2 sm:px-4">
-        <h2 className="text-4xl font-instrument text-black mb-10 text-center sm:text-left">Project Registry</h2>
+        <h2 className="text-4xl font-instrument text-white mb-10 text-center sm:text-left">Project Registry</h2>
         
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 items-start">
           {STATUSES.map((colStatus) => (
             <div key={colStatus} className="flex flex-col gap-4">
-              <div className="flex items-center justify-between border-b border-gray-200 pb-2">
-                <h3 className="font-semibold text-gray-800 flex items-center gap-2">
+              <div className="flex items-center justify-between border-b border-zinc-800 pb-2">
+                <h3 className="font-semibold text-zinc-200 flex items-center gap-2">
                   {colStatus}
-                  <span className="bg-gray-100 text-gray-600 text-[10px] px-2 py-0.5 rounded-full font-bold">
+                  <span className="bg-zinc-800 text-zinc-400 text-[10px] px-2 py-0.5 rounded-full font-bold">
                     {projects.filter(p => p.status === colStatus).length}
                   </span>
                 </h3>
@@ -337,7 +337,7 @@ export default function ContactLandingPage() {
               
               <div className="flex flex-col gap-4">
                 {projects.filter(p => p.status === colStatus).length === 0 ? (
-                  <div className="text-sm text-gray-400 border border-dashed border-gray-200 rounded-2xl p-6 text-center italic">
+                  <div className="text-sm text-zinc-500 border border-dashed border-zinc-800 rounded-2xl p-6 text-center italic">
                     No projects yet
                   </div>
                 ) : (
@@ -358,51 +358,51 @@ export default function ContactLandingPage() {
                     const progressPercent = totalTasks === 0 ? 0 : Math.round((completedTasks / totalTasks) * 100);
 
                     return (
-                    <div key={project.id} className="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm hover:shadow-md transition-shadow group relative flex flex-col">
+                    <div key={project.id} className="bg-zinc-900 border border-zinc-800 rounded-2xl p-5 shadow-sm hover:shadow-md transition-shadow group relative flex flex-col">
                       
                       {isEditing && editForm ? (
                         <div className="flex flex-col gap-4">
-                          <h4 className="font-semibold text-black text-base truncate border-b pb-2 mb-1">Edit Project</h4>
+                          <h4 className="font-semibold text-white text-base truncate border-b border-zinc-800 pb-2 mb-1">Edit Project</h4>
                           
                           <div className="flex flex-col gap-2">
                             <div>
-                              <label className="text-[10px] uppercase font-bold text-gray-400 block mb-1">Name</label>
+                              <label className="text-[10px] uppercase font-bold text-zinc-500 block mb-1">Name</label>
                               <input 
                                 value={editForm.name} 
                                 onChange={e => setEditForm({...editForm, name: e.target.value})}
-                                className="w-full text-sm p-2 border border-gray-200 rounded-lg bg-gray-50 focus:outline-none focus:ring-1 focus:ring-black"
+                                className="w-full text-sm p-2 border border-zinc-800 rounded-lg bg-zinc-950/50 focus:outline-none focus:ring-1 focus:ring-brand-500"
                               />
                             </div>
                             <div>
-                              <label className="text-[10px] uppercase font-bold text-gray-400 block mb-1">Description</label>
+                              <label className="text-[10px] uppercase font-bold text-zinc-500 block mb-1">Description</label>
                               <textarea 
                                 value={editForm.description} 
                                 onChange={e => setEditForm({...editForm, description: e.target.value})}
-                                className="w-full text-sm p-2 border border-gray-200 rounded-lg bg-gray-50 focus:outline-none focus:ring-1 focus:ring-black"
+                                className="w-full text-sm p-2 border border-zinc-800 rounded-lg bg-zinc-950/50 focus:outline-none focus:ring-1 focus:ring-brand-500"
                                 rows={2}
                               />
                             </div>
                             <div>
-                              <label className="text-[10px] uppercase font-bold text-gray-400 block mb-1">Status</label>
+                              <label className="text-[10px] uppercase font-bold text-zinc-500 block mb-1">Status</label>
                               <select 
                                 value={editForm.status} 
                                 onChange={e => setEditForm({...editForm, status: e.target.value})}
-                                className="w-full text-sm p-2 border border-gray-200 rounded-lg bg-gray-50 focus:outline-none focus:ring-1 focus:ring-black"
+                                className="w-full text-sm p-2 border border-zinc-800 rounded-lg bg-zinc-950/50 focus:outline-none focus:ring-1 focus:ring-brand-500"
                               >
                                 {STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
                               </select>
                             </div>
                           </div>
 
-                          <div className="border-t border-gray-200 pt-3 mt-1">
+                          <div className="border-t border-zinc-800 pt-3 mt-1">
                             <div className="flex justify-between items-center mb-2">
-                              <label className="text-xs uppercase font-bold text-gray-600 block">Modules</label>
+                              <label className="text-xs uppercase font-bold text-zinc-400 block">Modules</label>
                               <button 
                                 onClick={() => {
                                   const newModule: Module = { id: Math.random().toString(36).substr(2, 9), name: "New Module", description: "", completed: false, submodules: [] };
                                   setEditForm({...editForm, modules: [...editForm.modules, newModule]});
                                 }}
-                                className="text-xs flex items-center gap-1 text-blue-600 hover:text-blue-800"
+                                className="text-xs flex items-center gap-1 text-brand-400 hover:text-brand-300"
                               >
                                 <Plus size={12}/> Add Module
                               </button>
@@ -410,10 +410,10 @@ export default function ContactLandingPage() {
 
                             <div className="flex flex-col gap-3">
                               {editForm.modules.map((m, mIdx) => (
-                                <div key={m.id} className="bg-gray-50 p-3 rounded-xl border border-gray-200">
+                                <div key={m.id} className="bg-zinc-950/50 p-3 rounded-xl border border-zinc-800">
                                   <div className="flex justify-between items-start mb-2">
                                     <input 
-                                      className="text-sm font-semibold bg-transparent border-b border-gray-300 focus:border-black outline-none w-full mr-2"
+                                      className="text-sm font-semibold bg-transparent border-b border-zinc-700 focus:border-brand-500 outline-none w-full mr-2"
                                       value={m.name}
                                       placeholder="Module Name"
                                       onChange={(e) => {
@@ -430,7 +430,7 @@ export default function ContactLandingPage() {
                                     </button>
                                   </div>
                                   <textarea 
-                                    className="w-full text-xs p-2 border border-gray-200 rounded-lg bg-white outline-none mb-2"
+                                    className="w-full text-xs p-2 border border-zinc-800 rounded-lg bg-zinc-900 outline-none mb-2"
                                     value={m.description}
                                     placeholder="Module Description"
                                     rows={1}
@@ -442,25 +442,25 @@ export default function ContactLandingPage() {
                                   />
                                   
                                   {/* Submodules Edit */}
-                                  <div className="pl-3 border-l-2 border-gray-200 flex flex-col gap-2 mt-2">
+                                  <div className="pl-3 border-l-2 border-zinc-800 flex flex-col gap-2 mt-2">
                                     <div className="flex justify-between items-center">
-                                      <label className="text-[10px] uppercase font-bold text-gray-500 block">Submodules</label>
+                                      <label className="text-[10px] uppercase font-bold text-zinc-400 block">Submodules</label>
                                       <button 
                                         onClick={() => {
                                           const newMods = [...editForm.modules];
                                           newMods[mIdx].submodules.push({ id: Math.random().toString(36).substr(2, 9), name: "New Submodule", description: "", completed: false });
                                           setEditForm({...editForm, modules: newMods});
                                         }}
-                                        className="text-[10px] flex items-center gap-1 text-blue-600 hover:text-blue-800"
+                                        className="text-[10px] flex items-center gap-1 text-brand-400 hover:text-brand-300"
                                       >
                                         <Plus size={10}/> Add
                                       </button>
                                     </div>
                                     {m.submodules.map((sm, smIdx) => (
-                                      <div key={sm.id} className="bg-white p-2 rounded-lg border border-gray-100 flex flex-col gap-1">
+                                      <div key={sm.id} className="bg-zinc-900 p-2 rounded-lg border border-zinc-800/60 flex flex-col gap-1">
                                         <div className="flex justify-between items-center">
                                           <input 
-                                            className="text-xs font-medium bg-transparent border-b border-gray-200 focus:border-black outline-none w-full mr-2"
+                                            className="text-xs font-medium bg-transparent border-b border-zinc-800 focus:border-brand-500 outline-none w-full mr-2"
                                             value={sm.name}
                                             placeholder="Submodule Name"
                                             onChange={(e) => {
@@ -478,7 +478,7 @@ export default function ContactLandingPage() {
                                           </button>
                                         </div>
                                         <input 
-                                          className="text-[10px] bg-transparent outline-none text-gray-500 w-full"
+                                          className="text-[10px] bg-transparent outline-none text-zinc-400 w-full"
                                           value={sm.description}
                                           placeholder="Description"
                                           onChange={(e) => {
@@ -495,51 +495,51 @@ export default function ContactLandingPage() {
                             </div>
                           </div>
 
-                          <div className="flex justify-end gap-2 mt-4 pt-3 border-t border-gray-100">
-                            <button onClick={() => setEditingId(null)} className="text-xs font-medium px-3 py-1.5 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors">Cancel</button>
-                            <button onClick={() => saveEdit(project.id)} className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-black text-white hover:bg-gray-800 transition-colors">Save</button>
+                          <div className="flex justify-end gap-2 mt-4 pt-3 border-t border-zinc-800/60">
+                            <button onClick={() => setEditingId(null)} className="text-xs font-medium px-3 py-1.5 rounded-lg border border-zinc-800 text-zinc-400 hover:bg-zinc-800 transition-colors">Cancel</button>
+                            <button onClick={() => saveEdit(project.id)} className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-brand-500 text-zinc-950 hover:bg-brand-400 transition-colors">Save</button>
                           </div>
                         </div>
                       ) : (
                         <>
                           {/* Display Mode */}
                           <div className="flex justify-between items-start mb-2 cursor-pointer" onClick={() => toggleProjectExpand(project.id)}>
-                            <h4 className="font-semibold text-black text-base pr-2">{project.name}</h4>
+                            <h4 className="font-semibold text-white text-base pr-2">{project.name}</h4>
                             <div className="flex items-center gap-2">
                               <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                                 <button 
                                   onClick={(e) => { e.stopPropagation(); startEditing(project); }}
-                                  className="text-gray-300 hover:text-blue-500 transition-colors"
+                                  className="text-zinc-600 hover:text-brand-400 transition-colors"
                                 >
                                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>
                                 </button>
                                 <button 
                                   onClick={(e) => { e.stopPropagation(); setDeleteConfirmId(project.id); }}
-                                  className="text-gray-300 hover:text-red-500 transition-colors"
+                                  className="text-zinc-600 hover:text-red-500 transition-colors"
                                 >
                                   <Trash2 size={14} />
                                 </button>
                               </div>
-                              <div className="text-gray-400">
+                              <div className="text-zinc-500">
                                 {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
                               </div>
                             </div>
                           </div>
                           
                           {project.description && (
-                            <p className="text-sm text-gray-500 mb-4 line-clamp-2">{project.description}</p>
+                            <p className="text-sm text-zinc-400 mb-4 line-clamp-2">{project.description}</p>
                           )}
                           
                           {/* Progress Bar */}
                           {totalTasks > 0 && (
                             <div className="mb-4">
                               <div className="flex justify-between items-center mb-1">
-                                <span className="text-[10px] uppercase font-bold text-gray-400 tracking-wider">Progress</span>
-                                <span className="text-xs font-semibold text-gray-600">{progressPercent}%</span>
+                                <span className="text-[10px] uppercase font-bold text-zinc-500 tracking-wider">Progress</span>
+                                <span className="text-xs font-semibold text-zinc-400">{progressPercent}%</span>
                               </div>
-                              <div className="w-full bg-gray-100 rounded-full h-1.5 overflow-hidden">
+                              <div className="w-full bg-zinc-800 rounded-full h-1.5 overflow-hidden">
                                 <div 
-                                  className={`h-full transition-all duration-500 ${progressPercent === 100 ? 'bg-green-500' : 'bg-black'}`}
+                                  className={`h-full transition-all duration-500 ${progressPercent === 100 ? 'bg-emerald-500' : 'bg-brand-500'}`}
                                   style={{ width: `${progressPercent}%` }}
                                 ></div>
                               </div>
@@ -548,22 +548,22 @@ export default function ContactLandingPage() {
 
                           {isExpanded && project.modules.length > 0 && (
                             <div className="flex flex-col gap-3 mb-4 animate-in fade-in slide-in-from-top-2 duration-300">
-                              <div className="h-px bg-gray-100 w-full mb-1"></div>
+                              <div className="h-px bg-zinc-800 w-full mb-1"></div>
                               {project.modules.map(m => (
                                 <div key={m.id} className="flex flex-col gap-1">
                                   <div className="flex items-start gap-2 group/mod">
                                     <button 
                                       onClick={(e) => { e.stopPropagation(); toggleItemCompletion(project.id, m.id); }}
-                                      className="mt-0.5 text-gray-400 hover:text-black transition-colors"
+                                      className="mt-0.5 text-zinc-500 hover:text-white transition-colors"
                                     >
-                                      {m.completed ? <CheckSquare size={14} className="text-black" /> : <Square size={14} />}
+                                      {m.completed ? <CheckSquare size={14} className="text-brand-400" /> : <Square size={14} />}
                                     </button>
                                     <div className="flex flex-col">
-                                      <span className={`text-sm font-medium ${m.completed ? 'text-gray-400 line-through' : 'text-gray-800'}`}>
+                                      <span className={`text-sm font-medium ${m.completed ? 'text-zinc-500 line-through' : 'text-zinc-200'}`}>
                                         {m.name}
                                       </span>
                                       {m.description && (
-                                        <span className={`text-[11px] leading-tight mt-0.5 ${m.completed ? 'text-gray-300' : 'text-gray-500'}`}>
+                                        <span className={`text-[11px] leading-tight mt-0.5 ${m.completed ? 'text-zinc-600' : 'text-zinc-400'}`}>
                                           {m.description}
                                         </span>
                                       )}
@@ -572,21 +572,21 @@ export default function ContactLandingPage() {
 
                                   {/* Render Submodules */}
                                   {m.submodules.length > 0 && (
-                                    <div className="flex flex-col gap-1.5 mt-1 ml-5 pl-2 border-l-2 border-gray-100">
+                                    <div className="flex flex-col gap-1.5 mt-1 ml-5 pl-2 border-l-2 border-zinc-800/60">
                                       {m.submodules.map(sm => (
                                         <div key={sm.id} className="flex items-start gap-2">
                                           <button 
                                             onClick={(e) => { e.stopPropagation(); toggleItemCompletion(project.id, m.id, sm.id); }}
-                                            className="mt-0.5 text-gray-300 hover:text-gray-600 transition-colors"
+                                            className="mt-0.5 text-zinc-600 hover:text-zinc-300 transition-colors"
                                           >
-                                            {sm.completed ? <CheckSquare size={12} className="text-gray-500" /> : <Square size={12} />}
+                                            {sm.completed ? <CheckSquare size={12} className="text-zinc-400" /> : <Square size={12} />}
                                           </button>
                                           <div className="flex flex-col">
-                                            <span className={`text-xs ${sm.completed ? 'text-gray-300 line-through' : 'text-gray-600'}`}>
+                                            <span className={`text-xs ${sm.completed ? 'text-zinc-600 line-through' : 'text-zinc-400'}`}>
                                               {sm.name}
                                             </span>
                                             {sm.description && (
-                                              <span className={`text-[10px] leading-tight ${sm.completed ? 'text-gray-200' : 'text-gray-400'}`}>
+                                              <span className={`text-[10px] leading-tight ${sm.completed ? 'text-zinc-700' : 'text-zinc-500'}`}>
                                                 {sm.description}
                                               </span>
                                             )}
@@ -600,14 +600,14 @@ export default function ContactLandingPage() {
                             </div>
                           )}
 
-                          <div className="mt-auto pt-4 border-t border-gray-50 flex items-center justify-between">
-                            <span className="text-[10px] text-gray-400">{project.dateAdded}</span>
+                          <div className="mt-auto pt-4 border-t border-zinc-800/60 flex items-center justify-between">
+                            <span className="text-[10px] text-zinc-500">{project.dateAdded}</span>
                             
                             <div className="flex items-center gap-1">
                                {colStatus !== "Archived" && (
                                  <button 
                                    onClick={(e) => { e.stopPropagation(); updateProjectStatus(project.id, STATUSES[STATUSES.indexOf(colStatus) + 1]); }}
-                                   className="text-xs bg-gray-50 hover:bg-gray-100 text-gray-600 px-2 py-1 rounded-lg border border-gray-200 transition-colors flex items-center gap-1"
+                                   className="text-xs bg-zinc-950/50 hover:bg-zinc-700 text-zinc-400 px-2 py-1 rounded-lg border border-zinc-800 transition-colors flex items-center gap-1"
                                  >
                                    Next <ArrowRight size={12} />
                                  </button>
@@ -627,19 +627,19 @@ export default function ContactLandingPage() {
 
       {/* Delete Confirmation Modal */}
       {deleteConfirmId && (
-        <div className="fixed inset-0 z-[200] bg-black/40 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200">
-          <div className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-2xl flex flex-col gap-4 animate-in zoom-in-95 duration-200">
+        <div className="fixed inset-0 z-[200] bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200">
+          <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 w-full max-w-sm shadow-2xl flex flex-col gap-4 animate-in zoom-in-95 duration-200">
             <div className="flex justify-between items-center">
-              <h3 className="text-lg font-bold text-gray-900">Delete Project?</h3>
-              <button onClick={() => setDeleteConfirmId(null)} className="text-gray-400 hover:text-gray-600"><X size={20}/></button>
+              <h3 className="text-lg font-bold text-zinc-100">Delete Project?</h3>
+              <button onClick={() => setDeleteConfirmId(null)} className="text-zinc-500 hover:text-zinc-300"><X size={20}/></button>
             </div>
-            <p className="text-sm text-gray-500">
+            <p className="text-sm text-zinc-400">
               Are you sure you want to delete this project? This action cannot be undone.
             </p>
             <div className="flex justify-end gap-3 mt-2">
               <button 
                 onClick={() => setDeleteConfirmId(null)}
-                className="px-4 py-2 rounded-xl text-sm font-semibold text-gray-600 bg-gray-100 hover:bg-gray-200 transition-colors"
+                className="px-4 py-2 rounded-xl text-sm font-semibold text-zinc-400 bg-zinc-800 hover:bg-zinc-700 transition-colors"
               >
                 Cancel
               </button>

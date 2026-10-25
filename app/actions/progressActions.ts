@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@supabase/supabase-js";
+import { getLegacyRole } from "@/lib/auth/legacy";
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -19,6 +20,8 @@ export type StudentProgress = {
 
 // 1. Fetch a student's progress to paint the UI
 export async function getStudentProgress(studentId: string): Promise<StudentProgress[]> {
+  const me = await getLegacyRole();
+  if (!me || (me.userId !== studentId && me.role !== "super_admin")) return [];
   const { data, error } = await supabaseAdmin
     .from("student_progress")
     .select("*")
@@ -34,6 +37,10 @@ export async function getStudentProgress(studentId: string): Promise<StudentProg
 // 2. Upsert progress from the video player
 export async function updateStudentProgress(studentId: string, topicId: string, percentage: number) {
   try {
+    // Students may only update their own progress.
+    const me = await getLegacyRole();
+    if (!me || me.userId !== studentId) throw new Error("Not authorised");
+    if (!Number.isFinite(percentage) || percentage < 0 || percentage > 100) throw new Error("Invalid percentage");
     // Determine completion threshold
     const isCompleted = percentage >= 90;
 

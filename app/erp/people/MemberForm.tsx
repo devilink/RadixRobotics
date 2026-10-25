@@ -1,0 +1,155 @@
+"use client";
+
+import { useState } from "react";
+import { MEMBER_TYPE_LABELS, MEMBER_TYPES_BY_INSTITUTION, type InstitutionType, type MemberType } from "@/lib/erp/types";
+import type { ActionResult } from "@/lib/erp/types";
+import { ActionForm, SubmitButton } from "../_components/forms";
+import { Field, inputClass } from "../_components/ui";
+
+export type InstitutionChoice = {
+  id: string; name: string; institution_type: InstitutionType;
+  campuses: { id: string; name: string }[];
+  shifts: { id: string; name: string }[];
+  canStudents: boolean; canStaff: boolean;
+};
+
+export type MemberValues = {
+  membership_id: string; member_type: MemberType; institution_id: string;
+  first_name: string; last_name: string; member_code: string; email: string | null; phone: string | null;
+  campus_id: string | null; status: string; end_date: string | null;
+  registration_number: string | null; admission_date: string | null;
+  department: string | null; position: string | null; employment_type: string | null; shift_id: string | null;
+};
+
+export function MemberForm({ action, institutions, mode, defaultInstitution, defaultKind, initial, showHr = true }: {
+  action: (prev: ActionResult<unknown> | null, fd: FormData) => Promise<ActionResult<unknown>>;
+  institutions: InstitutionChoice[];
+  mode: "create" | "edit";
+  defaultInstitution?: string;
+  defaultKind?: "student" | "staff";
+  initial?: MemberValues;
+  showHr?: boolean;
+}) {
+  const initialInst = initial?.institution_id ?? (institutions.some((i) => i.id === defaultInstitution) ? defaultInstitution! : institutions[0]?.id);
+  const [instId, setInstId] = useState(initialInst);
+  const inst = institutions.find((i) => i.id === instId);
+  const allowedTypes = (inst ? MEMBER_TYPES_BY_INSTITUTION[inst.institution_type] : []).filter((t) =>
+    t === "student" ? inst?.canStudents : inst?.canStaff
+  );
+  const preferred = initial?.member_type ?? (defaultKind === "student" ? "student" : allowedTypes.find((t) => t !== "student"));
+  const [memberType, setMemberType] = useState<MemberType | undefined>(preferred);
+  const type = mode === "edit" ? initial?.member_type : allowedTypes.includes(memberType as MemberType) ? memberType : allowedTypes[0];
+  const isStudent = type === "student";
+  const v = initial;
+
+  return (
+    <ActionForm action={action}>
+      {({ errors }) => (
+        <>
+          {v && <input type="hidden" name="membership_id" value={v.membership_id} />}
+          <fieldset className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <legend className="sr-only">Membership</legend>
+            {mode === "create" ? (
+              <>
+                <Field label="Institution" htmlFor="institution_id" error={errors.institution_id} required>
+                  <select id="institution_id" name="institution_id" value={instId} onChange={(e) => setInstId(e.target.value)} className={inputClass}>
+                    {institutions.map((i) => <option key={i.id} value={i.id}>{i.name}</option>)}
+                  </select>
+                </Field>
+                <Field label="Person type" htmlFor="member_type" error={errors.member_type} required>
+                  <select id="member_type" name="member_type" value={type} onChange={(e) => setMemberType(e.target.value as MemberType)} className={inputClass}>
+                    {allowedTypes.map((t) => <option key={t} value={t}>{MEMBER_TYPE_LABELS[t]}</option>)}
+                  </select>
+                </Field>
+              </>
+            ) : (
+              <Field label="Status" htmlFor="status" error={errors.status} hint="Leaving or graduating sets an end date and removes them from future registers.">
+                <select id="status" name="status" defaultValue={v?.status} className={inputClass}>
+                  <option value="active">Active</option>
+                  <option value="inactive">Inactive</option>
+                  <option value="graduated">Graduated</option>
+                  <option value="left">Left</option>
+                </select>
+              </Field>
+            )}
+            <Field label={isStudent ? "Student ID" : "Employee / staff ID"} htmlFor="member_code" error={errors.member_code} required
+              hint="Unique within this institution.">
+              <input id="member_code" name="member_code" defaultValue={v?.member_code} required className={`${inputClass} uppercase`} aria-invalid={!!errors.member_code} />
+            </Field>
+            <Field label="First name" htmlFor="first_name" error={errors.first_name} required>
+              <input id="first_name" name="first_name" defaultValue={v?.first_name} required autoComplete="off" className={inputClass} aria-invalid={!!errors.first_name} />
+            </Field>
+            <Field label="Last name" htmlFor="last_name" error={errors.last_name}>
+              <input id="last_name" name="last_name" defaultValue={v?.last_name} autoComplete="off" className={inputClass} />
+            </Field>
+            <Field label="Email" htmlFor="email" error={errors.email} hint={isStudent ? "Optional. For minors, prefer a guardian contact instead." : undefined}>
+              <input id="email" name="email" type="email" defaultValue={v?.email ?? ""} autoComplete="off" className={inputClass} aria-invalid={!!errors.email} />
+            </Field>
+            <Field label="Phone" htmlFor="phone" error={errors.phone}>
+              <input id="phone" name="phone" type="tel" defaultValue={v?.phone ?? ""} autoComplete="off" className={inputClass} aria-invalid={!!errors.phone} />
+            </Field>
+            {inst && inst.campuses.length > 1 && (
+              <Field label="Campus" htmlFor="campus_id" error={errors.campus_id}>
+                <select id="campus_id" name="campus_id" defaultValue={v?.campus_id ?? ""} className={inputClass}>
+                  <option value="">—</option>
+                  {inst.campuses.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+                </select>
+              </Field>
+            )}
+            {mode === "create" ? (
+              <Field label="Start date" htmlFor="start_date" error={errors.start_date} hint="Defaults to today.">
+                <input id="start_date" name="start_date" type="date" className={inputClass} />
+              </Field>
+            ) : (
+              <Field label="End date" htmlFor="end_date" error={errors.end_date}>
+                <input id="end_date" name="end_date" type="date" defaultValue={v?.end_date ?? ""} className={inputClass} />
+              </Field>
+            )}
+          </fieldset>
+
+          {isStudent ? (
+            <fieldset className="grid grid-cols-1 gap-4 border-t border-zinc-800/60 pt-4 sm:grid-cols-2">
+              <legend className="mb-2 text-sm font-semibold text-zinc-100">Student details</legend>
+              <Field label="Registration number" htmlFor="registration_number" error={errors.registration_number}>
+                <input id="registration_number" name="registration_number" defaultValue={v?.registration_number ?? ""} className={inputClass} />
+              </Field>
+              <Field label="Admission date" htmlFor="admission_date" error={errors.admission_date}>
+                <input id="admission_date" name="admission_date" type="date" defaultValue={v?.admission_date ?? ""} className={inputClass} />
+              </Field>
+            </fieldset>
+          ) : showHr ? (
+            <fieldset className="grid grid-cols-1 gap-4 border-t border-zinc-800/60 pt-4 sm:grid-cols-2">
+              <legend className="mb-2 text-sm font-semibold text-zinc-100">Employment</legend>
+              <Field label="Department" htmlFor="department" error={errors.department}>
+                <input id="department" name="department" defaultValue={v?.department ?? ""} className={inputClass} />
+              </Field>
+              <Field label="Position" htmlFor="position" error={errors.position}>
+                <input id="position" name="position" defaultValue={v?.position ?? ""} className={inputClass} />
+              </Field>
+              <Field label="Employment type" htmlFor="employment_type" error={errors.employment_type}>
+                <select id="employment_type" name="employment_type" defaultValue={v?.employment_type ?? ""} className={inputClass}>
+                  <option value="">—</option>
+                  <option value="full_time">Full-time</option>
+                  <option value="part_time">Part-time</option>
+                  <option value="contract">Contract</option>
+                  <option value="intern">Intern</option>
+                  <option value="volunteer">Volunteer</option>
+                </select>
+              </Field>
+              <Field label="Work shift" htmlFor="shift_id" error={errors.shift_id} hint={inst?.shifts.length ? undefined : "Define shifts on the institution page."}>
+                <select id="shift_id" name="shift_id" defaultValue={v?.shift_id ?? ""} className={inputClass} disabled={!inst?.shifts.length}>
+                  <option value="">—</option>
+                  {inst?.shifts.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+                </select>
+              </Field>
+            </fieldset>
+          ) : null}
+
+          <div className="flex justify-end">
+            <SubmitButton>{mode === "create" ? "Create record" : "Save changes"}</SubmitButton>
+          </div>
+        </>
+      )}
+    </ActionForm>
+  );
+}
