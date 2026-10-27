@@ -3,6 +3,7 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
 import { createClient } from "@supabase/supabase-js";
 import { createClient as createSessionClient } from "@/utils/supabase/server";
+import { isReservedLoginEmail } from "@/lib/auth/student-login";
 
 // Initialize Supabase Admin strictly on the server-side
 const supabaseAdmin = createClient(
@@ -52,7 +53,7 @@ export async function queueStudentForApproval(userId: string, schoolTokenValue: 
     if (!sessionUser && Date.now() - new Date(user.created_at).getTime() > REGISTRATION_WINDOW_MS) {
       return fail("Registration expired. Please sign in to continue.");
     }
-    if ((user.email ?? "").toLowerCase().endsWith("@radix.school")) return fail("This email domain is reserved for school logins.");
+    if (isReservedLoginEmail(user.email ?? "")) return fail("This email domain is reserved for Radix logins.");
 
     // Never attach a student role to an account that already has a role.
     const { data: existing } = await supabaseAdmin.from("user_roles").select("role").eq("id", userId).maybeSingle();

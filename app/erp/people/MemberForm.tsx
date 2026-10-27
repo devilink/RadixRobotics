@@ -1,17 +1,31 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { MEMBER_TYPE_LABELS, MEMBER_TYPES_BY_INSTITUTION, type InstitutionType, type MemberType } from "@/lib/erp/types";
 import type { ActionResult } from "@/lib/erp/types";
 import { ActionForm, SubmitButton } from "../_components/forms";
-import { Field, inputClass } from "../_components/ui";
+import { buttonClass, Field, inputClass } from "../_components/ui";
+import { LoginCredentials } from "./LoginCredentials";
+import type { StudentLoginResult } from "./actions";
 
 export type InstitutionChoice = {
   id: string; name: string; institution_type: InstitutionType;
   campuses: { id: string; name: string }[];
   shifts: { id: string; name: string }[];
   canStudents: boolean; canStaff: boolean;
+  /** May create logins here (users.manage). */
+  canLogins: boolean;
+  /** The curriculum-portal school or center this institution came from, if any. */
+  legacy_school_id: string | null;
 };
+
+const slug = (s: string) => s.toLowerCase().normalize("NFKD").replace(/[^a-z0-9]+/g, "");
+
+function generatePassword() {
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789";
+  const bytes = crypto.getRandomValues(new Uint32Array(10));
+  return Array.from(bytes, (b) => chars[b % chars.length]).join("") + (bytes[0] % 10);
+}
 
 export type MemberValues = {
   membership_id: string; member_type: MemberType; institution_id: string;
@@ -41,11 +55,31 @@ export function MemberForm({ action, institutions, mode, defaultInstitution, def
   const type = mode === "edit" ? initial?.member_type : allowedTypes.includes(memberType as MemberType) ? memberType : allowedTypes[0];
   const isStudent = type === "student";
   const v = initial;
+  const formRef = useRef<HTMLDivElement>(null);
+  const [loginOn, setLoginOn] = useState(false);
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const offerLogin = mode === "create" && isStudent && !!inst?.canLogins;
+
+  // e.g. "aarav.stu023": first name + student ID, editable before saving.
+  const suggestUsername = () => {
+    const el = formRef.current;
+    const first = slug((el?.querySelector<HTMLInputElement>("#first_name")?.value ?? "").split(/\s+/)[0] ?? "");
+    const code = slug(el?.querySelector<HTMLInputElement>("#member_code")?.value ?? "");
+    setUsername([first, code].filter(Boolean).join(".").slice(0, 40));
+  };
+  const toggleLogin = (on: boolean) => {
+    setLoginOn(on);
+    if (on && !username) suggestUsername();
+    if (on && !password) setPassword(generatePassword());
+  };
 
   return (
     <ActionForm action={action}>
-      {({ errors }) => (
-        <>
+      {({ errors, result }) => result?.ok && result.data ? (
+        <LoginCredentials login={result.data as StudentLoginResult} institutionId={instId ?? ""} />
+      ) : (
+        <div ref={formRef} className="space-y-4">
           {v && <input type="hidden" name="membership_id" value={v.membership_id} />}
           <fieldset className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <legend className="sr-only">Membership</legend>
@@ -145,10 +179,44 @@ export function MemberForm({ action, institutions, mode, defaultInstitution, def
             </fieldset>
           ) : null}
 
+          {offerLogin && (
+            <fieldset className="space-y-4 border-t border-zinc-800/60 pt-4">
+              <legend className="sr-only">Student login</legend>
+              <label className="flex items-start gap-3">
+                <input type="checkbox" name="create_login" checked={loginOn} onChange={(e) => toggleLogin(e.target.checked)} className="mt-0.5 h-4 w-4 accent-brand-500" />
+                <span>
+                  <span className="block text-sm font-semibold text-zinc-100">Create a login for this student</span>
+                  <span className="block text-xs text-zinc-500">
+                    They sign in with a username and password, no email needed.
+                    {inst?.legacy_school_id ? ` The login opens ${inst.name}'s curriculum.` : " This institution has no curriculum school yet, so the login opens their ERP page only."}
+                  </span>
+                </span>
+              </label>
+              {loginOn && (
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <Field label="Username" htmlFor="login_username" error={errors.login_username} required hint="Letters, numbers, . _ - Must be unique.">
+                    <div className="flex gap-2">
+                      <input id="login_username" name="login_username" value={username} onChange={(e) => setUsername(e.target.value.toLowerCase())}
+                        required autoComplete="off" autoCapitalize="none" spellCheck={false} className={`${inputClass} font-mono`} aria-invalid={!!errors.login_username} />
+                      <button type="button" onClick={suggestUsername} className={buttonClass("secondary", "sm")}>Suggest</button>
+                    </div>
+                  </Field>
+                  <Field label="Password" htmlFor="login_password" error={errors.login_password} required hint="At least 8 characters with a letter and a number.">
+                    <div className="flex gap-2">
+                      <input id="login_password" name="login_password" value={password} onChange={(e) => setPassword(e.target.value)}
+                        required autoComplete="new-password" spellCheck={false} className={`${inputClass} font-mono`} aria-invalid={!!errors.login_password} />
+                      <button type="button" onClick={() => setPassword(generatePassword())} className={buttonClass("secondary", "sm")}>Generate</button>
+                    </div>
+                  </Field>
+                </div>
+              )}
+            </fieldset>
+          )}
+
           <div className="flex justify-end">
-            <SubmitButton>{mode === "create" ? "Create record" : "Save changes"}</SubmitButton>
+            <SubmitButton>{mode === "create" ? (loginOn && offerLogin ? "Create student and login" : "Create record") : "Save changes"}</SubmitButton>
           </div>
-        </>
+        </div>
       )}
     </ActionForm>
   );

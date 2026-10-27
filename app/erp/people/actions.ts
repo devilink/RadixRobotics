@@ -3,47 +3,145 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
-import { db, requireActionPermission } from "@/lib/erp/context";
+import { can, db, ForbiddenError, requireActionPermission, serviceClient } from "@/lib/erp/context";
 import { check, failure, parse } from "@/lib/erp/action-utils";
-import { formToObject, guardianSchema, memberCreateSchema, memberUpdateSchema } from "@/lib/erp/validation";
+import { formToObject, guardianSchema, memberCreateSchema, memberUpdateSchema, studentLoginSchema } from "@/lib/erp/validation";
+import { sharedRateLimit } from "@/lib/erp/rate-limit";
+import { studentLoginEmail } from "@/lib/auth/student-login";
 import type { ActionResult } from "@/lib/erp/types";
 
 const permFor = (memberType: string) => (memberType === "student" ? "students.manage" : "staff.manage");
 
-export async function createMember(_prev: unknown, fd: FormData): Promise<ActionResult> {
+/** Credentials shown once to the admin after a student is created with a login. */
+export type StudentLoginResult = {
+  membershipId: string;
+  name: string;
+  username: string;
+  password: string;
+  institutionName: string;
+  /** False when the institution has no curriculum-portal school, so the login only opens the ERP. */
+  curriculum: boolean;
+};
+
+export async function createMember(_prev: unknown, fd: FormData): Promise<ActionResult<StudentLoginResult>> {
   let id: string;
   try {
-    const p = parse(memberCreateSchema, formToObject(fd));
-    if (!p.ok) return p.result;
+    const raw = formToObject(fd);
+    const p = parse(memberCreateSchema, raw);
+    const wantsLogin = raw.member_type === "student" && raw.create_login === "on";
+    const login = wantsLogin ? parse(studentLoginSchema, raw) : null;
+    if (!p.ok || (login && !login.ok)) {
+      // Report the record's and the login's field errors together.
+      const errorsOf = (r: typeof p | typeof login) => (r && !r.ok && !r.result.ok ? r.result.fieldErrors : undefined);
+      return { ok: false, error: "Please fix the highlighted fields.", fieldErrors: { ...errorsOf(p), ...errorsOf(login) } };
+    }
     const d = p.data;
-    await requireActionPermission([permFor(d.member_type)], d.institution_id);
+    const ctx = await requireActionPermission([permFor(d.member_type)], d.institution_id);
+    if (login?.ok) return await createStudentWithLogin(ctx, d, login.data);
     const supabase = await db();
-    id = check(
-      await supabase.rpc("erp_create_member", {
-        p_institution: d.institution_id,
-        p_member_type: d.member_type,
-        p_first_name: d.first_name,
-        p_last_name: d.last_name,
-        p_member_code: d.member_code,
-        p_email: d.email ?? null,
-        p_phone: d.phone ?? null,
-        p_campus: d.campus_id ?? null,
-        p_start_date: d.start_date ?? null,
-        p_details: {
-          registration_number: d.registration_number ?? "",
-          admission_date: d.admission_date ?? "",
-          department: d.department ?? "",
-          position: d.position ?? "",
-          employment_type: d.employment_type ?? "",
-          shift_id: d.shift_id ?? "",
-        },
-      })
-    ) as string;
+    id = check(await supabase.rpc("erp_create_member", memberRpcArgs(d))) as string;
   } catch (err) {
     return failure(err);
   }
   revalidatePath("/erp/people");
   redirect(`/erp/people/${id}?created=1`);
+}
+
+type MemberCreate = z.infer<typeof memberCreateSchema>;
+
+function memberRpcArgs(d: MemberCreate) {
+  return {
+    p_institution: d.institution_id,
+    p_member_type: d.member_type,
+    p_first_name: d.first_name,
+    p_last_name: d.last_name,
+    p_member_code: d.member_code,
+    p_email: d.email ?? null,
+    p_phone: d.phone ?? null,
+    p_campus: d.campus_id ?? null,
+    p_start_date: d.start_date ?? null,
+    p_details: {
+      registration_number: d.registration_number ?? "",
+      admission_date: d.admission_date ?? "",
+      department: d.department ?? "",
+      position: d.position ?? "",
+      employment_type: d.employment_type ?? "",
+      shift_id: d.shift_id ?? "",
+    },
+  };
+}
+
+/**
+ * Student record + username login in one step: the Auth account (service role), then the
+ * record, the ERP Student role and the person link (as the signed-in admin, so the database
+ * checks who may do what), then the curriculum-portal role for the institution's school or
+ * center. Any failure removes the login again, so no half-made account is left behind.
+ */
+async function createStudentWithLogin(
+  ctx: Awaited<ReturnType<typeof requireActionPermission>>,
+  d: MemberCreate,
+  l: z.infer<typeof studentLoginSchema>
+): Promise<ActionResult<StudentLoginResult>> {
+  if (!can(ctx.perms, "users.manage", d.institution_id)) throw new ForbiddenError("You can add the student, but not create logins at this institution.");
+  const supabase = await db();
+  if (!(await sharedRateLimit(supabase, ctx.userId, "create-user", 30, 60_000))) throw new ForbiddenError("Too many accounts created in a short time. Please wait a minute.");
+  const { data: inst } = await supabase.from("institutions").select("name, legacy_school_id").eq("id", d.institution_id).maybeSingle();
+  if (!inst) throw new ForbiddenError("Institution not found.");
+
+  const name = `${d.first_name} ${d.last_name}`.trim();
+  const admin = serviceClient();
+  const { data: created, error: authErr } = await admin.auth.admin.createUser({
+    email: studentLoginEmail(l.login_username),
+    password: l.login_password,
+    email_confirm: true,
+    user_metadata: { full_name: name, username: l.login_username },
+  });
+  if (authErr || !created.user) {
+    return /already|registered|exists/i.test(authErr?.message ?? "")
+      ? { ok: false, error: "That username is taken.", fieldErrors: { login_username: "Already taken. Try another." } }
+      : { ok: false, error: "The login could not be created." };
+  }
+  const userId = created.user.id;
+
+  let membershipId: string;
+  try {
+    membershipId = check(await supabase.rpc("erp_create_member", memberRpcArgs(d))) as string;
+  } catch (err) {
+    await admin.auth.admin.deleteUser(userId);
+    return failure(err);
+  }
+
+  try {
+    check(await supabase.rpc("erp_assign_role", { p_user: userId, p_role: "student", p_institution: d.institution_id }));
+    check(await supabase.rpc("erp_link_user_person", { p_user: userId, p_membership: membershipId }));
+    if (inst.legacy_school_id) {
+      const { error } = await admin
+        .from("user_roles")
+        .insert({ id: userId, role: "student", school_id: inst.legacy_school_id, is_approved: true });
+      if (error) throw error;
+    }
+  } catch (err) {
+    console.error("[erp] student login setup failed", err);
+    await admin.auth.admin.deleteUser(userId);
+    revalidatePath("/erp/people");
+    return {
+      ok: false,
+      error: "The student record was created, but the login could not be set up. Open the student's page to create a login.",
+    };
+  }
+
+  revalidatePath("/erp/people");
+  return {
+    ok: true,
+    data: {
+      membershipId,
+      name,
+      username: l.login_username,
+      password: l.login_password,
+      institutionName: inst.name,
+      curriculum: !!inst.legacy_school_id,
+    },
+  };
 }
 
 export async function updateMember(memberType: string, institutionId: string, _prev: unknown, fd: FormData): Promise<ActionResult> {

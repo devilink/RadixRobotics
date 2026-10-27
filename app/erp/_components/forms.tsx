@@ -32,7 +32,7 @@ type FormAction = (prev: ActionResult<unknown> | null, fd: FormData) => Promise<
  */
 export function ActionForm({ action, children, className, resetOnSuccess = false, onSuccess }: {
   action: FormAction;
-  children: (state: { errors: Record<string, string>; pending: boolean }) => ReactNode;
+  children: (state: { errors: Record<string, string>; pending: boolean; result: ActionResult<unknown> | null }) => ReactNode;
   className?: string;
   resetOnSuccess?: boolean;
   onSuccess?: () => void;
@@ -51,7 +51,7 @@ export function ActionForm({ action, children, className, resetOnSuccess = false
     <form ref={ref} action={formAction} className={cx("space-y-4", className)} noValidate>
       {state && !state.ok && <Notice tone="error">{state.error}</Notice>}
       {state?.ok && state.message && <Notice tone="success">{state.message}</Notice>}
-      {children({ errors, pending })}
+      {children({ errors, pending, result: state })}
     </form>
   );
 }

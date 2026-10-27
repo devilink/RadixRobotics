@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { getPortalPath } from "@/app/actions/portalActions";
+import styles from "./LabFrame.module.css";
 
 const LABS = [
   { key: "kit", href: "/kits", label: "Starter Kit" },
@@ -14,7 +15,7 @@ export async function LabFrame({ active, src, title }: { active: (typeof LABS)[n
   const backHref = await getPortalPath();
   return (
     <div className="flex h-[100dvh] flex-col bg-[#F6EDDD]">
-      <nav className="flex items-center justify-between gap-4 border-b border-[#CFC0A2] bg-[#EFE3CC] px-4 py-2">
+      <nav className={`${styles.nav} flex items-center justify-between gap-4 border-b border-[#CFC0A2] bg-[#EFE3CC] px-4 py-2`}>
         <Link
           href={backHref}
           className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-[#1E2B45]/70 transition-colors hover:text-[#1E2B45]"

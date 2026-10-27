@@ -500,6 +500,43 @@ button{cursor:pointer}
 .fullpins span[data-k="pwr"]{background:#FDECEA;border-color:#F3C3BD}
 .fullpins span[data-k="gnd"]{background:#ECEDEF;border-color:#D3D6DB}
 .inputsrow[hidden]{display:none}
+/* ---------- smartboards: large touch displays read from across the room ----------
+   Touch: bigger hit areas, no sticky hover lifts.
+   Large: a modest type bump on the panel, strip and stage overlays; layout is unchanged. */
+@media (any-pointer:coarse) and (min-width:1021px){
+  .seg button,.stripnav button,.sqbtn,.playsq{min-width:44px;height:44px}
+  .tab{padding:10px 14px 12px}
+  .gbtn{padding:11px 10px}
+  .ibtn{width:48px;height:48px}
+  .got,.chip,.striphead select,.boardpick select{min-height:44px}
+  .ctl,.builtbtn,.cta button{min-height:48px}
+  .opt{min-height:52px}
+  .rng input{height:30px}
+  .snd input{width:22px;height:22px}
+  .item:hover,.pcard:hover,.bcard:hover{transform:none}
+  .rbtn .rtip{display:none}
+  .panel .tabpanel{flex:1 1 auto;min-height:180px;max-height:none}
+}
+@media (min-width:1600px) and (any-pointer:coarse),(min-width:2400px){
+  body{font-size:16px}
+  .shell{grid-template-columns:minmax(0,1fr) 470px}
+  .phead h2{font-size:30px}
+  .phead p,.qfeed,.cta,.drawerlede{font-size:15.5px}
+  .tab{font-size:17px}
+  .gbtn,.steps li,.rcard p,.rcard ul{font-size:16px}
+  .gbtn .t b{font-size:14px}
+  .ov h3{font-size:26px}
+  .quiz .q{font-size:24px}
+  .opt{font-size:16px}
+  .item .nm{font-size:17px}
+  .item .no,.pill{font-size:11.5px}
+  .tipbox{font-size:15px;max-width:300px}
+  .tipbox small{font-size:12.5px}
+  .hintpill,.legend,.bench-note,.hs .card span{font-size:13px}
+  .hs .card b{font-size:13.5px}
+  .editor{font-size:14px}
+  #serial{font-size:13.5px}
+}
 </style>
 </head>
 <body>

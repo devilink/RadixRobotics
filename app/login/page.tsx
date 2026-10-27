@@ -6,6 +6,7 @@ import { createClient } from "@/utils/supabase/client";
 import { autoAssignSuperAdmin, getUserRoleById } from "@/app/actions/superAdminActions";
 import { getAvailableSchools, queueStudentForApproval } from "@/app/actions/studentActions";
 import { hasErpAccess } from "@/app/erp/actions";
+import { isReservedLoginEmail, studentLoginEmail } from "@/lib/auth/student-login";
 
 // Only same-site ERP paths are accepted as post-login destinations (no open redirects).
 function erpNextPath(): string | null {
@@ -58,6 +59,7 @@ export default function LoginPage() {
     try {
       // 1. FORGOT PASSWORD FLOW
       if (activeTab === "student" && studentMode === "forgot") {
+        if (!email.includes("@")) throw new Error("Username logins can't be reset by email. Ask your teacher or school admin for a new password.");
         const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
           redirectTo: `${window.location.origin}/update-password`,
         });
@@ -70,7 +72,7 @@ export default function LoginPage() {
       // 2. REGISTER FLOW
       if (activeTab === "student" && studentMode === "register") {
         if (!selectedSchool) throw new Error("Please select your school before registering.");
-        if (email.trim().toLowerCase().endsWith("@radix.school")) throw new Error("This email domain is reserved for school logins.");
+        if (isReservedLoginEmail(email)) throw new Error("This email domain is reserved for Radix logins.");
 
         const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
           email,
@@ -91,7 +93,9 @@ export default function LoginPage() {
       }
 
       // 3. LOGIN FLOW
-      let loginEmail = email;
+      let loginEmail = email.trim();
+      // Students added by their school sign in with a username instead of an email.
+      if (activeTab === "student" && !loginEmail.includes("@")) loginEmail = studentLoginEmail(loginEmail);
 
       if (activeTab === "school") {
         if (!schoolId.trim()) throw new Error("Please enter your School or Center ID.");
@@ -118,7 +122,7 @@ export default function LoginPage() {
       if (err.message?.includes("Email not confirmed")) {
         setError("Please check your inbox and confirm your email address before logging in.");
       } else if (err.message?.includes("Invalid login credentials")) {
-        setError(activeTab === "school" ? "Invalid ID or password." : "Invalid email or password.");
+        setError(activeTab === "school" ? "Invalid ID or password." : activeTab === "student" ? "Invalid username, email or password." : "Invalid email or password.");
       } else {
         setError(err.message || "An unexpected error occurred.");
       }
@@ -243,13 +247,17 @@ export default function LoginPage() {
             </div>
           ) : (
             <div>
-              <label className="text-zinc-400 text-sm font-medium mb-1.5 block">Email Address</label>
+              <label className="text-zinc-400 text-sm font-medium mb-1.5 block">
+                {activeTab === "student" && studentMode === "login" ? "Username or Email" : "Email Address"}
+              </label>
               <input 
-                type="email" 
+                type={activeTab === "student" && studentMode === "login" ? "text" : "email"} 
                 required 
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="you@example.com"
+                autoCapitalize="none"
+                autoComplete="username"
+                placeholder={activeTab === "student" && studentMode === "login" ? "username or you@example.com" : "you@example.com"}
                 className="w-full p-3.5 rounded-xl bg-zinc-950/50 border border-zinc-800 text-white placeholder-zinc-700 outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all text-sm" 
               />
             </div>

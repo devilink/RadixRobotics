@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { ATTENDANCE_STATUSES, LEAVE_TYPES, MEMBER_TYPES, MEMBERSHIP_STATUSES } from "./types";
 import { ITEM_KINDS, MANUAL_MOVEMENT_TYPES } from "./inventory-types";
+import { isReservedLoginEmail, STUDENT_USERNAME_RE } from "@/lib/auth/student-login";
 
 // Server-side input validation. The database enforces the same rules with
 // CHECK constraints; these give friendly, field-level messages first.
@@ -75,6 +76,21 @@ export const memberCreateSchema = z.object({
   position: optionalText(100),
   employment_type: z.preprocess(blankToUndefined, z.enum(["full_time", "part_time", "contract", "intern", "volunteer"]).optional()),
   shift_id: optionalUuid,
+});
+
+/** Optional username login created together with a student record. */
+export const studentLoginSchema = z.object({
+  login_username: z
+    .string()
+    .trim()
+    .toLowerCase()
+    .regex(STUDENT_USERNAME_RE, "3–40 characters: letters, numbers, . _ - (start with a letter or number)"),
+  login_password: z
+    .string()
+    .min(8, "Password must be at least 8 characters")
+    .max(72)
+    .regex(/[A-Za-z]/, "Include a letter")
+    .regex(/[0-9]/, "Include a number"),
 });
 
 export const memberUpdateSchema = memberCreateSchema
@@ -175,8 +191,8 @@ export const createUserSchema = z.object({
     .toLowerCase()
     .email("Enter a valid email")
     .max(200)
-    // Reserved for school logins created by the curriculum portal.
-    .refine((e) => !e.endsWith("@radix.school"), "This email domain is reserved for school logins"),
+    // Reserved for school and student-username logins.
+    .refine((e) => !isReservedLoginEmail(e), "This email domain is reserved for Radix logins"),
   full_name: z.string().trim().min(1, "Name is required").max(150),
   password: z
     .string()

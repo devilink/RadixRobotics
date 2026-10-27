@@ -4,6 +4,7 @@ import { createClient } from "@supabase/supabase-js";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { requireLegacySchoolAccess } from "@/lib/auth/legacy";
+import { isReservedLoginEmail } from "@/lib/auth/student-login";
 import { rateLimit } from "@/lib/erp/rate-limit";
 import { createClient as createSessionClient } from "@/utils/supabase/server";
 
@@ -111,7 +112,7 @@ const newStudentSchema = z.object({
     .toLowerCase()
     .email("Enter a valid email")
     .max(200)
-    .refine((e) => !e.endsWith("@radix.school"), "This email domain is reserved for school logins"),
+    .refine((e) => !isReservedLoginEmail(e), "This email domain is reserved for Radix logins"),
   password: z
     .string()
     .min(8, "Password must be at least 8 characters")

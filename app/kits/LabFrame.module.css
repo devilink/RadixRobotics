@@ -1,0 +1,6 @@
+/* Smartboards: same breakpoint as the board block in docs/*.html. */
+@media (min-width: 1600px) and (any-pointer: coarse), (min-width: 2400px) {
+  .nav {
+    zoom: 1.15;
+  }
+}
