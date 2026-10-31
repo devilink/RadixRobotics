@@ -1,17 +1,25 @@
-import type { Metadata } from "next";
-import { Inter, Space_Grotesk, Anton, Condiment, Caveat } from "next/font/google";
+import type { Metadata, Viewport } from "next";
+import { Inter, Space_Grotesk, Anton, Condiment, Caveat, Plus_Jakarta_Sans, Silkscreen, Instrument_Serif } from "next/font/google";
 import "./globals.css";
 import "./styles/fonts.css";
 import "./styles/theme.css";
 import "./radix-landing.css";
+import "./styles/loader.css";
 import NavbarWrapper from "@/app/components/NavbarWrapper";
+import RouteProgress from "@/app/components/RouteProgress";
 import StructuredData from "@/app/components/StructuredData";
+import SiteLoader from "@/app/components/SiteLoader";
 
-const inter = Inter({ subsets: ["latin"], display: "swap" });
-const spaceGrotesk = Space_Grotesk({ subsets: ["latin"], display: 'swap', variable: '--font-space-grotesk' });
-const anton = Anton({ subsets: ["latin"], weight: '400', display: 'swap', variable: '--font-grotesk' });
-const condiment = Condiment({ subsets: ["latin"], weight: '400', display: 'swap', variable: '--font-condiment' });
-const caveat = Caveat({ subsets: ["latin"], display: 'swap', variable: '--font-caveat' });
+const inter = Inter({ subsets: ["latin"], display: "swap", variable: '--font-inter' });
+// Landing page fonts: self-hosted and preloaded so the hero never waits on a third-party stylesheet.
+const jakarta = Plus_Jakarta_Sans({ subsets: ["latin"], display: 'swap', variable: '--font-jakarta' });
+const silkscreen = Silkscreen({ subsets: ["latin"], weight: '700', display: 'swap', variable: '--font-pixel' });
+// Fonts used only on inner pages are not preloaded, so they don't compete with the landing page.
+const spaceGrotesk = Space_Grotesk({ subsets: ["latin"], display: 'swap', variable: '--font-space-grotesk', preload: false });
+const anton = Anton({ subsets: ["latin"], weight: '400', display: 'swap', variable: '--font-grotesk', preload: false });
+const condiment = Condiment({ subsets: ["latin"], weight: '400', display: 'swap', variable: '--font-condiment', preload: false });
+const caveat = Caveat({ subsets: ["latin"], display: 'swap', variable: '--font-caveat', preload: false });
+const instrumentSerif = Instrument_Serif({ subsets: ["latin"], weight: '400', style: ['normal', 'italic'], display: 'swap', variable: '--font-instrument', preload: false });
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://radixrobotics.in"),
@@ -75,12 +83,28 @@ export const metadata: Metadata = {
     },
   },
   icons: {
-    icon: "/fav.png?v=2",
-    apple: "/fav.png?v=2",
+    icon: [
+      { url: "/favicon-48.png", sizes: "48x48", type: "image/png" },
+      { url: "/icon-192.png", sizes: "192x192", type: "image/png" },
+    ],
+    apple: { url: "/apple-touch-icon.png", sizes: "180x180" },
+  },
+  appleWebApp: {
+    capable: true,
+    title: "RADIX",
+    statusBarStyle: "default",
   },
   alternates: {
     canonical: "https://radixrobotics.in",
   },
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  // Lets the page extend under the iPhone notch / home indicator; padding uses env(safe-area-inset-*).
+  viewportFit: "cover",
+  themeColor: "#f1f2f4",
 };
 
 export default function RootLayout({
@@ -90,8 +114,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${inter.className} ${spaceGrotesk.variable} ${anton.variable} ${condiment.variable} ${caveat.variable} overflow-x-clip`} suppressHydrationWarning>
+      <body className={`${inter.className} ${inter.variable} ${jakarta.variable} ${silkscreen.variable} ${instrumentSerif.variable} ${spaceGrotesk.variable} ${anton.variable} ${condiment.variable} ${caveat.variable} overflow-x-clip`} suppressHydrationWarning>
         <StructuredData />
+        <SiteLoader />
+        <RouteProgress />
         <NavbarWrapper />
         {children}
       </body>

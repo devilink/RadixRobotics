@@ -1,10 +1,15 @@
-@import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600&display=swap');
-
+/* Fonts are loaded via next/font in app/layout.tsx (self-hosted, no render-blocking @import). */
 @layer base {
   .font-instrument {
-    font-family: 'Instrument Serif', serif;
+    font-family: var(--font-instrument), serif;
   }
   .font-inter {
-    font-family: 'Inter', sans-serif;
+    font-family: var(--font-inter), sans-serif;
+  }
+  .pr-font-sans {
+    font-family: var(--font-jakarta), sans-serif;
+  }
+  .pr-font-pixel {
+    font-family: var(--font-pixel), monospace;
   }
 }

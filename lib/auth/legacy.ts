@@ -1,6 +1,6 @@
 import "server-only";
 import { createClient as createServiceClient } from "@supabase/supabase-js";
-import { createClient } from "@/utils/supabase/server";
+import { getSessionUser } from "./session";
 
 // Guards for the original curriculum portal's server actions. Server actions are
 // public POST endpoints, so each one must authenticate the caller itself.
@@ -15,8 +15,7 @@ function serviceClient() {
 
 /** The signed-in user and their legacy `user_roles` row, or null when signed out. */
 export async function getLegacyRole(): Promise<LegacyRole | null> {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const user = await getSessionUser();
   if (!user) return null;
   // Roles come only from user_roles. Nothing is inferred from the email address.
   const { data } = await serviceClient()
@@ -24,7 +23,7 @@ export async function getLegacyRole(): Promise<LegacyRole | null> {
     .select("role, school_id")
     .eq("id", user.id)
     .maybeSingle();
-  return { userId: user.id, email: user.email ?? "", role: data?.role ?? null, schoolId: data?.school_id ?? null };
+  return { userId: user.id, email: user.email, role: data?.role ?? null, schoolId: data?.school_id ?? null };
 }
 
 /** The owner account that is bootstrapped as super admin (SUPER_ADMIN_EMAIL), or null when unset. */

@@ -64,6 +64,13 @@ export const NAV: NavSection[] = [
     ],
   },
   {
+    label: "Community",
+    tone: "pink",
+    items: [
+      { href: "/erp/community", label: "Join Applications", icon: "HeartHandshake", hint: "People who want to join Radix", anyOf: ["community.manage"] },
+    ],
+  },
+  {
     label: "My Account",
     tone: "teal",
     items: [{ href: "/erp/me", label: "My Attendance", icon: "UserCheck", hint: "Your own record", anyOf: ["self.view"] }],

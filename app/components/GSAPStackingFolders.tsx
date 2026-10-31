@@ -216,9 +216,8 @@ export default function GSAPStackingFolders() {
                 src={tier.image} 
                 alt={tier.title} 
                 fill 
-                priority={index < 4}
                 className="object-cover group-hover:scale-110 transition-transform duration-700 ease-out" 
-                sizes="(max-width: 768px) 100vw, 50vw" 
+                sizes="(max-width: 768px) 100vw, 512px" 
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black via-black/60 to-transparent opacity-80 group-hover:opacity-95 transition-opacity duration-500"></div>
               

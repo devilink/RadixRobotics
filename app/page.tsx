@@ -1,8 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
 import {
   ArrowRight,
   ArrowUpRight,
@@ -11,9 +9,6 @@ import {
   Award,
   Cpu,
   Clock,
-  Sparkles,
-  ArrowDownLeft,
-  Radio,
   GraduationCap,
   Pencil,
   Settings,
@@ -21,8 +16,7 @@ import {
   MessageCircle,
   Mail
 } from 'lucide-react';
-import gsap from 'gsap';
-import { motion, useScroll, useTransform } from 'framer-motion';
+import { MotionConfig, motion, useScroll, useTransform } from 'framer-motion';
 
 import TrustMetricsBar from '@/app/components/TrustMetricsBar';
 import ProductServiceMatrix from '@/app/components/ProductServiceMatrix';
@@ -30,50 +24,19 @@ import ProjectGlimpse from '@/app/components/ProjectGlimpse';
 import PedagogicalImpact from '@/app/components/PedagogicalImpact';
 import AsymmetricLifecycle from '@/app/components/AsymmetricLifecycle';
 import Footer from '@/app/components/Footer';
-import dynamic from 'next/dynamic';
-
-const GSAPStackingFolders = dynamic(() => import('@/app/components/GSAPStackingFolders'), { 
-  ssr: false, 
-  loading: () => <div className="h-64 flex items-center justify-center text-white">Loading Packages...</div> 
-});
-
+import GSAPStackingFolders from '@/app/components/GSAPStackingFolders';
+import HeroRobot from '@/app/components/HeroRobot';
 
 export default function Page() {
-  const droneRef = useRef<HTMLImageElement>(null);
-
-  // Framer Motion Parallax setup using vh for responsive scaling
+// Framer Motion Parallax setup using vh for responsive scaling
   const { scrollY } = useScroll();
   const yBg = useTransform(scrollY, [0, 1000], ["0vh", "10vh"]); // Slow movement down (background)
   const yBgFast = useTransform(scrollY, [0, 1000], ["0vh", "20vh"]); // Faster movement down
   const yFg = useTransform(scrollY, [0, 1000], ["0vh", "-10vh"]); // Move up slightly (foreground)
   const yFloat = useTransform(scrollY, [0, 1000], ["0vh", "-20vh"]); // Float up fast
-  
-  // GSAP Drone Floating
-  useEffect(() => {
-    if (!droneRef.current) return;
-
-    const tween = gsap.to(droneRef.current, {
-      y: -20,
-      rotationZ: -2,
-      duration: 3.5,
-      repeat: -1,
-      yoyo: true,
-      ease: "sine.inOut"
-    });
-
-    return () => {
-      tween.kill();
-    };
-  }, []);
-
-  const navLinks = [
-    { name: 'Services', href: '/services' },
-    { name: 'Projects', href: '/projects' },
-    { name: 'About', href: '/about' },
-    { name: 'Team', href: '/team' },
-  ];
 
   return (
+    <MotionConfig reducedMotion="user">
     <div className="relative min-h-[100dvh] w-full max-w-full bg-grid text-[#1a1a1a] font-sans">
 
       {/* --- 100dvh Hero + Marquee Wrapper --- */}
@@ -81,27 +44,36 @@ export default function Page() {
         {/* --- HERO SECTION --- */}
         <section className="w-full flex-1 min-h-0 relative flex flex-col overflow-hidden text-[#111317]" style={{ background: 'radial-gradient(circle at 50% 50%, #ffffff 0%, #f1f2f4 65%, #e5e7eb 100%)' }}>
         <style dangerouslySetInnerHTML={{__html: `
-          @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&family=Silkscreen:wght@700&display=swap');
-          .pr-font-sans { font-family: 'Plus Jakarta Sans', sans-serif; }
-          .pr-font-pixel { font-family: 'Silkscreen', monospace; }
+          /* --- HERO ENTRANCE (pure CSS so it runs at first paint, before hydration) --- */
+          @keyframes pr-rise { from { opacity: 0; transform: translate3d(0, 1.5rem, 0); } to { opacity: 1; transform: none; } }
+          @keyframes pr-slide-in { from { opacity: 0; transform: translate3d(2.5rem, 0, 0); } to { opacity: 1; transform: none; } }
+          @keyframes pr-pop { from { transform: scale(0.85); } to { transform: scale(1); } }
+          .pr-rise { animation: pr-rise 0.7s cubic-bezier(0.2, 0.7, 0.2, 1) both; animation-delay: var(--pr-delay, 0s); }
+          .pr-slide-in { animation: pr-slide-in 0.8s ease-out 0.35s both; }
+          .pr-pop { animation: pr-pop 0.9s cubic-bezier(0.2, 0.7, 0.2, 1) both; }
+          @media (prefers-reduced-motion: reduce) {
+            .pr-rise, .pr-slide-in, .pr-pop { animation: none; }
+          }
 
           /* --- HERO FLEX LAYOUT --- */
           .pr-hero-flex {
+            --pr-pad-x: 3.75rem;
             display: flex;
             flex-direction: column;
             height: 100%;
-            padding: 0 3.75rem;
-            padding-top: 4.375rem; /* space for fixed navbar */
+            /* max() keeps content clear of the iPhone notch in landscape */
+            padding: 0 max(var(--pr-pad-x), env(safe-area-inset-right)) 0 max(var(--pr-pad-x), env(safe-area-inset-left));
+            padding-top: calc(4.375rem + env(safe-area-inset-top)); /* space for fixed navbar */
           }
           .pr-hero-row-top { flex-shrink: 0; padding-top: clamp(0.375rem, 1.5vh, 1.25rem); }
           .pr-hero-row-center { flex: 1 1 0%; min-height: 0; display: flex; align-items: center; justify-content: center; position: relative; }
           .pr-hero-row-bottom { flex-shrink: 0; padding-bottom: clamp(0.5rem, 1.5vh, 1.5rem); }
 
           @media (max-width: 768px) {
-            .pr-hero-flex { padding: 0 1rem; padding-top: 3.875rem; }
+            .pr-hero-flex { --pr-pad-x: 1rem; padding-top: calc(3.875rem + env(safe-area-inset-top)); }
           }
           @media (min-width: 769px) and (max-width: 1024px) {
-            .pr-hero-flex { padding: 0 2rem; padding-top: 4.25rem; }
+            .pr-hero-flex { --pr-pad-x: 2rem; padding-top: calc(4.25rem + env(safe-area-inset-top)); }
           }
 
           /* --- PIXEL BACKDROP --- */
@@ -143,20 +115,20 @@ export default function Page() {
           .pr-smiley-mouse { position: absolute; bottom: 14%; right: 14%; width: clamp(1.375rem, 3.5vw, 2.75rem); height: clamp(1.375rem, 3.5vw, 2.75rem); background: #ffb100; border-radius: 50%; box-shadow: 0 0.625rem 1.375rem rgba(0,0,0,0.2); display: flex; flex-direction: column; align-items: center; justify-content: center; }
           .pr-mouse-smile { width: 30%; height: 15%; border-bottom: 2px solid #111; border-radius: 0 0 0.5rem 0.5rem; }
 
-          .pr-social-dock { position: absolute; right: 2rem; top: 50%; transform: translateY(-50%); background: rgba(215, 218, 224, 0.55); backdrop-filter: blur(0.75rem); border: 1px solid rgba(255, 255, 255, 0.7); border-radius: 0.75rem; display: flex; flex-direction: column; gap: 1rem; padding: 0.875rem 0.625rem; z-index: 15; }
+          .pr-social-dock { position: absolute; right: 2rem; top: 50%; transform: translateY(-50%); background: rgba(215, 218, 224, 0.55); -webkit-backdrop-filter: blur(0.75rem); backdrop-filter: blur(0.75rem); border: 1px solid rgba(255, 255, 255, 0.7); border-radius: 0.75rem; display: flex; flex-direction: column; gap: 1rem; padding: 0.875rem 0.625rem; z-index: 15; }
           .pr-social-dock a { color: #555b66; display: flex; align-items: center; justify-content: center; text-decoration: none; transition: color 0.2s ease, transform 0.15s ease; }
           .pr-social-dock a:hover { color: #ff5400; transform: scale(1.15); }
 
           .pr-btn-cta-orange { background: linear-gradient(180deg, #ff6c00 0%, #ee4700 100%); color: #ffffff; font-size: clamp(0.6875rem, 1.5vh, 0.8125rem); font-weight: 700; padding: clamp(0.5rem, 1.2vh, 0.75rem) clamp(1rem, 2vw, 1.625rem); border-radius: 0.5rem; border: none; box-shadow: 0 0.5rem 1.25rem rgba(238, 71, 0, 0.35); cursor: pointer; transition: transform 0.15s ease; }
           .pr-btn-cta-orange:hover { transform: translateY(-2px); }
 
-          .pr-btn-cta-ghost { background: rgba(255, 255, 255, 0.6); color: #2b2f36; font-size: clamp(0.6875rem, 1.5vh, 0.8125rem); font-weight: 700; padding: clamp(0.5rem, 1.2vh, 0.75rem) clamp(0.875rem, 2vw, 1.5rem); border-radius: 0.5rem; border: 1px solid rgba(255, 255, 255, 0.9); backdrop-filter: blur(0.5rem); cursor: pointer; transition: background 0.2s ease; }
+          .pr-btn-cta-ghost { background: rgba(255, 255, 255, 0.6); color: #2b2f36; font-size: clamp(0.6875rem, 1.5vh, 0.8125rem); font-weight: 700; padding: clamp(0.5rem, 1.2vh, 0.75rem) clamp(0.875rem, 2vw, 1.5rem); border-radius: 0.5rem; border: 1px solid rgba(255, 255, 255, 0.9); -webkit-backdrop-filter: blur(0.5rem); backdrop-filter: blur(0.5rem); cursor: pointer; transition: background 0.2s ease; }
           .pr-btn-cta-ghost:hover { background: rgba(255, 255, 255, 0.9); }
 
           .pr-scroll-mouse-icon { width: 0.875rem; height: 1.375rem; border: 1.5px solid #7b828e; border-radius: 0.625rem; position: relative; }
           .pr-scroll-mouse-icon::after { content: ''; position: absolute; top: 0.1875rem; left: 50%; transform: translateX(-50%); width: 0.125rem; height: 0.25rem; background: #7b828e; border-radius: 0.125rem; }
 
-          .pr-nav-pill { background: rgba(185, 187, 192, 0.45); backdrop-filter: blur(0.75rem); border: 1px solid rgba(255, 255, 255, 0.6); padding: 0.375rem 0.5rem; border-radius: 2.5rem; display: flex; align-items: center; gap: 0.25rem; }
+          .pr-nav-pill { background: rgba(185, 187, 192, 0.45); -webkit-backdrop-filter: blur(0.75rem); backdrop-filter: blur(0.75rem); border: 1px solid rgba(255, 255, 255, 0.6); padding: 0.375rem 0.5rem; border-radius: 2.5rem; display: flex; align-items: center; gap: 0.25rem; }
           .pr-nav-link { color: #383c43; text-decoration: none; font-size: 0.78rem; font-weight: 600; padding: 0.5rem 1rem; border-radius: 1.875rem; transition: 0.2s ease; display: flex; align-items: center; gap: 0.25rem; }
           .pr-nav-link.active { background: #888d95; color: #ffffff; }
           .pr-nav-link svg { width: 0.625rem; height: 0.625rem; stroke: currentColor; }
@@ -201,28 +173,17 @@ export default function Page() {
           {/* ROW 1: HEADLINE & STATS */}
           <div className="pr-hero-row-top">
             <div className="flex justify-between items-start w-full pr-hero-upper">
-              <motion.div 
-                className="w-full md:w-auto relative z-20"
-                initial="hidden"
-                animate="visible"
-                variants={{
-                  hidden: { opacity: 0 },
-                  visible: { opacity: 1, transition: { staggerChildren: 0.15 } }
-                }}
-              >
+              <div className="w-full md:w-auto relative z-20">
                 <h1 className="pr-editorial-heading relative">
-                  <motion.div variants={{ hidden: { opacity: 0, y: 30 }, visible: { opacity: 1, y: 0 } }} className="pr-heading-line-1">Building India&apos;s</motion.div>
-                  <motion.div variants={{ hidden: { opacity: 0, y: 30 }, visible: { opacity: 1, y: 0 } }} className="pr-heading-line-2">Next Generation of</motion.div>
-                  <motion.div variants={{ hidden: { opacity: 0, y: 30 }, visible: { opacity: 1, y: 0 } }} className="pr-heading-line-3">Future Tech.</motion.div>
+                  <span className="block pr-rise">Building India&apos;s</span>
+                  <span className="block pr-rise" style={{ ['--pr-delay' as string]: '0.12s' }}>Next Generation of</span>
+                  <span className="block pr-rise" style={{ ['--pr-delay' as string]: '0.24s' }}>
+                    <span className="text-[#ff5400]">Future</span> Tech.
+                  </span>
                 </h1>
-              </motion.div>
+              </div>
 
-              <motion.div 
-                initial={{ opacity: 0, x: 50 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.8, delay: 0.4, ease: "easeOut" }}
-                className="hidden md:block md:max-w-[260px] text-left pr-bottom-right"
-              >
+              <div className="md:max-w-[260px] text-left pr-bottom-right pr-slide-in">
                 <div className="flex items-baseline gap-[6px] justify-start">
                   <span className="pr-hero-stats-arrow text-[#7b828e] font-[800]">↑</span>
                   <span className="pr-hero-stats-big font-[900] tracking-[-1.5px] text-[#111] leading-[1]">10x</span>
@@ -231,7 +192,7 @@ export default function Page() {
                 <p className="pr-hero-desc text-[#646a73] mt-[6px] font-[500] m-0">
                   Our autonomous systems deliver measurable operational efficiency and global scale.
                 </p>
-              </motion.div>
+              </div>
             </div>
           </div>
 
@@ -273,41 +234,36 @@ export default function Page() {
                 <Pencil size={36} strokeWidth={2} className="drop-shadow-lg -rotate-45" />
               </motion.div>
               
-              <motion.img
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1.3 }}
-                transition={{ duration: 1, ease: "easeOut" }}
-                src="/her.gif"
-                alt="Hero Video"  
-                className="w-full h-full object-contain drop-shadow-2xl z-10"
-              />
+              <div className="w-[72%] h-[72%] z-10 pr-pop">
+                <HeroRobot className="w-full h-full drop-shadow-2xl" />
+              </div>
             </div>
           </div>
 
           {/* ROW 3: BOTTOM CTA */}
           <div className="pr-hero-row-bottom">
-            <motion.div 
-              initial={{ opacity: 0, y: 50 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 0.6 }}
-              className="flex justify-between items-end w-full pr-hero-bottom"
+            <div
+              className="flex justify-between items-end w-full pr-hero-bottom pr-rise"
+              style={{ ['--pr-delay' as string]: '0.4s' }}
             >
               <div className="w-full md:max-w-[340px]">
                 <p className="pr-hero-desc text-[#646a73] font-[500] mb-[clamp(8px,1.5vh,18px)] m-0">
                   Engineering the future through Robotics Education with our Composite Skill Lab, Research, AI, Drones and Innovation.
                 </p>
                 <div className="flex items-center gap-[12px] pr-btn-group">
-                  <button className="pr-btn-cta-orange">Get Started</button>
+                  <Link href="#packages" className="pr-btn-cta-orange flex items-center justify-center gap-1.5">
+                    Get Started <ArrowRight size={14} strokeWidth={2.5} />
+                  </Link>
                   <Link href="/contact" className="pr-btn-cta-ghost flex items-center justify-center">Contact Us</Link>
                 </div>
               </div>
 
-              <div className="max-w-[270px] text-right pr-bottom-right hidden md:block">
+              <div className="max-w-[270px] text-right pr-bottom-right">
                 <p className="pr-hero-desc text-[#646a73] font-[500] m-0">
                   From the first spark of an idea to worldwide recognition — we partner with brands
                 </p>
               </div>
-            </motion.div>
+            </div>
           </div>
 
         </div>
@@ -407,7 +363,7 @@ export default function Page() {
               </h2>
             </div>
             <div className="md:w-1/3 text-[#a0aab8] text-sm sm:text-base leading-relaxed font-medium">
-              We don't just supply equipment — we build ecosystems where curiosity meets industrial capability. Our labs turn passive consumers into active robotics creators.
+              We don&apos;t just supply equipment — we build ecosystems where curiosity meets industrial capability. Our labs turn passive consumers into active robotics creators.
             </div>
           </motion.div>
 
@@ -504,7 +460,7 @@ export default function Page() {
             <h3 className="text-4xl sm:text-5xl lg:text-6xl font-black text-white uppercase tracking-tighter leading-[1.05] max-w-md">
               Ready to build the future?
             </h3>
-            <div className="font-mono font-bold text-4xl text-white/5 mt-10">///</div>
+            <div className="font-mono font-bold text-4xl text-white/5 mt-10">{"///"}</div>
           </motion.div>
 
           {/* Right Vibrant Side */}
@@ -547,5 +503,6 @@ export default function Page() {
       </section>
       <Footer />
     </div>
+    </MotionConfig>
   );
 }

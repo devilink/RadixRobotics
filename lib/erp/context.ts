@@ -4,6 +4,7 @@ import { cookies } from "next/headers";
 import { redirect, notFound } from "next/navigation";
 import { createClient as createServiceClient } from "@supabase/supabase-js";
 import { createClient } from "@/utils/supabase/server";
+import { getSessionUser } from "@/lib/auth/session";
 import { buildPermissionSet, can, canAny, type PermissionSet } from "./permissions";
 import { CATEGORIES, type Category, type InstitutionType } from "./types";
 
@@ -43,15 +44,17 @@ export function serviceClient() {
 }
 
 export const getErpContext = cache(async (): Promise<ErpContext | null> => {
-  const supabase = await db();
-  const { data: { user } } = await supabase.auth.getUser();
+  const user = await getSessionUser();
   if (!user) return null;
+  const supabase = await db();
 
+  // Two queries in parallel: the profile, and role assignments with each role's
+  // permissions embedded, so the whole context costs one database round trip.
   const [{ data: profile }, { data: rows, error: rowsError }] = await Promise.all([
     supabase.from("profiles").select("full_name, person_id, is_active").eq("id", user.id).maybeSingle(),
     supabase
       .from("user_role_assignments")
-      .select("id, role_key, institution_id, roles(name), institutions(name, institution_type)")
+      .select("id, role_key, institution_id, roles(name, role_permissions(permission_key)), institutions(name, institution_type)")
       .eq("user_id", user.id),
   ]);
   if (profile && !profile.is_active) return null;
@@ -60,17 +63,14 @@ export const getErpContext = cache(async (): Promise<ErpContext | null> => {
     id: string;
     role_key: string;
     institution_id: string | null;
-    roles: { name: string } | null;
+    roles: { name: string; role_permissions: { permission_key: string }[] | null } | null;
     institutions: { name: string; institution_type: InstitutionType } | null;
   };
   const assignmentRows = (rows ?? []) as unknown as Row[];
-  const roleKeys = [...new Set(assignmentRows.map((r) => r.role_key))];
-  const { data: rp } = roleKeys.length
-    ? await supabase.from("role_permissions").select("role_key, permission_key").in("role_key", roleKeys)
-    : { data: [] as { role_key: string; permission_key: string }[] };
-
   const permsByRole = new Map<string, string[]>();
-  for (const r of rp ?? []) permsByRole.set(r.role_key, [...(permsByRole.get(r.role_key) ?? []), r.permission_key]);
+  for (const r of assignmentRows) {
+    permsByRole.set(r.role_key, (r.roles?.role_permissions ?? []).map((p) => p.permission_key));
+  }
 
   const assignments: RoleAssignment[] = assignmentRows.map((r) => ({
     id: r.id,
@@ -83,7 +83,7 @@ export const getErpContext = cache(async (): Promise<ErpContext | null> => {
 
   return {
     userId: user.id,
-    email: user.email ?? "",
+    email: user.email,
     displayName: profile?.full_name || user.email || "User",
     personId: profile?.person_id ?? null,
     assignments,

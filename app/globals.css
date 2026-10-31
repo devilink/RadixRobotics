@@ -462,6 +462,24 @@
 }
 
 /* ================================
+   MAIN NAVBAR BREAKPOINTS (1024px)
+   Kept here with !important because Tailwind's responsive
+   display utilities are overridden site-wide (see theme.css).
+================================ */
+
+.nav-desktop { display: none !important; }
+.nav-mobile { display: flex !important; }
+.nav-mobile-block { display: block !important; }
+.nav-mobile-col { display: flex !important; }
+
+@media (min-width: 1024px) {
+  .nav-desktop { display: flex !important; }
+  .nav-mobile, .nav-mobile-block, .nav-mobile-col { display: none !important; }
+  /* Equal-width sides keep the link pill centred in the bar. */
+  .nav-side { flex: 1 1 0%; }
+}
+
+/* ================================
    TORN PAPER EDGE (SVG)
 ================================ */
 

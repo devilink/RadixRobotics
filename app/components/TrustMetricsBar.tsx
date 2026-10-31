@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import LazyVideo from './LazyVideo';
 
 interface ReadinessMetric {
   target: number;
@@ -91,12 +92,9 @@ export default function TrustMetricsBar() {
           
           {/* Card 1: Customization -> Founding Partner */}
           <div className="relative overflow-hidden rounded-[32px] p-0 lg:p-0 bg-black lg:col-[1] lg:row-[1_/_span_2] isolate hover:-translate-y-2 transition-transform duration-500 shadow-md">
-            <video 
-              src="/robo.mp4" 
-              autoPlay 
-              loop 
-              muted 
-              playsInline 
+            <LazyVideo
+              src="/robo.mp4"
+              poster="/robo-poster.webp"
               className="absolute inset-0 w-full h-full object-cover z-0"
             />
           </div>

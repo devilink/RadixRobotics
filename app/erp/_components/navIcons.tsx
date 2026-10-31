@@ -1,11 +1,11 @@
 import {
-  ArrowLeftRight, BarChart3, BookOpen, Boxes, Building2, CalendarOff, ClipboardCheck, Cpu, FilePen, GraduationCap, KeyRound,
+  ArrowLeftRight, BarChart3, BookOpen, Boxes, Building2, CalendarOff, ClipboardCheck, Cpu, FilePen, GraduationCap, HeartHandshake, KeyRound,
   LayoutDashboard, ListChecks, ScrollText, ShieldCheck, Tags, Truck, Upload, UserCheck, Users,
 } from "lucide-react";
 
 /** Icons referenced by name in lib/erp/nav.ts. */
 export const NAV_ICONS = {
-  ArrowLeftRight, BarChart3, BookOpen, Boxes, Building2, CalendarOff, ClipboardCheck, Cpu, FilePen, GraduationCap, KeyRound,
+  ArrowLeftRight, BarChart3, BookOpen, Boxes, Building2, CalendarOff, ClipboardCheck, Cpu, FilePen, GraduationCap, HeartHandshake, KeyRound,
   LayoutDashboard, ListChecks, ScrollText, ShieldCheck, Tags, Truck, Upload, UserCheck, Users,
 } as const;
 

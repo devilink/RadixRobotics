@@ -8,11 +8,12 @@ export default function Footer() {
     { name: 'About', href: '/about' },
     { name: 'Team', href: '/team' },
     { name: 'Projects', href: '/projects' },
-    { name: 'Services', href: '/services' }
+    { name: 'Services', href: '/services' },
+    { name: 'Community', href: '/community' }
   ];
 
   return (
-    <footer className="relative z-10 bg-[#111] text-white pt-20 sm:pt-24 pb-12 overflow-hidden border-t-2 border-[#111]">
+    <footer className="relative z-10 bg-[#111] text-white pt-20 sm:pt-24 overflow-hidden border-t-2 border-[#111]" style={{ paddingBottom: 'calc(3rem + env(safe-area-inset-bottom))' }}>
       {/* Massive Watermark */}
       <div className="absolute top-0 left-0 w-full overflow-hidden flex justify-center pointer-events-none opacity-[0.03] select-none pr-font-sans">
         <div className="text-[22vw] font-black leading-none tracking-tighter translate-y-[-20%]">RADIX</div>

@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useRef } from 'react';
 import { ArrowRight, ArrowUpRight } from 'lucide-react';
 import { motion, useScroll, useTransform } from 'framer-motion';
+import LazyVideo from './LazyVideo';
 const glimpseProjects = [
   {
     id: "agro",
@@ -114,12 +115,9 @@ export default function ProjectGlimpse() {
             >
               <div className={`p-3 sm:p-5 lg:p-6 aspect-square w-full flex flex-col justify-between relative overflow-hidden transition-all duration-300 hover:-translate-y-2 rounded-2xl sm:rounded-3xl ${p.cardClass} hover:border-[#ff5400]/50 shadow-xl`}>
                 {/* Background Video */}
-                <video 
-                  src="/fff.mp4" 
-                  autoPlay 
-                  loop 
-                  muted 
-                  playsInline 
+                <LazyVideo
+                  src="/fff.mp4"
+                  poster="/fff-poster.webp"
                   style={{ objectPosition: p.objectPosition, transform: p.transform, filter: p.filter }}
                   className="absolute inset-0 w-full h-full object-cover z-0 opacity-100 transition-transform duration-700 hover:!scale-[4]"
                 />

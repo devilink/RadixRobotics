@@ -23,7 +23,10 @@ export async function updateSession(request: NextRequest) {
     }
   );
 
-  const { data: { user } } = await supabase.auth.getUser();
+  // getClaims() verifies the session JWT locally when the project uses asymmetric
+  // signing keys (no round trip to Supabase Auth) and refreshes expired sessions.
+  const { data: claimsData } = await supabase.auth.getClaims();
+  const user = claimsData?.claims?.sub ? { id: claimsData.claims.sub } : null;
 
   // ERP: require a session here; roles and institution access are enforced by
   // the ERP data layer and database RLS, not by the legacy user_roles table.

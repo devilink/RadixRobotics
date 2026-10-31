@@ -4,6 +4,7 @@ import { Suspense } from "react";
 import { actionsFor, navFor } from "@/lib/erp/nav";
 import { getCategory, requireErpContext } from "@/lib/erp/context";
 import { Shell } from "./_components/Shell";
+import PortalLoader from "@/app/components/PortalLoader";
 import { signOut } from "./actions";
 
 export const metadata: Metadata = {
@@ -11,8 +12,18 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-export default async function ErpLayout({ children }: { children: ReactNode }) {
-  const ctx = await requireErpContext();
+// The layout itself returns at once with a loader, so the browser gets something
+// on screen immediately while the session and roles are checked in ErpGate.
+export default function ErpLayout({ children }: { children: ReactNode }) {
+  return (
+    <Suspense fallback={<PortalLoader label="Opening ERP" />}>
+      <ErpGate>{children}</ErpGate>
+    </Suspense>
+  );
+}
+
+async function ErpGate({ children }: { children: ReactNode }) {
+  const [ctx, category] = await Promise.all([requireErpContext(), getCategory()]);
 
   if (!ctx.databaseReady) {
     return (
@@ -53,7 +64,7 @@ export default async function ErpLayout({ children }: { children: ReactNode }) {
       <Shell
         nav={navFor(ctx.perms)}
         actions={actionsFor(ctx.perms)}
-        category={await getCategory()}
+        category={category}
         user={{ name: ctx.displayName, email: ctx.email, roles }}
       >
         {children}

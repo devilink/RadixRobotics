@@ -4,6 +4,7 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { CATEGORIES, type Category } from "@/lib/erp/types";
 import { CATEGORY_COOKIE, db } from "@/lib/erp/context";
+import { getSessionUser } from "@/lib/auth/session";
 
 export async function setCategory(value: string) {
   if (!(CATEGORIES as readonly string[]).includes(value)) return;
@@ -25,9 +26,9 @@ export async function signOut() {
 
 /** For the login page: whether the signed-in user has any ERP role. */
 export async function hasErpAccess(): Promise<boolean> {
-  const supabase = await db();
-  const { data: { user } } = await supabase.auth.getUser();
+  const user = await getSessionUser();
   if (!user) return false;
+  const supabase = await db();
   const { count } = await supabase
     .from("user_role_assignments")
     .select("id", { count: "exact", head: true })

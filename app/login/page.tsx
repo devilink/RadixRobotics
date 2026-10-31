@@ -3,15 +3,15 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/utils/supabase/client";
-import { autoAssignSuperAdmin, getUserRoleById } from "@/app/actions/superAdminActions";
+import { resolveLoginDestination } from "@/app/actions/loginActions";
 import { getAvailableSchools, queueStudentForApproval } from "@/app/actions/studentActions";
-import { hasErpAccess } from "@/app/erp/actions";
+import PortalLoader from "@/app/components/PortalLoader";
+import { startRouteProgress } from "@/app/components/RouteProgress";
 import { isReservedLoginEmail, studentLoginEmail } from "@/lib/auth/student-login";
 
-// Only same-site ERP paths are accepted as post-login destinations (no open redirects).
-function erpNextPath(): string | null {
-  const next = new URLSearchParams(window.location.search).get("next");
-  return next && /^\/erp(\/[A-Za-z0-9/_-]*)?$/.test(next) ? next : null;
+// The server validates `next` (same-site ERP paths only).
+function nextParam(): string | null {
+  return new URLSearchParams(window.location.search).get("next");
 }
 
 export default function LoginPage() {
@@ -26,6 +26,7 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
+  const [redirecting, setRedirecting] = useState(false);
   const router = useRouter();
   const supabase = createClient();
 
@@ -42,8 +43,7 @@ export default function LoginPage() {
       const { data: { session } } = await supabase.auth.getSession();
       if (session?.user) {
         setLoading(true);
-        await autoAssignSuperAdmin(session.user.email || '', session.user.id);
-        await routeUser(session.user.id);
+        await routeUser();
       }
     };
     checkUser();
@@ -112,12 +112,11 @@ export default function LoginPage() {
       }
 
       if (activeTab === "school") {
-        router.push(`/curriculum/${schoolId.trim().toUpperCase()}`);
+        goTo(`/curriculum/${schoolId.trim().toUpperCase()}`);
         return;
       }
 
-      await autoAssignSuperAdmin(authData.user.email || '', authData.user.id);
-      await routeUser(authData.user.id);
+      await routeUser();
     } catch (err: any) {
       if (err.message?.includes("Email not confirmed")) {
         setError("Please check your inbox and confirm your email address before logging in.");
@@ -132,52 +131,28 @@ export default function LoginPage() {
 
 
 
-  const routeUser = async (userId: string) => {
-    // ERP deep link (e.g. /login?next=/erp/attendance) for users with an ERP role.
-    const erpNext = erpNextPath();
-    if (erpNext && (await hasErpAccess())) {
-      router.push(erpNext);
-      return;
-    }
-
-    // Fetch the stored role (roles are never inferred from the email address)
-    const roleData = await getUserRoleById(userId);
-
-    if (!roleData) {
-      // Staff with ERP roles only (teachers, instructors, HR, centre staff, ...).
-      if (await hasErpAccess()) {
-        router.push("/erp");
-        return;
-      }
-      setError("No role has been assigned to your account. Contact your administrator.");
+  // One server round trip decides where the user goes (see resolveLoginDestination).
+  const routeUser = async () => {
+    const dest = await resolveLoginDestination(nextParam());
+    if (!dest.ok) {
+      setError(dest.error);
       setLoading(false);
       return;
     }
+    goTo(dest.path);
+  };
 
-    if (roleData.is_approved === false) {
-      setError("Your account is currently Pending Approval by your school administrator.");
-      await supabase.auth.signOut();
-      setLoading(false);
-      return;
-    }
-
-    if (roleData.role === 'super_admin') {
-      router.push("/super-admin");
-      return;
-    }
-
-    // School admins and approved students go to their school's curriculum
-    if ((roleData.role === 'school_admin' || roleData.role === 'student') && roleData.school_id) {
-      router.push(`/curriculum/${roleData.school_id}`);
-      return;
-    }
-
-    // Fallback route
-    router.push("/");
+  // Signed in: cover the form with the branded loader until the portal renders.
+  const goTo = (path: string) => {
+    setRedirecting(true);
+    startRouteProgress();
+    router.prefetch(path);
+    router.replace(path);
   };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-zinc-950 p-4">
+      {redirecting && <PortalLoader variant="overlay" label="Signing you in" />}
       <div className="w-full max-w-md bg-zinc-900 p-8 rounded-2xl border border-zinc-800 shadow-2xl">
         <div className="mb-8 text-center text-emerald-500 font-black tracking-tighter text-3xl">RADIX</div>
         
@@ -315,7 +290,7 @@ export default function LoginPage() {
                   : "bg-emerald-600 hover:bg-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.15)]"
             }`}
           >
-            {loading ? "Processing..." : activeTab === "student" && studentMode === "register" ? "Submit Registration" : activeTab === "student" && studentMode === "forgot" ? "Send Reset Link" : "Sign In"}
+            {loading ? (<span className="inline-flex items-center justify-center gap-2"><span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" aria-hidden />{activeTab === "student" && studentMode !== "login" ? "Sending…" : "Signing in…"}</span>) : activeTab === "student" && studentMode === "register" ? "Submit Registration" : activeTab === "student" && studentMode === "forgot" ? "Send Reset Link" : "Sign In"}
           </button>
         </form>
 
