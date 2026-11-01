@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { cleanNumber, googleSheetCsvUrl, mapTable, normalizeDate, parseCsv } from "@/lib/erp/spreadsheet";
-import { parseComponents, prepareInventory, prepareStudents, skuFromName, withDbErrors } from "@/lib/erp/imports";
+import { AUTO_ID_PLACEHOLDER, cleanStudentCode, parseComponents, prepareInventory, prepareStudents, skuFromName, withDbErrors } from "@/lib/erp/imports";
 
 describe("parseCsv", () => {
   it("handles quotes, escaped quotes, CRLF and a BOM", () => {
@@ -64,7 +64,7 @@ describe("cells", () => {
 });
 
 describe("prepareStudents", () => {
-  it("splits names, generates roll numbers and infers guardian relationship", () => {
+  it("splits names, leaves blank IDs for the database to generate and infers guardian relationship", () => {
     const p = prepareStudents([
       ["Student Name", "Roll Number", "Class", "Father's Name", "Parent Mobile", "Admission Date"],
       ["Aarav Kumar Sharma", "", "Grade 6 - A", "Raj Sharma", 9876543210, "01/04/2026"],
@@ -75,20 +75,42 @@ describe("prepareStudents", () => {
       row: 2, first_name: "Aarav", last_name: "Kumar Sharma", group: "Grade 6 - A",
       guardian_name: "Raj Sharma", guardian_relationship: "father", guardian_phone: "9876543210", admission_date: "2026-04-01",
     });
-    expect(p.payload[0].member_code).toMatch(/^STU-[A-Z2-9]{6}$/);
+    expect(p.payload[0].member_code).toBe("");
+    expect(p.preview.rows[0].cells[1]).toBe(AUTO_ID_PLACEHOLDER);
   });
-  it("flags bad cells and repeated roll numbers per row", () => {
+  it("leaves unusable cells blank with a note instead of failing the row", () => {
     const p = prepareStudents([
-      ["Name", "Roll No", "Email", "Admission Date", "Relationship"],
-      ["Ira", "A-1", "not-an-email", "32/01/2026", "cousin"],
-      ["Kai", "a-1", "", "", ""],
-      ["", "A-2", "", "", ""],
+      ["Name", "Roll No", "Email", "Phone", "Admission Date", "Guardian Name", "Relationship", "Guardian Email"],
+      ["Ira", "A-1", "not-an-email", "12", "32/01/2026", "Mina", "cousin", "bad@"],
+      ["Kai", "", "", "", "", "", "", "kai.parent@example.com"],
     ]);
-    expect(p.preview.rows[0].errors).toEqual([
-      "Email is not valid", "Admission Date is not a valid date (use DD/MM/YYYY)", "Relationship must be Mother, Father, Guardian or Other",
+    expect(p.preview.rows[0].errors).toEqual([]);
+    expect(p.preview.rows[0].notes).toHaveLength(5);
+    expect(p.payload[0]).toMatchObject({
+      member_code: "A-1", email: "", phone: "", admission_date: "", guardian_name: "Mina", guardian_relationship: "guardian", guardian_email: "",
+    });
+    expect(p.preview.rows[1].errors).toEqual([]);
+    expect(p.preview.rows[1].notes).toEqual(["Guardian phone / email was left out because there is no Guardian Name"]);
+    expect(p.payload[1].guardian_email).toBe("");
+  });
+  it("only a missing name or a repeated Roll No stops a row", () => {
+    const p = prepareStudents([
+      ["Name", "Roll No"],
+      ["Ira", "A-1"],
+      ["Kai", "a-1"],
+      ["", "A-2"],
+      ["Om", "#!"],
     ]);
     expect(p.preview.rows[1].errors).toEqual(["Roll No A-1 is repeated (also on row 2)"]);
     expect(p.preview.rows[2].errors).toEqual(["Name is missing"]);
+    expect(p.preview.rows[3].errors).toEqual([]);
+    expect(p.payload[3].member_code).toBe("");
+    expect(p.preview.rows[3].notes?.[0]).toMatch(/Student ID will be generated/);
+  });
+  it("tidies Roll Nos with spaces instead of rejecting them", () => {
+    expect(cleanStudentCode(" 6 a 01 ")).toBe("6-A-01");
+    expect(cleanStudentCode("--x")).toBe("X");
+    expect(cleanStudentCode("###")).toBe("");
   });
   it("needs a name column", () => {
     expect(prepareStudents([["Roll No"], ["1"]]).fatal).toMatch(/name column/);

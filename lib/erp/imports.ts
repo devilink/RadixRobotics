@@ -5,7 +5,8 @@ import { cellText, cleanNumber, mapTable, normalizeDate, MAX_IMPORT_ROWS, type C
 // checked here for friendly cell-level messages, then sent to the database,
 // which re-checks everything in a dry run before anything is saved.
 
-export type PreviewRow = { row: number; cells: string[]; errors: string[] };
+/** errors stop a row from being imported; notes are things left blank in a row that is still imported. */
+export type PreviewRow = { row: number; cells: string[]; errors: string[]; notes?: string[] };
 
 export type ImportPreview = {
   columns: string[];
@@ -64,7 +65,7 @@ export const STUDENT_TEMPLATE = {
   headers: ["Student Name", "Roll No", "Class / Batch", "Admission No", "Admission Date", "Email", "Phone", "Guardian Name", "Relationship", "Guardian Phone", "Guardian Email"],
   example: [
     ["Aarav Sharma", "6A-01", "Grade 6 - A", "ADM-2026-001", "01/04/2026", "", "", "Neha Sharma", "Mother", "9876543210", "neha@example.com"],
-    ["Diya Patel", "6A-02", "Grade 6 - A", "ADM-2026-002", "01/04/2026", "", "", "Raj Patel", "Father", "9876500000", ""],
+    ["Diya Patel", "", "Grade 6 - A", "ADM-2026-002", "01/04/2026", "", "", "Raj Patel", "Father", "9876500000", ""],
   ],
 };
 
@@ -80,16 +81,24 @@ const RELATIONSHIPS: Record<string, string> = {
   uncle: "other", aunt: "other", sibling: "other", brother: "other", sister: "other",
 };
 
-/** Auto roll number for rows without one. */
-export function autoStudentCode(rand: () => number = Math.random): string {
-  const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-  return `STU-${Array.from({ length: 6 }, () => alphabet[Math.floor(rand() * alphabet.length)]).join("")}`;
+/** Sheet Roll No → a usable ID ("6 A 01" → "6-A-01"), or "" when it cannot be used. */
+export function cleanStudentCode(raw: string): string {
+  const code = raw.trim().toUpperCase().replace(/\s+/g, "-").replace(/[^A-Z0-9/_-]/g, "").replace(/^[^A-Z0-9]+/, "").slice(0, 40);
+  return /^[A-Z0-9][A-Z0-9/_-]{0,39}$/.test(code) ? code : "";
 }
 
+/** Shown in the preview until the database check returns the real generated ID. */
+export const AUTO_ID_PLACEHOLDER = "Auto (STU-…)";
+
+/**
+ * Only a missing name (or a Roll No repeated in the sheet) stops a row. Any other
+ * cell that cannot be used is left blank and listed as a note on the row, and
+ * rows without a usable Roll No get a Student ID from the database (STU-0001…).
+ */
 export function prepareStudents(table: Cell[][]): Prepared<StudentPayload> {
   const t = mapTable(table, STUDENT_COLUMNS);
   const hasName = t.matched.includes("full_name") || t.matched.includes("first_name");
-  const columns = ["Name", "Roll No", "Class / Batch", "Admission No", "Guardian"];
+  const columns = ["Name", "Student ID", "Class / Batch", "Admission No", "Guardian"];
   const base = { columns, ignoredColumns: t.ignored, total: t.records.length };
   if (!hasName) return { preview: { ...base, rows: [] }, payload: [], fatal: `No name column found. Add a “Student Name” column (or “First Name” and “Last Name”). ${foundColumns(t.found)}` };
   const limit = tooMany(t.records.length);
@@ -100,6 +109,14 @@ export function prepareStudents(table: Cell[][]): Prepared<StudentPayload> {
   const seenCodes = new Map<string, number>();
   for (const { row, cells: c, headers } of t.records) {
     const errors: string[] = [];
+    const notes: string[] = [];
+    /** Keep a value only if it passes; otherwise leave it blank and say so. */
+    const keep = (value: string, ok: boolean, label: string) => {
+      if (!value || ok) return value;
+      notes.push(`${label} “${value.slice(0, 60)}” could not be used, so it was left blank`);
+      return "";
+    };
+
     let first = cellText(c.first_name);
     let last = cellText(c.last_name);
     if (!first && c.full_name !== undefined) {
@@ -110,45 +127,48 @@ export function prepareStudents(table: Cell[][]): Prepared<StudentPayload> {
     if (!first) errors.push("Name is missing");
     if (first.length > 100 || last.length > 100) errors.push("Name is too long");
 
-    let code = cellText(c.member_code).toUpperCase();
-    const autoCode = !code;
-    if (autoCode) code = autoStudentCode();
-    else if (!/^[A-Za-z0-9][A-Za-z0-9/_-]{0,39}$/.test(code)) errors.push("Roll No may only use letters, numbers, / _ - (max 40)");
-    else if (seenCodes.has(code)) errors.push(`Roll No ${code} is repeated (also on row ${seenCodes.get(code)})`);
-    else seenCodes.set(code, row);
+    const rawCode = cellText(c.member_code);
+    const code = cleanStudentCode(rawCode);
+    if (rawCode && !code) notes.push(`Roll No “${rawCode.slice(0, 40)}” could not be used, so a Student ID will be generated`);
+    if (code && seenCodes.has(code)) errors.push(`Roll No ${code} is repeated (also on row ${seenCodes.get(code)})`);
+    else if (code) seenCodes.set(code, row);
 
-    const mail = cellText(c.email).toLowerCase();
-    if (mail && !email.safeParse(mail).success) errors.push("Email is not valid");
-    const tel = cellText(c.phone);
-    if (tel && !phone.test(tel)) errors.push("Phone is not valid");
+    const mail = keep(cellText(c.email).toLowerCase(), email.safeParse(cellText(c.email).toLowerCase()).success, "Email");
+    const tel = keep(cellText(c.phone), phone.test(cellText(c.phone)), "Phone");
 
-    const admission = normalizeDate(c.admission_date);
-    if (admission === null) errors.push("Admission Date is not a valid date (use DD/MM/YYYY)");
-    const start = normalizeDate(c.start_date);
-    if (start === null) errors.push("Start Date is not a valid date (use DD/MM/YYYY)");
+    const date = (v: Cell, label: string) => {
+      const d = normalizeDate(v);
+      if (d === null) { notes.push(`${label} “${cellText(v).slice(0, 30)}” is not a date (use DD/MM/YYYY), so it was left blank`); return ""; }
+      return d;
+    };
+    const admission = date(c.admission_date, "Admission Date");
+    const start = date(c.start_date, "Start Date");
 
-    const gName = cellText(c.guardian_name);
+    let gName = cellText(c.guardian_name);
     const relText = cellText(c.guardian_relationship).toLowerCase();
     let rel = RELATIONSHIPS[relText] ?? "";
-    if (relText && !rel) errors.push("Relationship must be Mother, Father, Guardian or Other");
+    if (relText && !rel && gName) notes.push(`Relationship “${cellText(c.guardian_relationship)}” is not Mother, Father, Guardian or Other, so Guardian was used`);
     if (!rel && gName) rel = /father/.test(headers.guardian_name ?? "") ? "father" : /mother/.test(headers.guardian_name ?? "") ? "mother" : "guardian";
-    const gPhone = cellText(c.guardian_phone);
-    if (gPhone && !phone.test(gPhone)) errors.push("Guardian Phone is not valid");
-    const gMail = cellText(c.guardian_email).toLowerCase();
-    if (gMail && !email.safeParse(gMail).success) errors.push("Guardian Email is not valid");
-    if (!gName && (gPhone || gMail)) errors.push("Guardian Name is missing");
+    let gPhone = keep(cellText(c.guardian_phone), phone.test(cellText(c.guardian_phone)), "Guardian Phone");
+    let gMail = keep(cellText(c.guardian_email).toLowerCase(), email.safeParse(cellText(c.guardian_email).toLowerCase()).success, "Guardian Email");
+    if (!gName && (gPhone || gMail)) {
+      notes.push("Guardian phone / email was left out because there is no Guardian Name");
+      gPhone = ""; gMail = "";
+    }
+    if (gName.length > 200) { notes.push("Guardian Name is too long, so the guardian was left out"); gName = ""; gPhone = ""; gMail = ""; }
 
     const group = cellText(c.group);
     rows.push({
       row,
-      cells: [[first, last].filter(Boolean).join(" "), autoCode ? `${code} (auto)` : code, group || "—", cellText(c.registration_number) || "—",
+      cells: [[first, last].filter(Boolean).join(" "), code || AUTO_ID_PLACEHOLDER, group || "—", cellText(c.registration_number) || "—",
         gName ? `${gName}${rel ? ` (${rel})` : ""}` : "—"],
       errors,
+      notes,
     });
     payload.push({
       row, first_name: first, last_name: last, member_code: code, registration_number: cellText(c.registration_number).slice(0, 40),
-      email: mail, phone: tel, admission_date: admission ?? "", start_date: start ?? "", group,
-      guardian_name: gName, guardian_relationship: rel, guardian_phone: gPhone, guardian_email: gMail,
+      email: mail, phone: tel, admission_date: admission, start_date: start, group,
+      guardian_name: gName, guardian_relationship: gName ? rel : "", guardian_phone: gPhone, guardian_email: gMail,
     });
   }
   return { preview: { ...base, rows }, payload };
@@ -299,10 +319,22 @@ export function prepareInventory(table: Cell[][]): Prepared<InventoryPayload> {
   return { preview: { ...base, rows }, payload };
 }
 
-/** Merge database errors (by spreadsheet row) into the preview. */
-export function withDbErrors(preview: Omit<ImportPreview, "invalid">, dbErrors: { row: number; message: string }[]): ImportPreview {
-  const byRow = new Map<number, string[]>();
-  for (const e of dbErrors) byRow.set(e.row, [...(byRow.get(e.row) ?? []), e.message]);
-  const rows = preview.rows.map((r) => ({ ...r, errors: [...r.errors, ...(byRow.get(r.row) ?? [])] }));
+type RowMessage = { row: number; message: string };
+
+function byRow(list: RowMessage[]) {
+  const m = new Map<number, string[]>();
+  for (const e of list) m.set(e.row, [...(m.get(e.row) ?? []), e.message]);
+  return m;
+}
+
+/** Merge database errors and notes (by spreadsheet row) into the preview. */
+export function withDbErrors(preview: Omit<ImportPreview, "invalid">, dbErrors: RowMessage[], dbNotes: RowMessage[] = []): ImportPreview {
+  const errs = byRow(dbErrors);
+  const notes = byRow(dbNotes);
+  const rows = preview.rows.map((r) => ({
+    ...r,
+    errors: [...r.errors, ...(errs.get(r.row) ?? [])],
+    notes: [...(r.notes ?? []), ...(notes.get(r.row) ?? [])],
+  }));
   return { ...preview, rows, invalid: rows.filter((r) => r.errors.length).length };
 }

@@ -6,7 +6,10 @@ import { seedWorld, type World } from "./world";
 let db: PGlite;
 let w: World;
 
-type StudentResult = { ok: number; enrolled: number; guardians: number; errors: { row: number; message: string }[]; saved: boolean };
+type StudentResult = {
+  ok: number; enrolled: number; guardians: number; errors: { row: number; message: string }[]; saved: boolean;
+  notes: { row: number; message: string }[]; codes: { row: number; code: string }[];
+};
 type InventoryResult = { created: number; updated: number; units_received: number; errors: { row: number; message: string }[]; saved: boolean };
 
 const importStudents = (user: string, inst: string, rows: unknown[], dry: boolean, skip = false) =>
@@ -52,14 +55,41 @@ describe("student import", () => {
     const before = await countMembers(w.schoolA);
     const r = await importStudents(w.u.adminA, w.schoolA, bad, false);
     expect(r.saved).toBe(false);
-    expect(r.errors.map((e) => e.row)).toEqual([3, 4]);
+    expect(r.errors.map((e) => e.row)).toEqual([3]);
     expect(r.errors[0].message).toMatch(/already used/);
-    expect(r.errors[1].message).toMatch(/not found/);
     expect(await countMembers(w.schoolA)).toBe(before);
 
     const skipped = await importStudents(w.u.adminA, w.schoolA, bad, false, true);
-    expect(skipped).toMatchObject({ ok: 1, saved: true });
-    expect(await countMembers(w.schoolA)).toBe(before + 1);
+    expect(skipped).toMatchObject({ ok: 2, enrolled: 0, saved: true });
+    expect(await countMembers(w.schoolA)).toBe(before + 2);
+  });
+
+  it("imports a student whose class is not found, without enrolling them, and says so", async () => {
+    const r = await importStudents(w.u.adminA, w.schoolA, [{ row: 2, first_name: "Nia", member_code: "A-300", group: "Grade 99" }], false);
+    expect(r).toMatchObject({ ok: 1, enrolled: 0, errors: [], saved: true });
+    expect(r.notes).toEqual([{ row: 2, message: expect.stringMatching(/Grade 99.*not found/) }]);
+  });
+
+  it("generates sequential Student IDs, and the check shows the IDs the upload will use", async () => {
+    const blank = [
+      { row: 2, first_name: "Auto", last_name: "One", member_code: "" },
+      { row: 3, first_name: "Auto", last_name: "Two" },
+      { row: 4, first_name: "Own", last_name: "Code", member_code: "A-400" },
+    ];
+    const dry = await importStudents(w.u.adminA, w.schoolA, blank, true);
+    expect(dry.codes).toEqual([{ row: 2, code: "STU-0001" }, { row: 3, code: "STU-0002" }]);
+
+    const real = await importStudents(w.u.adminA, w.schoolA, blank, false);
+    expect(real).toMatchObject({ ok: 3, saved: true });
+    expect(real.codes).toEqual(dry.codes);
+
+    // The next upload continues the sequence instead of reusing numbers.
+    const next = await importStudents(w.u.adminA, w.schoolA, [{ row: 2, first_name: "Auto", last_name: "Three" }], false);
+    expect(next.codes).toEqual([{ row: 2, code: "STU-0003" }]);
+
+    // Numbering is per institution.
+    const other = await importStudents(w.u.adminB, w.schoolB, [{ row: 2, first_name: "Bea" }], true);
+    expect(other.codes).toEqual([{ row: 2, code: "STU-0001" }]);
   });
 
   it("refuses institutions the user does not manage", async () => {

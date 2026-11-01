@@ -38,5 +38,10 @@ export function friendlyDbError(err: PgError, fallback = "Something went wrong. 
   if (err.code === "23503") return "A linked record was not found or belongs to another institution.";
   if (err.code === "23514") return "Some values are not allowed. Check the form and try again.";
   if (err.code === "22P02") return "Some values are in the wrong format.";
+  // PostgREST: the SQL function is not in the database, i.e. its migration was never applied.
+  if (err.code === "PGRST202") {
+    console.error("[erp] missing database function:", msg);
+    return "This feature is not set up on the database yet. An administrator needs to apply the latest ERP migrations in Supabase.";
+  }
   return fallback;
 }

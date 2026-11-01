@@ -8,7 +8,7 @@ import type { Cell } from "./spreadsheet";
 
 export type ImportState = { ok: boolean; error?: string; preview?: ImportPreview };
 
-type DbResult = { errors: { row: number; message: string }[]; saved: boolean };
+type DbResult = { errors: { row: number; message: string }[]; notes?: { row: number; message: string }[]; saved: boolean };
 
 /**
  * Shared flow for spreadsheet imports. mode=check reads and validates the sheet
@@ -25,6 +25,8 @@ export async function runImport<P extends { row: number }, R extends DbResult>(o
   };
   save: (rows: P[], dryRun: boolean, skipInvalid: boolean) => Promise<{ data: unknown; error: { code?: string; message: string } | null }>;
   summarize: (r: R) => string;
+  /** Adjust the preview with what the database returned (e.g. generated IDs). */
+  decorate?: (preview: ImportPreview, r: R) => ImportPreview;
 }): Promise<ImportState> {
   const commit = opts.fd.get("mode") === "import";
   const skipInvalid = opts.fd.get("skip_invalid") === "on";
@@ -51,17 +53,18 @@ export async function runImport<P extends { row: number }, R extends DbResult>(o
   const checked = withDbErrors(prep.preview, []);
 
   if (commit && badRows.size > 0 && !skipInvalid) {
-    return { ok: true, preview: { ...checked, saved: false, summary: "Nothing was imported. Fix the rows marked below, or tick “Skip rows with problems”." } };
+    return { ok: true, preview: { ...checked, saved: false, summary: "Nothing was uploaded. Fix the rows marked below, or tick “Skip rows with problems”." } };
   }
   if (valid.length === 0) return { ok: true, preview: { ...checked, saved: false } };
 
   const { data, error } = await opts.save(valid, !commit, skipInvalid);
   if (error) return { ok: false, error: friendlyDbError(error, "The import could not be completed.") };
   const result = data as R;
-  const preview = withDbErrors(prep.preview, result.errors ?? []);
+  const merged = withDbErrors(prep.preview, result.errors ?? [], result.notes ?? []);
+  const preview = opts.decorate ? opts.decorate(merged, result) : merged;
   if (!commit) return { ok: true, preview };
   if (!result.saved) {
-    return { ok: true, preview: { ...preview, saved: false, summary: "Nothing was imported. Fix the rows marked below, or tick “Skip rows with problems”." } };
+    return { ok: true, preview: { ...preview, saved: false, summary: "Nothing was uploaded. Fix the rows marked below, or tick “Skip rows with problems”." } };
   }
   const skipped = preview.invalid;
   return {

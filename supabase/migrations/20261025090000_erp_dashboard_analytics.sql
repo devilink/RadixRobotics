@@ -10,7 +10,7 @@
 -- attended/expected follow the dashboard's rate definition:
 -- (present + late + ½ half-day) ÷ (marked − excused − on leave).
 create or replace function public.erp_attendance_calendar(
-  p_category text default 'all',
+  p_category text default 'all',  
   p_kind text default 'student',
   p_days integer default 371)
 returns table (

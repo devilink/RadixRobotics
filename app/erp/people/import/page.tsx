@@ -9,9 +9,9 @@ import { importStudents } from "./actions";
 export const metadata = { title: "Import students" };
 
 const GUIDE: [string, string][] = [
-  ["Student Name", "Required. Or use separate “First Name” and “Last Name” columns."],
-  ["Roll No", "Unique at the institution. Left blank, one is generated (STU-XXXXXX)."],
-  ["Class / Batch", "Optional. Must match a class or batch name in the ERP, e.g. “Grade 6 - A”. The student is enrolled in it."],
+  ["Student Name", "Required. Or use separate “First Name” and “Last Name” columns. The only column a row cannot do without."],
+  ["Roll No / Student ID", "Optional. Left blank (or no such column), a Student ID is generated automatically: STU-0001, STU-0002, … for this institution."],
+  ["Class / Batch", "Optional. Should match a class or batch name in the ERP, e.g. “Grade 6 - A”, to enrol the student. If none matches, the student is still added, without a class."],
   ["Admission No, Admission Date", "Optional. Dates as DD/MM/YYYY or real Excel dates."],
   ["Email, Phone", "Optional."],
   ["Guardian Name, Relationship, Guardian Phone, Guardian Email", "Optional. Relationship is Mother, Father, Guardian or Other."],
@@ -27,7 +27,7 @@ export default async function ImportStudentsPage({ searchParams }: { searchParam
     <>
       <PageHeader
         title="Import students"
-        description="Add many students at once from an Excel file, a CSV or a Google Sheet. The sheet is checked first; nothing is saved until you click Import."
+        description="Add many students at once from an Excel file, a CSV or a Google Sheet. Step 1 checks the sheet; nothing is saved until step 2, Upload."
         crumbs={[{ href: "/erp/people?type=students", label: "Students" }, { label: "Import" }]}
       />
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_22rem]">
@@ -52,7 +52,7 @@ export default async function ImportStudentsPage({ searchParams }: { searchParam
               <div key={k}><dt className="font-medium text-zinc-100">{k}</dt><dd className="text-xs text-zinc-400">{v}</dd></div>
             ))}
           </dl>
-          <p className="mt-4 text-xs text-zinc-500">If any row has a problem, nothing is imported unless you choose to skip those rows.</p>
+          <p className="mt-4 text-xs text-zinc-500">Empty cells are fine. A cell that cannot be read (for example a wrong email or date) is left blank and noted on its row. Rows without a name are skipped.</p>
         </Card>
       </div>
     </>

@@ -14,7 +14,8 @@ export async function importStudents(_prev: ImportState | null, fd: FormData): P
 
   const supabase = await db();
   const state = await runImport<ReturnType<typeof prepareStudents>["payload"][number], {
-    ok: number; enrolled: number; guardians: number; errors: { row: number; message: string }[]; saved: boolean;
+    ok: number; enrolled: number; guardians: number; saved: boolean;
+    errors: { row: number; message: string }[]; notes?: { row: number; message: string }[]; codes?: { row: number; code: string }[];
   }>({
     fd,
     userId: ctx.userId,
@@ -24,7 +25,18 @@ export async function importStudents(_prev: ImportState | null, fd: FormData): P
     summarize: (r) =>
       `Imported ${r.ok} student${r.ok === 1 ? "" : "s"}` +
       (r.enrolled ? `, ${r.enrolled} enrolled in a class or batch` : "") +
-      (r.guardians ? `, ${r.guardians} guardian contact${r.guardians === 1 ? "" : "s"} added` : "") + ".",
+      (r.guardians ? `, ${r.guardians} guardian contact${r.guardians === 1 ? "" : "s"} added` : "") +
+      (r.codes?.length ? `, ${r.codes.length} Student ID${r.codes.length === 1 ? "" : "s"} generated` : "") + ".",
+    // Show the Student IDs the database generated (the same ones the upload will use).
+    decorate: (preview, r) => {
+      const codes = new Map((r.codes ?? []).map((c) => [c.row, c.code]));
+      return {
+        ...preview,
+        rows: preview.rows.map((row) => codes.has(row.row)
+          ? { ...row, cells: row.cells.map((cell, i) => (i === 1 ? `${codes.get(row.row)} (auto)` : cell)) }
+          : row),
+      };
+    },
   });
   if (state.preview?.saved) revalidatePath("/erp/people");
   return state;
