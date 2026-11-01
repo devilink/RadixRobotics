@@ -121,7 +121,7 @@ export default function LoginPage() {
       if (err.message?.includes("Email not confirmed")) {
         setError("Please check your inbox and confirm your email address before logging in.");
       } else if (err.message?.includes("Invalid login credentials")) {
-        setError(activeTab === "school" ? "Invalid ID or password." : activeTab === "student" ? "Invalid username, email or password." : "Invalid email or password.");
+        setError(activeTab === "school" ? "Invalid ID or password." : activeTab === "student" ? "Invalid username or password." : "Invalid email or password.");
       } else {
         setError(err.message || "An unexpected error occurred.");
       }
@@ -223,7 +223,7 @@ export default function LoginPage() {
           ) : (
             <div>
               <label className="text-zinc-400 text-sm font-medium mb-1.5 block">
-                {activeTab === "student" && studentMode === "login" ? "Username or Email" : "Email Address"}
+                {activeTab === "student" && studentMode === "login" ? "Username" : "Email Address"}
               </label>
               <input 
                 type={activeTab === "student" && studentMode === "login" ? "text" : "email"} 
@@ -232,7 +232,7 @@ export default function LoginPage() {
                 onChange={(e) => setEmail(e.target.value)}
                 autoCapitalize="none"
                 autoComplete="username"
-                placeholder={activeTab === "student" && studentMode === "login" ? "username or you@example.com" : "you@example.com"}
+                placeholder={activeTab === "student" && studentMode === "login" ? "your username" : "you@example.com"}
                 className="w-full p-3.5 rounded-xl bg-zinc-950/50 border border-zinc-800 text-white placeholder-zinc-700 outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all text-sm" 
               />
             </div>

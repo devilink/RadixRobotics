@@ -3,8 +3,13 @@ import { notFound } from "next/navigation";
 import { can, db, requirePagePermission } from "@/lib/erp/context";
 import { addDays, formatDate, formatPct, str, todayIn } from "@/lib/erp/format";
 import { ATTENDANCE_STATUSES, ATTENDANCE_STATUS_LABELS, MEMBER_TYPE_LABELS, type AttendanceStatus, type InstitutionType, type MemberType } from "@/lib/erp/types";
-import { AttendanceBadge, Card, DescriptionList, EmptyState, LinkButton, Notice, PageHeader, StatusBadge, Table, TypeBadge, cx, focusRing, td, th } from "../../_components/ui";
+import { STUDENT_LOGIN_DOMAIN } from "@/lib/auth/student-login";
+import { ResetPasswordForm } from "../../admin/users/UserForms";
+import { AttendanceBadge, Badge, Card, DescriptionList, EmptyState, LinkButton, Notice, PageHeader, StatusBadge, Table, TypeBadge, cx, focusRing, td, th } from "../../_components/ui";
 import { Guardians, type GuardianRow } from "./Guardians";
+import { UnenrollButton } from "../../groups/[id]/Panels";
+import { EnrollInGroup } from "./EnrollInGroup";
+import { DeleteStudentButton } from "../DeleteStudents";
 
 export const metadata = { title: "Person" };
 
@@ -18,25 +23,30 @@ export default async function PersonPage({ params, searchParams }: {
   const ctx = await requirePagePermission(["students.view", "students.view_assigned", "staff.view", "self.view"]);
   const supabase = await db();
 
-  const { data: m } = await supabase
+  // employee_profiles links to memberships twice (the member and their reporting manager),
+  // so the embed must name the foreign key or PostgREST rejects the query (PGRST201).
+  const { data: m, error: loadError } = await supabase
     .from("institution_memberships")
-    .select("*, people(*), institutions(id, name, institution_type, timezone), campuses(name), student_profiles(*), employee_profiles(*, work_shifts(name))")
+    .select("*, people(*), institutions(id, name, institution_type, timezone), campuses(name), student_profiles(*), employee_profiles:employee_profiles!employee_profiles_institution_id_membership_id_fkey(*, work_shifts(name))")
     .eq("id", id)
     .maybeSingle();
+  if (loadError) console.error("[erp] could not load member", id, loadError);
   if (!m) notFound();
 
   const person = m.people as { id: string; first_name: string; last_name: string; email: string | null; phone: string | null };
   const inst = m.institutions as { id: string; name: string; institution_type: InstitutionType; timezone: string };
   const type = m.member_type as MemberType;
   const isStudent = type === "student";
-  const sp_ = (Array.isArray(m.student_profiles) ? m.student_profiles[0] : m.student_profiles) as { registration_number: string | null; admission_date: string | null } | null;
+  const sp_ = (Array.isArray(m.student_profiles) ? m.student_profiles[0] : m.student_profiles) as { registration_number: string | null; admission_date: string | null; notes: string | null } | null;
   const ep = (Array.isArray(m.employee_profiles) ? m.employee_profiles[0] : m.employee_profiles) as
     { department: string | null; position: string | null; employment_type: string | null; qualifications: string | null; work_shifts: { name: string } | null } | null;
   const today = todayIn(inst.timezone);
   const from = addDays(today, -89);
   const name = `${person.first_name} ${person.last_name}`.trim();
 
-  const [others, groups, records, guardians, leave] = await Promise.all([
+  const canEnrol = isStudent && (can(ctx.perms, "students.manage", inst.id) || can(ctx.perms, "groups.manage", inst.id));
+  const canLogins = can(ctx.perms, "users.manage", inst.id);
+  const [others, groups, records, guardians, leave, groupChoices, logins] = await Promise.all([
     supabase.from("institution_memberships").select("id, member_type, member_code, status, institutions(name, institution_type)")
       .eq("person_id", person.id).neq("id", id),
     isStudent
@@ -52,7 +62,17 @@ export default async function PersonPage({ params, searchParams }: {
     !isStudent
       ? supabase.from("leave_requests").select("id, leave_type, start_date, end_date, status").eq("membership_id", id).order("start_date", { ascending: false }).limit(10)
       : Promise.resolve({ data: null }),
+    canEnrol
+      ? supabase.from("learning_groups").select("id, name").eq("institution_id", inst.id).eq("status", "active").order("name").limit(500)
+      : Promise.resolve({ data: null }),
+    // The login(s) linked to this person. RLS shows them only to staff allowed to see accounts.
+    supabase.from("profiles").select("id, email, is_active").eq("person_id", person.id).limit(5),
   ]);
+  const accounts = ((logins.data ?? []) as { id: string; email: string | null; is_active: boolean }[]).map((a) => {
+    const email = a.email ?? "";
+    const isUsername = email.endsWith(`@${STUDENT_LOGIN_DOMAIN}`);
+    return { ...a, isUsername, login: isUsername ? email.slice(0, -(STUDENT_LOGIN_DOMAIN.length + 1)) : email };
+  });
 
   type Rec = { id: string; status: AttendanceStatus; remarks: string | null; corrected_at: string | null;
     attendance_sessions: { id: string; session_date: string; period_label: string; learning_groups: { name: string } | null } };
@@ -74,10 +94,11 @@ export default async function PersonPage({ params, searchParams }: {
         crumbs={[{ href: listHref, label: isStudent ? "Students" : "Teachers & Staff" }, { label: name }]}
         actions={
           <>
-            {can(ctx.perms, "users.manage", inst.id) && (
+            {canLogins && accounts.length === 0 && (
               <LinkButton variant="secondary" href={`/erp/admin/users?link=${id}`}>Create login</LinkButton>
             )}
             {canEdit && <LinkButton variant="secondary" href={`/erp/people/${id}/edit`}>Edit</LinkButton>}
+            {canEdit && isStudent && <DeleteStudentButton membershipId={id} name={name} />}
           </>
         }
       />
@@ -102,7 +123,39 @@ export default async function PersonPage({ params, searchParams }: {
               { label: "Shift", value: ep.work_shifts?.name ?? null },
             ] : []),
           ]} />
+          {isStudent && sp_?.notes && (
+            <div className="mt-4 border-t border-zinc-800 pt-4">
+              <p className="mb-1 text-xs font-medium uppercase tracking-wide text-zinc-500">Notes</p>
+              <p className="whitespace-pre-line text-sm text-zinc-300">{sp_.notes}</p>
+            </div>
+          )}
           {!isStudent && !ep && <p className="mt-3 text-xs text-zinc-500">HR details are only visible to HR-authorised users.</p>}
+          {(accounts.length > 0 || canLogins) && (
+            <div className="mt-4 border-t border-zinc-800 pt-4">
+              <p className="mb-2 text-xs font-medium uppercase tracking-wide text-zinc-500">Login</p>
+              {accounts.length === 0 ? (
+                <p className="text-sm text-zinc-500">No login yet. Use <span className="text-zinc-300">Create login</span> above to give them one.</p>
+              ) : (
+                <ul className="space-y-3">
+                  {accounts.map((a) => (
+                    <li key={a.id}>
+                      <DescriptionList items={[
+                        { label: a.isUsername ? "Username" : "Login email", value: <span className="font-mono font-semibold">{a.login}</span> },
+                        { label: "Signs in on", value: a.isUsername ? "/login → Student tab" : "/login" },
+                        { label: "Status", value: a.is_active ? <Badge tone="green">Active</Badge> : <Badge tone="red">Inactive</Badge> },
+                      ]} />
+                      {canLogins && a.isUsername && (
+                        <details className="mt-2 max-w-sm">
+                          <summary className="cursor-pointer text-sm text-zinc-300 hover:text-zinc-100">Reset password</summary>
+                          <div className="mt-2"><ResetPasswordForm userId={a.id} /></div>
+                        </details>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          )}
         </Card>
 
         <Card title={isStudent ? "Classes & batches" : "Assigned classes & batches"}>
@@ -111,13 +164,24 @@ export default async function PersonPage({ params, searchParams }: {
           ) : (
             <ul className="divide-y divide-zinc-800/60 text-sm">
               {((groups.data ?? []) as unknown as { id: string; end_date?: string | null; assignment_role?: string; learning_groups: { id: string; name: string } | null }[]).map((g) => (
-                <li key={g.id} className="flex items-center justify-between py-2">
+                <li key={g.id} className="flex items-center justify-between gap-2 py-2">
                   <Link href={`/erp/groups/${g.learning_groups?.id}`} className={cx("hover:underline", focusRing)}>{g.learning_groups?.name}</Link>
-                  <span className="text-xs text-zinc-500">{g.assignment_role ?? (g.end_date && g.end_date < today ? `ended ${formatDate(g.end_date)}` : "current")}</span>
+                  <span className="flex items-center gap-2 text-xs text-zinc-500">
+                    {g.assignment_role ?? (g.end_date && g.end_date <= today ? `ended ${formatDate(g.end_date)}` : "current")}
+                    {canEnrol && !g.assignment_role && !(g.end_date && g.end_date <= today) && g.learning_groups && (
+                      <UnenrollButton enrollmentId={g.id} groupId={g.learning_groups.id} institutionId={inst.id} name={name} />
+                    )}
+                  </span>
                 </li>
               ))}
             </ul>
           )}
+          {canEnrol && (() => {
+            const current = new Set(((groups.data ?? []) as unknown as { end_date?: string | null; learning_groups: { id: string } | null }[])
+              .filter((g) => !(g.end_date && g.end_date <= today)).map((g) => g.learning_groups?.id));
+            const options = ((groupChoices.data ?? []) as { id: string; name: string }[]).filter((g) => !current.has(g.id));
+            return <EnrollInGroup membershipId={id} institutionId={inst.id} groups={options} />;
+          })()}
           {(others.data ?? []).length > 0 && (
             <div className="mt-4 border-t border-zinc-800/60 pt-3">
               <p className="mb-1 text-xs font-medium uppercase tracking-wide text-zinc-500">Other roles for this person</p>

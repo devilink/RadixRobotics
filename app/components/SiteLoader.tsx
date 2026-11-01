@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { usePathname } from 'next/navigation';
 
 // App-style areas skip the splash: people there want the tool, not the brand moment.
-const SKIP_PREFIXES = ['/super-admin', '/erp', '/school-admin', '/login', '/update-password', '/student', '/curriculum', '/kits', '/auth'];
+const SKIP_PREFIXES = ['/super-admin', '/erp', '/school-admin', '/login', '/update-password', '/student', '/curriculum', '/profile', '/kits', '/auth'];
 
 const MIN_VISIBLE_MS = 900;   // long enough for the logo animation to read
 const MAX_VISIBLE_MS = 4000;  // never hold a slow connection hostage

@@ -15,6 +15,7 @@ export default function NavbarWrapper() {
     '/update-password',
     '/student',
     '/curriculum',
+    '/profile',
     '/kits',
     '/auth'
   ];

@@ -18,18 +18,21 @@ type DbResult = { errors: { row: number; message: string }[]; notes?: { row: num
 export async function runImport<P extends { row: number }, R extends DbResult>(opts: {
   fd: FormData;
   userId: string;
-  prepare: (table: Cell[][]) => {
+  prepare: (table: Cell[][], opts: { force: boolean }) => {
     preview: Omit<ImportPreview, "invalid" | "summary" | "saved">;
     payload: P[];
     fatal?: string;
   };
-  save: (rows: P[], dryRun: boolean, skipInvalid: boolean) => Promise<{ data: unknown; error: { code?: string; message: string } | null }>;
+  save: (rows: P[], dryRun: boolean, skipInvalid: boolean, force: boolean) => Promise<{ data: unknown; error: { code?: string; message: string } | null }>;
   summarize: (r: R) => string;
   /** Adjust the preview with what the database returned (e.g. generated IDs). */
   decorate?: (preview: ImportPreview, r: R) => ImportPreview;
 }): Promise<ImportState> {
-  const commit = opts.fd.get("mode") === "import";
-  const skipInvalid = opts.fd.get("skip_invalid") === "on";
+  const mode = opts.fd.get("mode");
+  // force = upload every row: nothing stops a row; what does not fit is kept (see prepareStudents).
+  const force = mode === "force";
+  const commit = mode === "import" || force;
+  const skipInvalid = force || opts.fd.get("skip_invalid") === "on";
   const supabase = await db();
   if (!(await sharedRateLimit(supabase, opts.userId, "spreadsheet-import", 30, 60_000))) {
     return { ok: false, error: "Too many imports in a short time. Please wait a minute." };
@@ -44,7 +47,7 @@ export async function runImport<P extends { row: number }, R extends DbResult>(o
     return { ok: false, error: "The sheet could not be read." };
   }
 
-  const prep = opts.prepare(table);
+  const prep = opts.prepare(table, { force });
   if (prep.fatal) return { ok: false, error: prep.fatal };
   if (prep.preview.total === 0) return { ok: false, error: "The sheet has a header row but no data rows." };
 
@@ -57,7 +60,7 @@ export async function runImport<P extends { row: number }, R extends DbResult>(o
   }
   if (valid.length === 0) return { ok: true, preview: { ...checked, saved: false } };
 
-  const { data, error } = await opts.save(valid, !commit, skipInvalid);
+  const { data, error } = await opts.save(valid, !commit, skipInvalid, force);
   if (error) return { ok: false, error: friendlyDbError(error, "The import could not be completed.") };
   const result = data as R;
   const merged = withDbErrors(prep.preview, result.errors ?? [], result.notes ?? []);

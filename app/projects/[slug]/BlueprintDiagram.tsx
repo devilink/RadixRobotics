@@ -21,7 +21,7 @@ function exitPoint(b: Box, tx: number, ty: number) {
 }
 
 /** System block diagram: how the parts connect (signal and power). */
-export default function BlueprintDiagram({ build }: { build: CapstoneBuild }) {
+export default function BlueprintDiagram({ build }: { build: Pick<CapstoneBuild, 'id' | 'title' | 'blueprint'> }) {
   const { nodes, edges, drawingNo } = build.blueprint;
   const byId = new Map(nodes.map((n) => [n.id, box(n)]));
 

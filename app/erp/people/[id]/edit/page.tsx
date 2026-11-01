@@ -12,11 +12,14 @@ export default async function EditMemberPage({ params }: { params: Promise<{ id:
   if (!/^[0-9a-f-]{36}$/i.test(id)) notFound();
   const ctx = await requirePagePermission(["students.manage", "staff.manage"]);
   const supabase = await db();
-  const { data: m } = await supabase
+  // employee_profiles links to memberships twice (the member and their reporting manager),
+  // so the embed must name the foreign key or PostgREST rejects the query (PGRST201).
+  const { data: m, error: loadError } = await supabase
     .from("institution_memberships")
-    .select("*, people(*), student_profiles(*), employee_profiles(*)")
+    .select("*, people(*), student_profiles(*), employee_profiles:employee_profiles!employee_profiles_institution_id_membership_id_fkey(*)")
     .eq("id", id)
     .maybeSingle();
+  if (loadError) console.error("[erp] could not load member", id, loadError);
   if (!m || !can(ctx.perms, m.member_type === "student" ? "students.manage" : "staff.manage", m.institution_id)) notFound();
   const p = m.people as { first_name: string; last_name: string; email: string | null; phone: string | null };
   const s = (Array.isArray(m.student_profiles) ? m.student_profiles[0] : m.student_profiles) as Record<string, string | null> | null;
@@ -25,7 +28,7 @@ export default async function EditMemberPage({ params }: { params: Promise<{ id:
     membership_id: m.id, member_type: m.member_type, institution_id: m.institution_id,
     first_name: p.first_name, last_name: p.last_name, member_code: m.member_code, email: p.email, phone: p.phone,
     campus_id: m.campus_id, status: m.status, end_date: m.end_date,
-    registration_number: s?.registration_number ?? null, admission_date: s?.admission_date ?? null,
+    registration_number: s?.registration_number ?? null, admission_date: s?.admission_date ?? null, notes: s?.notes ?? null,
     department: e?.department ?? null, position: e?.position ?? null, employment_type: e?.employment_type ?? null, shift_id: e?.shift_id ?? null,
   };
   const choices = await memberInstitutionChoices(ctx, m.institution_id);

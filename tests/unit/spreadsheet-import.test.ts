@@ -107,6 +107,23 @@ describe("prepareStudents", () => {
     expect(p.payload[3].member_code).toBe("");
     expect(p.preview.rows[3].notes?.[0]).toMatch(/Student ID will be generated/);
   });
+  it("force mode lets every row through and keeps what does not fit for the notes", () => {
+    const table = [
+      ["Name", "Roll No", "Email", "Blood Group"],
+      ["Ira", "A-1", "not-an-email", "O+"],
+      ["Kai", "a-1", "", ""],
+      ["", "A-2", "", "B-"],
+    ];
+    expect(prepareStudents(table).preview.rows.filter((r) => r.errors.length)).toHaveLength(2);
+    expect(prepareStudents(table).payload[0].extra_notes).toBe("");
+
+    const p = prepareStudents(table, { force: true });
+    expect(p.preview.rows.every((r) => r.errors.length === 0)).toBe(true);
+    expect(p.payload[0].extra_notes).toBe("From spreadsheet import (row 2):\nEmail: not-an-email\nBlood Group: O+");
+    expect(p.payload[1]).toMatchObject({ member_code: "", extra_notes: "From spreadsheet import (row 3):\nRoll No: a-1" });
+    expect(p.payload[2]).toMatchObject({ first_name: "Unnamed", last_name: "student (row 4)", member_code: "A-2" });
+    expect(p.payload[2].extra_notes).toContain("Blood Group: B-");
+  });
   it("tidies Roll Nos with spaces instead of rejecting them", () => {
     expect(cleanStudentCode(" 6 a 01 ")).toBe("6-A-01");
     expect(cleanStudentCode("--x")).toBe("X");

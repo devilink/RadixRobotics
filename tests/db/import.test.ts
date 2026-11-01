@@ -8,12 +8,14 @@ let w: World;
 
 type StudentResult = {
   ok: number; enrolled: number; guardians: number; errors: { row: number; message: string }[]; saved: boolean;
-  notes: { row: number; message: string }[]; codes: { row: number; code: string }[];
+  notes: { row: number; message: string }[]; codes: { row: number; code: string }[]; members?: { row: number; id: string }[];
 };
 type InventoryResult = { created: number; updated: number; units_received: number; errors: { row: number; message: string }[]; saved: boolean };
 
-const importStudents = (user: string, inst: string, rows: unknown[], dry: boolean, skip = false) =>
-  w.rpc(user, "erp_import_students", { p_institution: inst, p_rows: JSON.stringify(rows), p_dry_run: dry, p_skip_invalid: skip }) as Promise<StudentResult>;
+const importStudents = (user: string, inst: string, rows: unknown[], dry: boolean, skip = false, force = false) =>
+  w.rpc(user, "erp_import_students", {
+    p_institution: inst, p_rows: JSON.stringify(rows), p_dry_run: dry, p_skip_invalid: skip, ...(force ? { p_force: true } : {}),
+  }) as Promise<StudentResult>;
 const importInventory = (user: string, rows: unknown[], dry: boolean, skip = false) =>
   w.rpc(user, "erp_inventory_import", { p_rows: JSON.stringify(rows), p_dry_run: dry, p_skip_invalid: skip }) as Promise<InventoryResult>;
 const countMembers = async (inst: string) =>
@@ -95,6 +97,53 @@ describe("student import", () => {
   it("refuses institutions the user does not manage", async () => {
     expect(await sqlState(importStudents(w.u.adminA, w.schoolB, rows, true))).toBe("42501");
     expect(await sqlState(importStudents(w.u.teacherA, w.schoolA, rows, true))).toBe("42501");
+  });
+});
+
+describe("student force upload", () => {
+  it("gives a taken Roll No a new ID, saves the leftovers to notes, and keeps the rest of the upload", async () => {
+    await importStudents(w.u.adminA, w.schoolA, [{ row: 2, first_name: "First", member_code: "F-1" }], false);
+    const rows = [
+      { row: 2, first_name: "Second", member_code: "F-1", extra_notes: "From spreadsheet import (row 2):\nEmail: nope" },
+      { row: 3, first_name: "Third", member_code: "F-2" },
+    ];
+    // Without force the taken Roll No blocks the whole upload.
+    expect((await importStudents(w.u.adminA, w.schoolA, rows, false)).saved).toBe(false);
+
+    const r = await importStudents(w.u.adminA, w.schoolA, rows, false, false, true);
+    expect(r).toMatchObject({ ok: 2, errors: [], saved: true });
+    expect(r.codes).toHaveLength(1);
+    expect(r.notes[0].message).toMatch(/F-1 already belongs to another student/);
+    const sp = await db.query<{ member_code: string; notes: string | null }>(
+      `select m.member_code, sp.notes from public.institution_memberships m join public.student_profiles sp on sp.membership_id = m.id
+       where m.institution_id = $1 and m.member_code = $2`, [w.schoolA, r.codes[0].code]);
+    expect(sp.rows[0].notes).toContain("Email: nope");
+    expect(sp.rows[0].notes).toContain("Roll No in the sheet: F-1");
+  });
+
+  it("returns each saved student's record id so it can be edited, and notes can be edited later", async () => {
+    const r = await importStudents(w.u.adminA, w.schoolA, [{ row: 2, first_name: "Edit", last_name: "Me" }], false);
+    expect(r.members).toHaveLength(1);
+    const id = r.members![0].id;
+    const dry = await importStudents(w.u.adminA, w.schoolA, [{ row: 2, first_name: "Not", last_name: "Saved" }], true);
+    expect(dry.members).toEqual([]);
+
+    const update = (details: Record<string, string>) => w.rpc(w.u.adminA, "erp_update_member", {
+      p_membership: id, p_first_name: "Edited", p_last_name: "Name", p_member_code: r.codes[0].code,
+      p_status: "active", p_details: JSON.stringify(details),
+    });
+    const notes = async () => (await db.query<{ notes: string | null }>(
+      "select notes from public.student_profiles where membership_id = $1", [id])).rows[0].notes;
+    await update({ notes: "Allergic to peanuts" });
+    expect(await notes()).toBe("Allergic to peanuts");
+    await update({ registration_number: "R-1" });   // no notes key: notes are left alone
+    expect(await notes()).toBe("Allergic to peanuts");
+    await update({ notes: "" });
+    expect(await notes()).toBeNull();
+  });
+
+  it("is still limited to institutions the user manages", async () => {
+    expect(await sqlState(importStudents(w.u.adminA, w.schoolB, [{ row: 2, first_name: "X" }], false, false, true))).toBe("42501");
   });
 });
 

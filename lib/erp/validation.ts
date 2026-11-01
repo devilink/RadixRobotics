@@ -99,6 +99,7 @@ export const memberUpdateSchema = memberCreateSchema
     membership_id: uuid,
     status: z.enum(MEMBERSHIP_STATUSES),
     end_date: optionalDate,
+    notes: optionalText(2000),
   });
 
 export const guardianSchema = z.object({
@@ -184,15 +185,33 @@ export const leaveRequestSchema = z
   .refine((l) => l.end_date >= l.start_date, { path: ["end_date"], message: "End date must be on or after the start date" })
   .refine((l) => !l.half_day || l.start_date === l.end_date, { path: ["half_day"], message: "Half-day leave must be a single day" });
 
+/**
+ * Staff sign in with their email. Students sign in with a staff-chosen username;
+ * their email (optional) is kept as contact details only. The action enforces
+ * which of the two the chosen role needs.
+ */
 export const createUserSchema = z.object({
-  email: z
-    .string()
-    .trim()
-    .toLowerCase()
-    .email("Enter a valid email")
-    .max(200)
-    // Reserved for school and student-username logins.
-    .refine((e) => !isReservedLoginEmail(e), "This email domain is reserved for Radix logins"),
+  email: z.preprocess(
+    blankToUndefined,
+    z
+      .string()
+      .trim()
+      .toLowerCase()
+      .email("Enter a valid email")
+      .max(200)
+      // Reserved for school and student-username logins.
+      .refine((e) => !isReservedLoginEmail(e), "This email domain is reserved for Radix logins")
+      .optional()
+  ),
+  username: z.preprocess(
+    blankToUndefined,
+    z
+      .string()
+      .trim()
+      .toLowerCase()
+      .regex(STUDENT_USERNAME_RE, "3–40 characters: letters, numbers, . _ - (start with a letter or number)")
+      .optional()
+  ),
   full_name: z.string().trim().min(1, "Name is required").max(150),
   password: z
     .string()

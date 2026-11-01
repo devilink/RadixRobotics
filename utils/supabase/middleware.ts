@@ -43,6 +43,7 @@ export async function updateSession(request: NextRequest) {
   const isProtected = pathname.startsWith('/super-admin') || 
                       pathname.startsWith('/school-admin') || 
                       pathname.startsWith('/curriculum') ||
+                      pathname === '/profile' || pathname.startsWith('/profile/') ||
                       pathname.startsWith('/kits');
 
   if (isProtected && !user) {
@@ -96,7 +97,19 @@ export async function updateSession(request: NextRequest) {
       }
     }
 
-    // 3. Curriculum checking (accessible by all 3, but bound to school_id)
+    // 3. Students use their profile (/profile) instead of the curriculum.
+    if (pathname.startsWith('/curriculum') && role === 'student') {
+      return NextResponse.redirect(new URL('/profile', request.url));
+    }
+
+    // 4. Profile is for students only.
+    if ((pathname === '/profile' || pathname.startsWith('/profile/')) && role !== 'student') {
+      if (role === 'super_admin') return NextResponse.redirect(new URL('/super-admin', request.url));
+      if (role === 'school_admin' && school_id) return NextResponse.redirect(new URL(`/curriculum/${school_id}`, request.url));
+      return NextResponse.redirect(new URL('/403', request.url));
+    }
+
+    // 5. Curriculum checking (school admins and super admins, bound to school_id)
     if (pathname.startsWith('/curriculum')) {
       const routeSchoolId = pathname.split('/')[2];
       // Only super_admin can freely browse other schools' curriculums

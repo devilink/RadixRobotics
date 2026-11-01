@@ -58,7 +58,14 @@ export async function enrollStudents(_prev: unknown, fd: FormData): Promise<Acti
         { onConflict: "group_id,membership_id", ignoreDuplicates: true }
       )
     );
+    // Someone removed earlier keeps their old enrolment row (with an end date):
+    // adding them again reopens it instead of silently doing nothing.
+    check(
+      await supabase.from("enrollments").update({ end_date: null })
+        .eq("group_id", p.data.group_id).in("membership_id", p.data.membership_ids).not("end_date", "is", null)
+    );
     revalidatePath(`/erp/groups/${p.data.group_id}`);
+    revalidatePath("/erp/people/[id]", "page");
     return { ok: true, message: `${p.data.membership_ids.length} student(s) enrolled.` };
   } catch (err) {
     return failure(err);
@@ -82,6 +89,7 @@ export async function endEnrollment(_prev: unknown, fd: FormData): Promise<Actio
     );
     if (!rows?.length) throw new ForbiddenError("Enrolment not found.");
     revalidatePath(`/erp/groups/${p.data.group_id}`);
+    revalidatePath("/erp/people/[id]", "page");
     return { ok: true, message: "Student removed from this group from today." };
   } catch (err) {
     return failure(err);

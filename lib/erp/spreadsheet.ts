@@ -107,7 +107,11 @@ export type ColumnSpec<K extends string> = { key: K; label: string; aliases: str
 
 export type MappedTable<K extends string> = {
   /** Spreadsheet row number (1-based, as shown in Excel) and cells keyed by column. */
-  records: { row: number; cells: Partial<Record<K, Cell>>; headers: Partial<Record<K, string>> }[];
+  records: {
+    row: number; cells: Partial<Record<K, Cell>>; headers: Partial<Record<K, string>>;
+    /** Non-blank cells under columns the import does not use, as { header, value }. */
+    extra: { header: string; value: string }[];
+  }[];
   matched: K[];
   missing: string[];
   ignored: string[];
@@ -133,12 +137,13 @@ export function mapTable<K extends string>(table: Cell[][], spec: ColumnSpec<K>[
   const columns = new Map<K, number>();
   const headerText = new Map<K, string>();
   const ignored: string[] = [];
+  const ignoredAt: [number, string][] = [];
   header.forEach((h, i) => {
     const n = normalizeHeader(h);
     if (!n) return;
     const key = lookup.get(n);
     if (key && !columns.has(key)) { columns.set(key, i); headerText.set(key, n); }
-    else ignored.push(cellText(h));
+    else { ignored.push(cellText(h)); ignoredAt.push([i, cellText(h)]); }
   });
 
   const records: MappedTable<K>["records"] = [];
@@ -148,7 +153,8 @@ export function mapTable<K extends string>(table: Cell[][], spec: ColumnSpec<K>[
     const cells: Partial<Record<K, Cell>> = {};
     const headers: Partial<Record<K, string>> = {};
     for (const [key, i] of columns) { cells[key] = row[i]; headers[key] = headerText.get(key); }
-    records.push({ row: r + 1, cells, headers });
+    const extra = ignoredAt.map(([i, h]) => ({ header: h, value: cellText(row[i]) })).filter((e) => e.value !== "");
+    records.push({ row: r + 1, cells, headers, extra });
   }
   return {
     records,

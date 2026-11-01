@@ -2,7 +2,8 @@ import { db, requirePagePermission } from "@/lib/erp/context";
 import { institutionsWith } from "@/lib/erp/permissions";
 import { str } from "@/lib/erp/format";
 import { Badge, Card, EmptyState, Notice, PageHeader, Table, buttonClass, cx, inputClass, td, th } from "../../_components/ui";
-import { AssignRoleForm, CreateUserForm, LinkPersonButton, RevokeButton, type InstOption, type RoleOption } from "./UserForms";
+import { AssignRoleForm, CreateUserForm, LinkPersonButton, ResetPasswordForm, RevokeButton, type InstOption, type RoleOption } from "./UserForms";
+import { STUDENT_LOGIN_DOMAIN } from "@/lib/auth/student-login";
 
 export const metadata = { title: "Users & Roles" };
 
@@ -27,11 +28,11 @@ export default async function UsersPage({ searchParams }: { searchParams: Promis
 
   // Optional: "create login for this person" flow from a person page.
   const linkId = /^[0-9a-f-]{36}$/i.test(str(sp.link) ?? "") ? str(sp.link)! : null;
-  let link: { membership_id: string; institution_id: string; name: string; email: string | null } | undefined;
+  let link: { membership_id: string; institution_id: string; name: string; email: string | null; member_type: string | null } | undefined;
   if (linkId) {
-    const { data: m } = await supabase.from("institution_memberships").select("id, institution_id, people(first_name, last_name, email)").eq("id", linkId).maybeSingle();
+    const { data: m } = await supabase.from("institution_memberships").select("id, institution_id, member_type, people(first_name, last_name, email)").eq("id", linkId).maybeSingle();
     const p = m?.people as unknown as { first_name: string; last_name: string; email: string | null } | null;
-    if (m && p) link = { membership_id: m.id, institution_id: m.institution_id, name: `${p.first_name} ${p.last_name}`.trim(), email: p.email };
+    if (m && p) link = { membership_id: m.id, institution_id: m.institution_id, name: `${p.first_name} ${p.last_name}`.trim(), email: p.email, member_type: m.member_type };
   }
 
   let pq = supabase.from("profiles").select("id, email, full_name, person_id, is_active").order("email").limit(200);
@@ -105,6 +106,12 @@ export default async function UsersPage({ searchParams }: { searchParams: Promis
                       <summary className="cursor-pointer text-sm text-zinc-300 hover:text-zinc-100">Grant a role</summary>
                       <div className="mt-2"><AssignRoleForm userId={p.id} roles={roles} institutions={institutions} /></div>
                     </details>
+                    {p.email?.endsWith(`@${STUDENT_LOGIN_DOMAIN}`) && (
+                      <details className="mt-2">
+                        <summary className="cursor-pointer text-sm text-zinc-300 hover:text-zinc-100">Reset password</summary>
+                        <div className="mt-2"><ResetPasswordForm userId={p.id} /></div>
+                      </details>
+                    )}
                   </td>
                 </tr>
               ))}

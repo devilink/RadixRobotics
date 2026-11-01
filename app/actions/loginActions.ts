@@ -60,7 +60,9 @@ export async function resolveLoginDestination(next?: string | null): Promise<Log
   }
 
   if (role.role === "super_admin") return { ok: true, path: "/super-admin" };
-  if ((role.role === "school_admin" || role.role === "student") && role.school_id) {
+  // Students land on their profile (projects, virtual lab, progress); the curriculum is for school admins.
+  if (role.role === "student") return { ok: true, path: "/profile" };
+  if (role.role === "school_admin" && role.school_id) {
     return { ok: true, path: `/curriculum/${role.school_id}` };
   }
   return { ok: true, path: "/" };

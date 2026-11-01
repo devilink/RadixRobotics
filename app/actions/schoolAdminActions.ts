@@ -4,7 +4,7 @@ import { createClient } from "@supabase/supabase-js";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { requireLegacySchoolAccess } from "@/lib/auth/legacy";
-import { isReservedLoginEmail } from "@/lib/auth/student-login";
+import { studentLoginEmail, STUDENT_USERNAME_RE } from "@/lib/auth/student-login";
 import { rateLimit } from "@/lib/erp/rate-limit";
 import { createClient as createSessionClient } from "@/utils/supabase/server";
 
@@ -106,13 +106,13 @@ export async function toggleStudentApproval(userId: string, isApproved: boolean)
 
 const newStudentSchema = z.object({
   name: z.string().trim().min(1, "Enter the student's name").max(150),
-  email: z
+  username: z
     .string()
     .trim()
     .toLowerCase()
-    .email("Enter a valid email")
-    .max(200)
-    .refine((e) => !isReservedLoginEmail(e), "This email domain is reserved for Radix logins"),
+    .min(3, "Username must be at least 3 characters")
+    .max(40, "Username must be 40 characters or less")
+    .regex(STUDENT_USERNAME_RE, "Letters, numbers, . _ - only; must start with a letter or number"),
   password: z
     .string()
     .min(8, "Password must be at least 8 characters")
@@ -128,6 +128,7 @@ const newStudentSchema = z.object({
 });
 
 export type NewStudentInput = z.input<typeof newStudentSchema>;
+export type NewStudentData = z.infer<typeof newStudentSchema>;
 
 /**
  * Creates an approved student login for a school or learning center. Only that
@@ -152,14 +153,14 @@ export async function createStudentAccount(
     if (!school) return { success: false, message: "School or center not found." };
 
     const { data: created, error: authErr } = await supabaseAdmin.auth.admin.createUser({
-      email: d.email,
+      email: studentLoginEmail(d.username),
       password: d.password,
       email_confirm: true,
-      user_metadata: { full_name: d.name },
+      user_metadata: { full_name: d.name, username: d.username },
     });
     if (authErr || !created.user) {
       const exists = /already|registered|exists/i.test(authErr?.message ?? "");
-      return { success: false, message: exists ? "An account with this email already exists." : "The account could not be created." };
+      return { success: false, message: exists ? "That username is already taken. Try another." : "The account could not be created." };
     }
     const userId = created.user.id;
 
@@ -175,9 +176,9 @@ export async function createStudentAccount(
     revalidatePath(`/school-admin/${schoolId}`);
     return {
       success: true,
-      message: `Student account created for ${d.email}. Share the password with them securely.`,
+      message: `Student account created. Username: ${d.username}. Share the username and password with them securely.`,
       erpNote,
-      student: { id: userId, email: d.email, name: d.name, is_approved: true },
+      student: { id: userId, email: d.username, name: d.name, is_approved: true },
     };
   } catch (err) {
     console.error("Failed to add student:", err);

@@ -24,4 +24,13 @@ describe("student username logins", () => {
     expect(studentLoginSchema.safeParse({ login_username: "aarav", login_password: "abcdefgh" }).success).toBe(false);
     expect(studentLoginSchema.safeParse({ login_username: "aarav", login_password: "abc123" }).success).toBe(false);
   });
+
+  it("lets admins create a student account with a username and an optional contact email", () => {
+    const base = { full_name: "Aarav K", password: "longenough1", role_key: "student" };
+    const noEmail = createUserSchema.safeParse({ ...base, username: "Aarav.K", email: "" });
+    expect(noEmail.success && noEmail.data).toMatchObject({ username: "aarav.k", email: undefined });
+    const withEmail = createUserSchema.safeParse({ ...base, username: "aarav.k", email: "Parent@Example.test" });
+    expect(withEmail.success && withEmail.data.email).toBe("parent@example.test");
+    expect(createUserSchema.safeParse({ ...base, username: "a b" }).success).toBe(false);
+  });
 });

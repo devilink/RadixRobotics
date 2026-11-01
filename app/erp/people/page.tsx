@@ -1,9 +1,10 @@
 import Link from "next/link";
+import { BULK_FORM_ID, BulkDeleteStudents, SelectAllStudents } from "./DeleteStudents";
 import { can, canAny, db, getCategory, requirePagePermission } from "@/lib/erp/context";
 import { institutionOptions } from "@/lib/erp/queries";
 import { str } from "@/lib/erp/format";
 import { CATEGORY_LABELS, MEMBER_TYPE_LABELS, type InstitutionType, type MemberType } from "@/lib/erp/types";
-import { Card, EmptyState, LinkButton, PageHeader, Pagination, StatusBadge, Table, TypeBadge, buttonClass, cx, focusRing, inputClass, td, th } from "../_components/ui";
+import { Card, EmptyState, LinkButton, Notice, PageHeader, Pagination, StatusBadge, Table, TypeBadge, buttonClass, cx, focusRing, inputClass, td, th } from "../_components/ui";
 
 export const metadata = { title: "People" };
 
@@ -44,6 +45,9 @@ export default async function PeoplePage({ searchParams }: { searchParams: Promi
   const managePerm = kind === "students" ? "students.manage" : "staff.manage";
   const canAdd = options.some((o) => can(ctx.perms, managePerm, o.id));
   const title = kind === "students" ? "Students" : "Teachers, Instructors & Staff";
+  // Students can be deleted (in bulk) where the user manages them.
+  const canDelete = kind === "students" && canAdd;
+  const deletedCount = Number(str(sp.deleted)) || 0;
 
   const qs = (over: Record<string, string | number | null>) => {
     const p = new URLSearchParams({ type: kind, ...(q && { q }), status, ...(institution && { institution }), ...(staffType && { member: staffType }) });
@@ -73,6 +77,9 @@ export default async function PeoplePage({ searchParams }: { searchParams: Promi
           </>
         ) : undefined}
       />
+      {deletedCount > 0 && (
+        <div className="mb-4"><Notice tone="success">Deleted {deletedCount} student{deletedCount === 1 ? "" : "s"}.</Notice></div>
+      )}
       <Card>
         <form className="mb-4 grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-5" role="search">
           <input type="hidden" name="type" value={kind} />
@@ -118,20 +125,31 @@ export default async function PeoplePage({ searchParams }: { searchParams: Promi
           </EmptyState>
         ) : (
           <>
+            {canDelete && <BulkDeleteStudents />}
             <Table caption={title}>
               <thead>
                 <tr>
+                  {canDelete && <th className={cx(th, "w-8")}><SelectAllStudents /></th>}
                   <th className={th}>Name</th>
                   <th className={th}>ID</th>
                   {kind === "staff" && <th className={th}>Type</th>}
                   <th className={th}>Institution</th>
                   <th className={th}>{kind === "students" ? "Class / batch" : "Assigned to"}</th>
                   <th className={th}>Status</th>
+                  <th className={th}><span className="sr-only">Actions</span></th>
                 </tr>
               </thead>
               <tbody>
                 {rows.map((r) => (
                   <tr key={r.membership_id} className="hover:bg-zinc-800/40">
+                    {canDelete && (
+                      <td className={cx(td, "w-8")}>
+                        {can(ctx.perms, managePerm, r.institution_id) && (
+                          <input type="checkbox" name="membership_ids" value={r.membership_id} form={BULK_FORM_ID}
+                            aria-label={`Select ${r.full_name}`} className="h-4 w-4 accent-brand-500" />
+                        )}
+                      </td>
+                    )}
                     <td className={td}>
                       <Link href={`/erp/people/${r.membership_id}`} className={cx("font-medium hover:underline", focusRing)}>{r.full_name}</Link>
                       {r.email && <p className="text-xs text-zinc-500">{r.email}</p>}
@@ -144,6 +162,14 @@ export default async function PeoplePage({ searchParams }: { searchParams: Promi
                     </td>
                     <td className={cx(td, "max-w-[16rem] truncate")}>{r.groups ?? "—"}</td>
                     <td className={td}><StatusBadge status={r.status} /></td>
+                    <td className={cx(td, "text-right")}>
+                      {can(ctx.perms, managePerm, r.institution_id) && (
+                        <Link href={`/erp/people/${r.membership_id}/edit`} aria-label={`Edit ${r.full_name}`}
+                          className={cx("rounded-lg px-2 py-1 text-xs text-zinc-400 hover:bg-zinc-800 hover:text-white", focusRing)}>
+                          Edit
+                        </Link>
+                      )}
+                    </td>
                   </tr>
                 ))}
               </tbody>

@@ -172,6 +172,8 @@ export async function updateMember(memberType: string, institutionId: string, _p
           position: d.position ?? "",
           employment_type: d.employment_type ?? "",
           shift_id: d.shift_id ?? "",
+          // Students only: the database applies notes when the key is present.
+          ...(memberType === "student" ? { notes: d.notes ?? "" } : {}),
         },
       })
     );
@@ -219,4 +221,39 @@ export async function removeGuardian(institutionId: string, _prev: unknown, fd: 
   } catch (err) {
     return failure(err);
   }
+}
+
+const deleteSchema = z.object({
+  membership_ids: z.array(z.string().uuid()).min(1, "Select at least one student").max(500),
+  return_to_list: z.string().optional(),
+});
+
+type DeleteResult = { deleted: number; blocked: { id: string; name: string | null; reason: string }[] };
+
+/**
+ * Permanently deletes students. The database refuses students with attendance
+ * history (mark them Left instead) or a portal login, and reports them back.
+ */
+export async function deleteStudents(_prev: unknown, fd: FormData): Promise<ActionResult> {
+  let deleted = 0;
+  try {
+    const p = parse(deleteSchema, formToObject(fd, ["membership_ids"]));
+    if (!p.ok) return p.result;
+    const supabase = await db();
+    // Permission is checked per student inside the function (students.manage at their institution).
+    const r = check(await supabase.rpc("erp_delete_students", { p_memberships: p.data.membership_ids })) as DeleteResult;
+    deleted = r.deleted;
+    revalidatePath("/erp/people");
+    const blocked = r.blocked ?? [];
+    if (blocked.length) {
+      const list = blocked.slice(0, 5).map((b) => `${b.name ?? "A student"}: ${b.reason}`).join("; ");
+      const more = blocked.length > 5 ? ` (and ${blocked.length - 5} more)` : "";
+      const msg = `${deleted ? `Deleted ${deleted} student${deleted === 1 ? "" : "s"}. ` : ""}${blocked.length} could not be deleted. ${list}${more}.`;
+      return deleted ? { ok: true, message: msg } : { ok: false, error: msg };
+    }
+    if (!p.data.return_to_list) return { ok: true, message: `Deleted ${deleted} student${deleted === 1 ? "" : "s"}.` };
+  } catch (err) {
+    return failure(err);
+  }
+  redirect(`/erp/people?type=students&deleted=${deleted}`);
 }

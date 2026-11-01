@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState, useMemo, useState, useTransition, type FormEvent, type ReactNode } from "react";
-import { CheckCircle2, Download, FileSpreadsheet, Link2, Loader2, Upload } from "lucide-react";
+import { CheckCircle2, Download, FileSpreadsheet, Link2, Loader2, Upload, Zap } from "lucide-react";
 import type { ImportPreview } from "@/lib/erp/imports";
 import { templateCsv } from "@/lib/erp/spreadsheet";
 import { Badge, Notice, buttonClass, cx, inputClass, td, th } from "./ui";
@@ -15,12 +15,14 @@ const SHOW_LIMIT = 500;
  * database; nothing is saved) -> 2. Upload (saves). The form is submitted
  * manually so the chosen file stays selected between the two steps.
  */
-export function SpreadsheetImport({ action, children, template, noun }: {
+export function SpreadsheetImport({ action, children, template, noun, forceHelp }: {
   action: (prev: ImportState | null, fd: FormData) => Promise<ImportState>;
   /** Extra fields sent with the sheet (e.g. institution). */
   children?: ReactNode;
   template: { headers: string[]; example: string[][]; filename: string };
   noun: string;
+  /** Enables "Force upload" (upload every row; what does not fit is kept). Text for its confirmation. */
+  forceHelp?: string;
 }) {
   const [state, formAction] = useActionState(action, null);
   const [pending, startTransition] = useTransition();
@@ -28,7 +30,7 @@ export function SpreadsheetImport({ action, children, template, noun }: {
   const [onlyProblems, setOnlyProblems] = useState(false);
   // Rows with problems are skipped by default so the good rows can still be uploaded.
   const [skip, setSkip] = useState(true);
-  const [lastMode, setLastMode] = useState<"check" | "import">("check");
+  const [lastMode, setLastMode] = useState<"check" | "import" | "force">("check");
   const templateHref = useMemo(
     () => `data:text/csv;charset=utf-8,${encodeURIComponent("﻿" + templateCsv(template.headers, template.example))}`,
     [template],
@@ -40,7 +42,9 @@ export function SpreadsheetImport({ action, children, template, noun }: {
     const fd = new FormData(e.currentTarget, submitter);
     if (source === "file") fd.delete("sheet_url");
     else fd.delete("file");
-    setLastMode(fd.get("mode") === "import" ? "import" : "check");
+    const mode = fd.get("mode");
+    if (mode === "force" && forceHelp && !window.confirm(forceHelp)) return;
+    setLastMode(mode === "import" ? "import" : mode === "force" ? "force" : "check");
     startTransition(() => formAction(fd));
   }
 
@@ -108,11 +112,21 @@ export function SpreadsheetImport({ action, children, template, noun }: {
             {pending && lastMode === "check" ? "Checking…" : checked ? "Check again" : "1. Check sheet"}
           </button>
           {p && checked && valid > 0 && (
+            <button type="submit" name="mode" value="import" disabled={pending || (p.invalid > 0 && !skip)} className={buttonClass("primary")}>
+              {pending && lastMode === "import" ? <Loader2 aria-hidden className="h-4 w-4 animate-spin" /> : <Upload aria-hidden className="h-4 w-4" />}
+              {pending && lastMode === "import" ? "Uploading…" : `2. Upload ${valid} ${noun}`}
+            </button>
+          )}
+          {/* Shown whenever something would be skipped or left out, even if no row is valid. */}
+          {p && checked && forceHelp && (p.invalid > 0 || withNotes > 0 || p.ignoredColumns.length > 0) && (
+            <button type="submit" name="mode" value="force" disabled={pending} className={buttonClass("danger")}
+              title="Upload every row of the sheet. Nothing is skipped; values that do not fit are kept in each record's notes.">
+              {pending && lastMode === "force" ? <Loader2 aria-hidden className="h-4 w-4 animate-spin" /> : <Zap aria-hidden className="h-4 w-4" />}
+              {pending && lastMode === "force" ? "Uploading everything…" : `Force upload all ${p.total} rows`}
+            </button>
+          )}
+          {p && checked && valid > 0 && (
             <>
-              <button type="submit" name="mode" value="import" disabled={pending || (p.invalid > 0 && !skip)} className={buttonClass("primary")}>
-                {pending && lastMode === "import" ? <Loader2 aria-hidden className="h-4 w-4 animate-spin" /> : <Upload aria-hidden className="h-4 w-4" />}
-                {pending && lastMode === "import" ? "Uploading…" : `2. Upload ${valid} ${noun}`}
-              </button>
               {p.invalid > 0 && (
                 <label className="flex items-center gap-2 text-sm text-zinc-300">
                   <input type="checkbox" name="skip_invalid" className="h-4 w-4 accent-brand-500" onChange={(e) => setSkip(e.target.checked)} checked={skip} />
@@ -128,7 +142,12 @@ export function SpreadsheetImport({ action, children, template, noun }: {
       </form>
 
       {state && !state.ok && <Notice tone="error">{state.error}</Notice>}
-      {p?.summary && <Notice tone={p.saved ? "success" : "warn"}>{p.saved && <CheckCircle2 aria-hidden className="mr-1 inline h-4 w-4" />}{p.summary}</Notice>}
+      {p?.summary && (
+        <Notice tone={p.saved ? "success" : "warn"}>
+          {p.saved && <CheckCircle2 aria-hidden className="mr-1 inline h-4 w-4" />}{p.summary}
+          {p.saved && p.rows.some((r) => r.href) && " Click a name below to edit that record."}
+        </Notice>
+      )}
       {p && !p.saved && !p.summary && (
         <Notice tone={p.invalid ? "warn" : "success"}>
           Checked {p.total} row{p.total === 1 ? "" : "s"}: {valid} ready to upload
@@ -138,7 +157,9 @@ export function SpreadsheetImport({ action, children, template, noun }: {
         </Notice>
       )}
       {p && p.ignoredColumns.length > 0 && (
-        <p className="text-xs text-zinc-500">Columns not used: {p.ignoredColumns.join(", ")}</p>
+        <p className="text-xs text-zinc-500">
+          Columns not used: {p.ignoredColumns.join(", ")}.{forceHelp ? " Force upload keeps them in each student's notes." : ""}
+        </p>
       )}
 
       {p && p.rows.length > 0 && (
@@ -163,7 +184,11 @@ export function SpreadsheetImport({ action, children, template, noun }: {
                 {rows.slice(0, SHOW_LIMIT).map((r) => (
                   <tr key={r.row} className={cx("align-top", r.errors.length > 0 && "bg-rose-500/5")}>
                     <td className={cx(td, "tabular-nums text-zinc-500")}>{r.row}</td>
-                    {r.cells.map((c, i) => <td key={i} className={cx(td, "text-xs")}>{c}</td>)}
+                    {r.cells.map((c, i) => (
+                      <td key={i} className={cx(td, "text-xs")}>
+                        {i === 0 && r.href ? <a href={r.href} className="font-medium text-brand-300 hover:underline">{c}</a> : c}
+                      </td>
+                    ))}
                     <td className={cx(td, "text-xs")}>
                       {r.errors.length === 0 ? (
                         <>

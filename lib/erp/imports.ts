@@ -6,7 +6,7 @@ import { cellText, cleanNumber, mapTable, normalizeDate, MAX_IMPORT_ROWS, type C
 // which re-checks everything in a dry run before anything is saved.
 
 /** errors stop a row from being imported; notes are things left blank in a row that is still imported. */
-export type PreviewRow = { row: number; cells: string[]; errors: string[]; notes?: string[] };
+export type PreviewRow = { row: number; cells: string[]; errors: string[]; notes?: string[]; /** Link to the saved record. */ href?: string };
 
 export type ImportPreview = {
   columns: string[];
@@ -73,6 +73,8 @@ export type StudentPayload = {
   first_name: string; last_name: string; member_code: string; registration_number: string; email: string; phone: string;
   admission_date: string; start_date: string; group: string;
   guardian_name: string; guardian_relationship: string; guardian_phone: string; guardian_email: string;
+  /** Force upload only: every original value that did not fit a field, saved as the student's notes. */
+  extra_notes: string;
 };
 
 const RELATIONSHIPS: Record<string, string> = {
@@ -94,8 +96,13 @@ export const AUTO_ID_PLACEHOLDER = "Auto (STU-…)";
  * Only a missing name (or a Roll No repeated in the sheet) stops a row. Any other
  * cell that cannot be used is left blank and listed as a note on the row, and
  * rows without a usable Roll No get a Student ID from the database (STU-0001…).
+ *
+ * force: nothing stops a row. A missing name becomes "Unnamed student (row N)",
+ * a repeated Roll No gets a generated ID, and every original value that did not
+ * fit a field (plus columns the ERP does not use) is kept in the student's notes.
  */
-export function prepareStudents(table: Cell[][]): Prepared<StudentPayload> {
+export function prepareStudents(table: Cell[][], opts: { force?: boolean } = {}): Prepared<StudentPayload> {
+  const force = Boolean(opts.force);
   const t = mapTable(table, STUDENT_COLUMNS);
   const hasName = t.matched.includes("full_name") || t.matched.includes("first_name");
   const columns = ["Name", "Student ID", "Class / Batch", "Admission No", "Guardian"];
@@ -107,13 +114,16 @@ export function prepareStudents(table: Cell[][]): Prepared<StudentPayload> {
   const rows: PreviewRow[] = [];
   const payload: (StudentPayload & { row: number })[] = [];
   const seenCodes = new Map<string, number>();
-  for (const { row, cells: c, headers } of t.records) {
+  for (const { row, cells: c, headers, extra } of t.records) {
     const errors: string[] = [];
     const notes: string[] = [];
+    /** Original "Label: value" text that did not fit a field (saved to notes on a force upload). */
+    const kept: string[] = [];
     /** Keep a value only if it passes; otherwise leave it blank and say so. */
     const keep = (value: string, ok: boolean, label: string) => {
       if (!value || ok) return value;
       notes.push(`${label} “${value.slice(0, 60)}” could not be used, so it was left blank`);
+      kept.push(`${label}: ${value}`);
       return "";
     };
 
@@ -124,21 +134,42 @@ export function prepareStudents(table: Cell[][]): Prepared<StudentPayload> {
       first = parts.shift() ?? "";
       last = last || parts.join(" ");
     }
-    if (!first) errors.push("Name is missing");
-    if (first.length > 100 || last.length > 100) errors.push("Name is too long");
+    if (!first && force) {
+      first = "Unnamed"; last = `student (row ${row})`;
+      notes.push("Name is missing, so the student was saved as “Unnamed student”. Edit the record to add the name");
+    } else if (!first) errors.push("Name is missing");
+    if (first.length > 100 || last.length > 100) {
+      if (force) {
+        kept.push(`Full name: ${[first, last].filter(Boolean).join(" ")}`);
+        first = first.slice(0, 100); last = last.slice(0, 100);
+        notes.push("Name was longer than 100 characters, so it was shortened");
+      } else errors.push("Name is too long");
+    }
 
     const rawCode = cellText(c.member_code);
-    const code = cleanStudentCode(rawCode);
-    if (rawCode && !code) notes.push(`Roll No “${rawCode.slice(0, 40)}” could not be used, so a Student ID will be generated`);
-    if (code && seenCodes.has(code)) errors.push(`Roll No ${code} is repeated (also on row ${seenCodes.get(code)})`);
-    else if (code) seenCodes.set(code, row);
+    let code = cleanStudentCode(rawCode);
+    if (rawCode && !code) {
+      notes.push(`Roll No “${rawCode.slice(0, 40)}” could not be used, so a Student ID will be generated`);
+      kept.push(`Roll No: ${rawCode}`);
+    }
+    if (code && seenCodes.has(code)) {
+      if (force) {
+        notes.push(`Roll No ${code} is repeated (also on row ${seenCodes.get(code)}), so a Student ID will be generated`);
+        kept.push(`Roll No: ${rawCode}`);
+        code = "";
+      } else errors.push(`Roll No ${code} is repeated (also on row ${seenCodes.get(code)})`);
+    } else if (code) seenCodes.set(code, row);
 
     const mail = keep(cellText(c.email).toLowerCase(), email.safeParse(cellText(c.email).toLowerCase()).success, "Email");
     const tel = keep(cellText(c.phone), phone.test(cellText(c.phone)), "Phone");
 
     const date = (v: Cell, label: string) => {
       const d = normalizeDate(v);
-      if (d === null) { notes.push(`${label} “${cellText(v).slice(0, 30)}” is not a date (use DD/MM/YYYY), so it was left blank`); return ""; }
+      if (d === null) {
+        notes.push(`${label} “${cellText(v).slice(0, 30)}” is not a date (use DD/MM/YYYY), so it was left blank`);
+        kept.push(`${label}: ${cellText(v)}`);
+        return "";
+      }
       return d;
     };
     const admission = date(c.admission_date, "Admission Date");
@@ -147,15 +178,27 @@ export function prepareStudents(table: Cell[][]): Prepared<StudentPayload> {
     let gName = cellText(c.guardian_name);
     const relText = cellText(c.guardian_relationship).toLowerCase();
     let rel = RELATIONSHIPS[relText] ?? "";
-    if (relText && !rel && gName) notes.push(`Relationship “${cellText(c.guardian_relationship)}” is not Mother, Father, Guardian or Other, so Guardian was used`);
+    if (relText && !rel && gName) {
+      notes.push(`Relationship “${cellText(c.guardian_relationship)}” is not Mother, Father, Guardian or Other, so Guardian was used`);
+      kept.push(`Relationship: ${cellText(c.guardian_relationship)}`);
+    }
     if (!rel && gName) rel = /father/.test(headers.guardian_name ?? "") ? "father" : /mother/.test(headers.guardian_name ?? "") ? "mother" : "guardian";
     let gPhone = keep(cellText(c.guardian_phone), phone.test(cellText(c.guardian_phone)), "Guardian Phone");
     let gMail = keep(cellText(c.guardian_email).toLowerCase(), email.safeParse(cellText(c.guardian_email).toLowerCase()).success, "Guardian Email");
     if (!gName && (gPhone || gMail)) {
       notes.push("Guardian phone / email was left out because there is no Guardian Name");
+      if (gPhone) kept.push(`Guardian Phone: ${gPhone}`);
+      if (gMail) kept.push(`Guardian Email: ${gMail}`);
       gPhone = ""; gMail = "";
     }
-    if (gName.length > 200) { notes.push("Guardian Name is too long, so the guardian was left out"); gName = ""; gPhone = ""; gMail = ""; }
+    if (gName.length > 200) {
+      notes.push("Guardian Name is too long, so the guardian was left out");
+      kept.push(`Guardian: ${gName}${gPhone ? `, ${gPhone}` : ""}${gMail ? `, ${gMail}` : ""}`);
+      gName = ""; gPhone = ""; gMail = "";
+    }
+    for (const e of extra) kept.push(`${e.header}: ${e.value}`);
+    const extraNotes = force && kept.length ? `From spreadsheet import (row ${row}):\n${kept.join("\n")}`.slice(0, 2000) : "";
+    if (extraNotes) notes.push("Original values that did not fit a field are saved in the student’s notes");
 
     const group = cellText(c.group);
     rows.push({
@@ -169,6 +212,7 @@ export function prepareStudents(table: Cell[][]): Prepared<StudentPayload> {
       row, first_name: first, last_name: last, member_code: code, registration_number: cellText(c.registration_number).slice(0, 40),
       email: mail, phone: tel, admission_date: admission, start_date: start, group,
       guardian_name: gName, guardian_relationship: gName ? rel : "", guardian_phone: gPhone, guardian_email: gMail,
+      extra_notes: extraNotes,
     });
   }
   return { preview: { ...base, rows }, payload };

@@ -16,7 +16,7 @@ export default function StudentManager({ initialStudents, schoolId }: Props) {
   const [isPending, startTransition] = useTransition();
   const [searchQuery, setSearchQuery] = useState("");
   const [showAdd, setShowAdd] = useState(false);
-  const [form, setForm] = useState({ name: "", email: "", password: "", studentCode: "" });
+  const [form, setForm] = useState({ name: "", username: "", password: "", studentCode: "" });
   const [adding, setAdding] = useState(false);
   const [addResult, setAddResult] = useState<{ ok: boolean; text: string; note?: string } | null>(null);
   const supabase = createClient();
@@ -37,7 +37,7 @@ export default function StudentManager({ initialStudents, schoolId }: Props) {
     if (res.success && res.student) {
       setStudents((prev) => [res.student!, ...prev]);
       setAddResult({ ok: true, text: `${res.message} Password: ${form.password}`, note: res.erpNote });
-      setForm({ name: "", email: "", password: "", studentCode: "" });
+      setForm({ name: "", username: "", password: "", studentCode: "" });
     } else {
       setAddResult({ ok: false, text: res.message });
     }
@@ -141,7 +141,7 @@ export default function StudentManager({ initialStudents, schoolId }: Props) {
             <div className="mb-5 flex items-start justify-between gap-4">
               <div>
                 <h3 className="text-lg font-bold text-white">Add a student</h3>
-                <p className="text-sm text-zinc-500">The account is approved immediately. Share the email and password with the student; they sign in on the Student tab.</p>
+                <p className="text-sm text-zinc-500">The account is approved immediately. Share the username and password with the student; they sign in on the Student tab.</p>
               </div>
               <button type="button" onClick={() => setShowAdd(false)} aria-label="Close" className="rounded-lg p-1.5 text-zinc-500 hover:bg-zinc-800 hover:text-white">
                 <X className="w-4 h-4" />
@@ -150,7 +150,7 @@ export default function StudentManager({ initialStudents, schoolId }: Props) {
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               {([
                 ["name", "Full name", "text", "E.g. Ananya Sharma", true],
-                ["email", "Email", "email", "student@example.com", true],
+                ["username", "Username", "text", "E.g. ananya.2026041", true],
                 ["studentCode", "Roll / admission no. (optional)", "text", "E.g. 2026-041", false],
               ] as const).map(([key, label, type, placeholder, required]) => (
                 <label key={key} className="block">
@@ -159,8 +159,10 @@ export default function StudentManager({ initialStudents, schoolId }: Props) {
                     type={type}
                     required={required}
                     value={form[key]}
-                    onChange={(e) => setForm((f) => ({ ...f, [key]: e.target.value }))}
+                    onChange={(e) => setForm((f) => ({ ...f, [key]: e.target.value.toLowerCase() }))}
                     placeholder={placeholder}
+                    autoCapitalize="none"
+                    autoComplete={key === "username" ? "username" : "off"}
                     className="w-full rounded-xl border border-zinc-800 bg-zinc-950/50 px-3.5 py-3 text-sm text-white placeholder-zinc-600 focus:border-brand-500/50 focus:outline-none focus:ring-1 focus:ring-brand-500/50"
                   />
                 </label>
@@ -210,6 +212,7 @@ export default function StudentManager({ initialStudents, schoolId }: Props) {
               <tr className="border-b border-zinc-800/80 bg-zinc-900/80">
                 <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-zinc-500">Account ID</th>
                 <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-zinc-500">Student</th>
+                <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-zinc-500">Username</th>
                 <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-zinc-500">Status</th>
                 <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-zinc-500 text-right">Actions</th>
               </tr>
@@ -217,7 +220,7 @@ export default function StudentManager({ initialStudents, schoolId }: Props) {
             <tbody>
               {filteredStudents.length === 0 ? (
                 <tr>
-                  <td colSpan={4} className="px-6 py-16 text-center text-zinc-500">
+                  <td colSpan={5} className="px-6 py-16 text-center text-zinc-500">
                     <GraduationCap className="w-8 h-8 mx-auto mb-3 opacity-20" />
                     No students found.
                   </td>
@@ -231,8 +234,12 @@ export default function StudentManager({ initialStudents, schoolId }: Props) {
                       </code>
                     </td>
                     <td className="px-6 py-4 text-sm">
-                      {student.name && <p className="font-medium text-zinc-100">{student.name}</p>}
-                      <p className={student.name ? "text-xs text-zinc-500" : "font-medium text-zinc-200"}>{student.email}</p>
+                      {student.name
+                        ? <p className="font-medium text-zinc-100">{student.name}</p>
+                        : <p className="text-zinc-500 italic text-xs">No name</p>}
+                    </td>
+                    <td className="px-6 py-4">
+                      <code className="text-xs font-mono text-zinc-300">{student.email}</code>
                     </td>
                     <td className="px-6 py-4">
                       {student.is_approved ? (

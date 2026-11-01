@@ -8,7 +8,8 @@ export async function getPortalPath(): Promise<string> {
   const me = await getLegacyRole();
   if (!me) return "/login";
   if (me.role === "super_admin") return "/super-admin";
-  if ((me.role === "school_admin" || me.role === "student") && me.schoolId) return `/curriculum/${me.schoolId}`;
+  if (me.role === "student") return "/profile";
+  if (me.role === "school_admin" && me.schoolId) return `/curriculum/${me.schoolId}`;
   if (await hasErpAccess()) return "/erp";
   return "/login";
 }

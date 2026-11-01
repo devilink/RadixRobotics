@@ -31,7 +31,7 @@ export type MemberValues = {
   membership_id: string; member_type: MemberType; institution_id: string;
   first_name: string; last_name: string; member_code: string; email: string | null; phone: string | null;
   campus_id: string | null; status: string; end_date: string | null;
-  registration_number: string | null; admission_date: string | null;
+  registration_number: string | null; admission_date: string | null; notes?: string | null;
   department: string | null; position: string | null; employment_type: string | null; shift_id: string | null;
 };
 
@@ -150,6 +150,14 @@ export function MemberForm({ action, institutions, mode, defaultInstitution, def
               <Field label="Admission date" htmlFor="admission_date" error={errors.admission_date}>
                 <input id="admission_date" name="admission_date" type="date" defaultValue={v?.admission_date ?? ""} className={inputClass} />
               </Field>
+              {mode === "edit" && (
+                <div className="sm:col-span-2">
+                  <Field label="Notes" htmlFor="notes" error={errors.notes}
+                    hint="Anything else about this student. A force upload puts spreadsheet values that did not fit a field here.">
+                    <textarea id="notes" name="notes" rows={5} maxLength={2000} defaultValue={v?.notes ?? ""} className={inputClass} />
+                  </Field>
+                </div>
+              )}
             </fieldset>
           ) : showHr ? (
             <fieldset className="grid grid-cols-1 gap-4 border-t border-zinc-800/60 pt-4 sm:grid-cols-2">
