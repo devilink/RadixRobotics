@@ -12,7 +12,7 @@ export const metadata = { title: "Community application" };
 
 type Application = {
   id: string; full_name: string; phone: string; email: string; resume_path: string; resume_name: string;
-  work_paths: string[]; status: CommunityStatus; admin_notes: string | null; submitted_at: string | null;
+  work_paths: string[]; other_paths?: string[]; other_names?: string[]; status: CommunityStatus; admin_notes: string | null; submitted_at: string | null;
   reviewed_at: string | null; reviewed_by: string | null;
 };
 
@@ -38,6 +38,17 @@ export default async function ApplicationPage({ params }: { params: Promise<{ id
       : Promise.resolve({ data: null }),
   ]);
   const imageUrls = (images.data ?? []).map((i) => i.signedUrl).filter(Boolean) as string[];
+
+  // Optional extra files (certificates, reports, slides…), each with open + download links.
+  const otherPaths = app.other_paths ?? [];
+  const otherFiles = await Promise.all(otherPaths.map(async (path, i) => {
+    const name = app.other_names?.[i] ?? path.split("/").pop() ?? `File ${i + 1}`;
+    const [view, download] = await Promise.all([
+      bucket.createSignedUrl(path, LINK_TTL),
+      bucket.createSignedUrl(path, LINK_TTL, { download: name }),
+    ]);
+    return { path, name, view: view.data?.signedUrl ?? null, download: download.data?.signedUrl ?? null };
+  }));
   const filesMissing = !!resumeView.error || !!images.error;
   const waNumber = app.phone.replace(/[^0-9]/g, "");
   const waLink = `https://wa.me/${waNumber.length === 10 ? `91${waNumber}` : waNumber}`;
@@ -110,6 +121,35 @@ export default async function ApplicationPage({ params }: { params: Promise<{ id
             </div>
             <p className="mt-3 text-xs text-zinc-500">Click an image to open it full size. Links expire after an hour; refresh to renew.</p>
           </Card>
+
+          {otherFiles.length > 0 && (
+            <Card title={`Other files (${otherFiles.length})`}>
+              <ul className="divide-y divide-zinc-800/60">
+                {otherFiles.map((f) => (
+                  <li key={f.path} className="flex flex-wrap items-center justify-between gap-3 py-3 first:pt-0 last:pb-0">
+                    <div className="flex min-w-0 items-center gap-3">
+                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-brand-500/15 text-brand-400">
+                        <FileText className="h-4 w-4" aria-hidden />
+                      </div>
+                      <p className="truncate text-sm font-medium text-zinc-100">{f.name}</p>
+                    </div>
+                    <div className="flex gap-2">
+                      {f.view && (
+                        <a href={f.view} target="_blank" rel="noopener noreferrer" className={buttonClass("secondary", "sm")}>
+                          <ExternalLink className="h-3.5 w-3.5" aria-hidden /> Open
+                        </a>
+                      )}
+                      {f.download && (
+                        <a href={f.download} className={buttonClass("primary", "sm")}>
+                          <Download className="h-3.5 w-3.5" aria-hidden /> Download
+                        </a>
+                      )}
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </Card>
+          )}
         </div>
 
         <div className="space-y-6">

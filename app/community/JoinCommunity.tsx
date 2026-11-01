@@ -1,11 +1,24 @@
 "use client";
 
 import { useEffect, useId, useMemo, useRef, useState } from "react";
-import { ArrowRight, CheckCircle2, FileText, ImagePlus, Loader2, Upload, X } from "lucide-react";
+import { ArrowRight, CheckCircle2, FilePlus2, FileText, ImagePlus, Loader2, Upload, X } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
 import {
-  applicationSchema, COMMUNITY_BUCKET, formatBytes, IMAGE_TYPES, MAX_FILE_BYTES, MAX_WORK_IMAGES, RESUME_TYPES,
+  applicationSchema, COMMUNITY_BUCKET, formatBytes, IMAGE_TYPES, MAX_FILE_BYTES, MAX_OTHER_FILES, MAX_WORK_IMAGES,
+  OTHER_ACCEPT, OTHER_TYPES, RESUME_TYPES,
 } from "@/lib/community";
+
+// Browsers (especially on Windows) often report ZIP/CSV files with an empty or odd type,
+// so extra files are typed by their extension.
+const EXT_TYPE: Record<string, string> = {
+  pdf: "application/pdf", doc: "application/msword",
+  docx: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  ppt: "application/vnd.ms-powerpoint", pptx: "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+  xls: "application/vnd.ms-excel", xlsx: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  txt: "text/plain", csv: "text/csv", zip: "application/zip",
+  jpg: "image/jpeg", jpeg: "image/jpeg", png: "image/png", webp: "image/webp", gif: "image/gif",
+};
+const otherType = (f: File) => EXT_TYPE[f.name.split(".").pop()?.toLowerCase() ?? ""] ?? (f.type in OTHER_TYPES ? f.type : "");
 import { finishApplication, startApplication } from "./actions";
 
 type Phase = "form" | "sending" | "done";
@@ -24,6 +37,7 @@ export default function JoinCommunity({ variant = "dark" }: { variant?: "dark" |
   const [email, setEmail] = useState("");
   const [resume, setResume] = useState<File | null>(null);
   const [works, setWorks] = useState<File[]>([]);
+  const [others, setOthers] = useState<File[]>([]);
   const [honeypot, setHoneypot] = useState("");
 
   const [phase, setPhase] = useState<Phase>("form");
@@ -42,7 +56,7 @@ export default function JoinCommunity({ variant = "dark" }: { variant?: "dark" |
   useEffect(() => () => previews.forEach((u) => URL.revokeObjectURL(u)), [previews]);
 
   function reset() {
-    setFullName(""); setPhone(""); setEmail(""); setResume(null); setWorks([]); setHoneypot("");
+    setFullName(""); setPhone(""); setEmail(""); setResume(null); setWorks([]); setOthers([]); setHoneypot("");
     setPhase("form"); setProgress(""); setError(null); setFieldErrors({});
   }
 
@@ -73,6 +87,18 @@ export default function JoinCommunity({ variant = "dark" }: { variant?: "dark" |
     else setFieldErrors((e) => without(e, "works"));
   }
 
+  function addOthers(list: FileList | null) {
+    if (!list) return;
+    const incoming = Array.from(list);
+    const ok = incoming.filter((f) => otherType(f) && f.size <= MAX_FILE_BYTES);
+    const bad = incoming.length !== ok.length;
+    const next = [...others, ...ok].slice(0, MAX_OTHER_FILES);
+    setOthers(next);
+    if (bad) setFieldErrors((e) => ({ ...e, others: "Files must be PDF, Word, PowerPoint, Excel, TXT, CSV, ZIP or images, up to 10 MB each" }));
+    else if (others.length + ok.length > MAX_OTHER_FILES) setFieldErrors((e) => ({ ...e, others: `Only the first ${MAX_OTHER_FILES} files were kept` }));
+    else setFieldErrors((e) => without(e, "others"));
+  }
+
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
@@ -83,6 +109,7 @@ export default function JoinCommunity({ variant = "dark" }: { variant?: "dark" |
       email,
       resume: resume ? { name: resume.name, type: resume.type, size: resume.size } : undefined,
       works: works.map((f) => ({ name: f.name, type: f.type, size: f.size })),
+      others: others.map((f) => ({ name: f.name, type: otherType(f), size: f.size })),
     };
     const local = applicationSchema.safeParse(payload);
     if (!local.success) {
@@ -105,13 +132,18 @@ export default function JoinCommunity({ variant = "dark" }: { variant?: "dark" |
       }
 
       const supabase = createClient();
-      const files = [resume!, ...works];
+      // Same order as the server's upload list: resume, work images, other files.
+      const files = [
+        { file: resume!, type: resume!.type },
+        ...works.map((f) => ({ file: f, type: f.type })),
+        ...others.map((f) => ({ file: f, type: otherType(f) })),
+      ];
       for (let i = 0; i < files.length; i++) {
         setProgress(`Uploading file ${i + 1} of ${files.length}…`);
         const { path, token } = start.uploads[i];
         const { error: upErr } = await supabase.storage
           .from(COMMUNITY_BUCKET)
-          .uploadToSignedUrl(path, token, files[i], { contentType: files[i].type });
+          .uploadToSignedUrl(path, token, files[i].file, { contentType: files[i].type });
         if (upErr) throw upErr;
       }
 
@@ -247,6 +279,39 @@ export default function JoinCommunity({ variant = "dark" }: { variant?: "dark" |
               </div>
               <p className="mt-2 text-xs font-medium text-[#646a73]">Photos of projects, robots, circuits or designs you&apos;ve made. Up to {MAX_WORK_IMAGES} images, 10 MB each.</p>
               <FieldError msg={fieldErrors.works} />
+            </div>
+
+            <div>
+              <span className={labelCls}>Other files (optional)</span>
+              {others.length > 0 && (
+                <ul className="mb-3 space-y-2">
+                  {others.map((f, i) => (
+                    <li key={`${f.name}-${i}`} className="flex items-center gap-3 border-2 border-[#111] bg-white px-3 py-2">
+                      <FileText size={18} className="shrink-0 text-[#ff5400]" />
+                      <span className="min-w-0 flex-1 truncate text-sm font-bold">{f.name}</span>
+                      <span className="shrink-0 text-xs font-medium text-[#646a73]">{formatBytes(f.size)}</span>
+                      <button
+                        type="button"
+                        onClick={() => setOthers((o) => o.filter((_, j) => j !== i))}
+                        aria-label={`Remove ${f.name}`}
+                        className="flex h-7 w-7 shrink-0 items-center justify-center border-2 border-[#111] bg-white hover:bg-[#ff5400] hover:text-white"
+                      >
+                        <X size={14} />
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+              {others.length < MAX_OTHER_FILES && (
+                <label className="flex cursor-pointer items-center gap-4 border-2 border-dashed border-[#111] bg-white px-4 py-3 hover:bg-[#fff7f2] focus-within:shadow-[4px_4px_0px_#ff5400]">
+                  <FilePlus2 size={20} className="shrink-0 text-[#ff5400]" />
+                  <span className="text-sm font-bold">Add files</span>
+                  <span className="text-xs font-medium text-[#646a73]">Certificates, reports, slides, sheets or ZIP</span>
+                  <input type="file" multiple className="sr-only" accept={OTHER_ACCEPT} onChange={(e) => { addOthers(e.target.files); e.target.value = ""; }} />
+                </label>
+              )}
+              <p className="mt-2 text-xs font-medium text-[#646a73]">Up to {MAX_OTHER_FILES} files, 10 MB each. PDF, Word, PowerPoint, Excel, TXT, CSV, ZIP or images.</p>
+              <FieldError msg={fieldErrors.others} />
             </div>
 
             <button

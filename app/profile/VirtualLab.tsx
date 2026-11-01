@@ -191,7 +191,7 @@ export default function VirtualLab({ solved, onSolved }: { solved: Set<string>; 
         <aside aria-label="Challenges" className="min-w-0">
           <p className="mb-2 text-xs uppercase tracking-wider text-zinc-500">Challenges · {solved.size}/{CHALLENGES.length} solved</p>
           {/* A sideways-scrolling row on small screens, a column beside the editor on wide ones. */}
-          <div className="max-xl:flex max-xl:gap-2 max-xl:overflow-x-auto max-xl:pb-2 xl:space-y-2">
+          <div className="max-xl:flex max-xl:gap-2 max-xl:overflow-x-auto max-xl:pb-2 xl:space-y-2 [scrollbar-color:rgba(255,255,255,0.15)_transparent] [scrollbar-width:thin]">
           {CHALLENGES.map((c, i) => (
             <button key={c.id} type="button" onClick={() => { stop(); setActive(c); }} aria-current={active.id === c.id ? "true" : undefined}
               className={`flex items-center max-xl:w-52 max-xl:shrink-0 xl:w-full gap-3 rounded-2xl border p-3 text-left transition ${active.id === c.id ? "border-sky-400/50 bg-sky-400/10" : "border-white/10 bg-zinc-900/50 hover:border-white/25"}`}>

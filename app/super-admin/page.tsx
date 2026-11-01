@@ -147,7 +147,8 @@ export default function SuperAdminPage() {
                 <Link href="/" className="text-[10px] font-bold uppercase tracking-widest text-white/60 hover:text-white transition-colors">Home</Link>
                 <Link href="/erp" className="text-[10px] font-bold uppercase tracking-widest text-white/60 hover:text-white transition-colors">ERP</Link>
                 <Link href="/erp/inventory" className="text-[10px] font-bold uppercase tracking-widest text-white/60 hover:text-white transition-colors">Inventory</Link>
-                
+                <Link href="/erp/community" className="text-[10px] font-bold uppercase tracking-widest text-white/60 hover:text-white transition-colors">Community</Link>
+
                 <div className="flex items-center gap-2">
                   <span className="w-2 h-2 rounded-full bg-brand-500 shadow-[0_0_8px_rgba(255,84,0,0.8)] animate-pulse" />
                   <span className="text-[10px] font-bold tracking-widest uppercase text-brand-400">Super Admin</span>
@@ -196,6 +197,7 @@ export default function SuperAdminPage() {
               <Link href="/super-admin/projects" onClick={() => setIsMobileMenuOpen(false)} className="text-xl uppercase tracking-widest text-white hover:text-brand-400 transition-colors">Projects</Link>
               <Link href="/kits" onClick={() => setIsMobileMenuOpen(false)} className="text-xl uppercase tracking-widest text-white hover:text-brand-400 transition-colors">Kits</Link>
               <Link href="/erp/inventory" onClick={() => setIsMobileMenuOpen(false)} className="text-xl uppercase tracking-widest text-white hover:text-brand-400 transition-colors">Inventory</Link>
+              <Link href="/erp/community" onClick={() => setIsMobileMenuOpen(false)} className="text-xl uppercase tracking-widest text-white hover:text-brand-400 transition-colors">Community</Link>
               
               <div className="w-24 h-px bg-white/20 my-2"></div>
 

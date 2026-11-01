@@ -4,7 +4,7 @@ import { createHash, randomUUID } from "node:crypto";
 import { headers } from "next/headers";
 import { serviceClient } from "@/lib/erp/context";
 import { rateLimit } from "@/lib/erp/rate-limit";
-import { applicationSchema, COMMUNITY_BUCKET, IMAGE_TYPES, RESUME_TYPES } from "@/lib/community";
+import { applicationSchema, COMMUNITY_BUCKET, IMAGE_TYPES, OTHER_TYPES, RESUME_TYPES } from "@/lib/community";
 
 // Public join flow, in two steps so large files never pass through our server:
 //   1. startApplication checks the details, records an `incomplete` row and
@@ -63,6 +63,7 @@ export async function startApplication(input: unknown, honeypot?: string): Promi
     const id = randomUUID();
     const resumePath = `${id}/resume.${RESUME_TYPES[data.resume.type]}`;
     const workPaths = data.works.map((w, i) => `${id}/work-${i + 1}.${IMAGE_TYPES[w.type]}`);
+    const otherPaths = data.others.map((f, i) => `${id}/file-${i + 1}.${OTHER_TYPES[f.type]}`);
 
     const { error: insertError } = await supabase.from("community_applications").insert({
       id,
@@ -72,12 +73,19 @@ export async function startApplication(input: unknown, honeypot?: string): Promi
       resume_path: resumePath,
       resume_name: data.resume.name,
       work_paths: workPaths,
+      // Only sent when used, so the form keeps working where the other-files migration isn't applied yet.
+      ...(otherPaths.length ? { other_paths: otherPaths, other_names: data.others.map((f) => f.name) } : {}),
       ip_hash: ipHash,
     });
-    if (insertError) throw insertError;
+    if (insertError) {
+      if (otherPaths.length && /other_(paths|names)/.test(insertError.message)) {
+        return { ok: false, error: "Extra files can't be accepted right now. Please remove them from \"Other files\" and submit again.", fieldErrors: { others: "Not available yet" } };
+      }
+      throw insertError;
+    }
 
     const uploads: { path: string; token: string }[] = [];
-    for (const path of [resumePath, ...workPaths]) {
+    for (const path of [resumePath, ...workPaths, ...otherPaths]) {
       const { data: signed, error } = await supabase.storage.from(COMMUNITY_BUCKET).createSignedUploadUrl(path);
       if (error || !signed) throw error ?? new Error("No upload URL");
       uploads.push({ path, token: signed.token });
@@ -94,7 +102,7 @@ export async function finishApplication(id: string): Promise<{ ok: true } | { ok
   try {
     const supabase = serviceClient();
     const { data: row } = await supabase.from("community_applications")
-      .select("id, status, resume_path, work_paths, created_at").eq("id", id).maybeSingle();
+      .select("*").eq("id", id).maybeSingle();
     if (!row) return { ok: false, error: "Application not found." };
     if (row.status !== "incomplete") return { ok: true };
     if (Date.parse(row.created_at) < Date.now() - HOUR) {
@@ -104,7 +112,7 @@ export async function finishApplication(id: string): Promise<{ ok: true } | { ok
     const { data: objects, error: listError } = await supabase.storage.from(COMMUNITY_BUCKET).list(id, { limit: 100 });
     if (listError) throw listError;
     const present = new Set((objects ?? []).map((o) => `${id}/${o.name}`));
-    const expected = [row.resume_path as string, ...(row.work_paths as string[])];
+    const expected = [row.resume_path as string, ...(row.work_paths as string[]), ...((row.other_paths as string[] | undefined) ?? [])];
     if (!expected.every((p) => present.has(p))) {
       return { ok: false, error: "Some files didn't finish uploading. Please try again." };
     }

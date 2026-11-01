@@ -53,6 +53,12 @@ export default function StudentHub({ data }: { data: HubData }) {
       { topic_id, progress_percentage: pct, is_completed: done, last_watched_at: new Date().toISOString() },
     ]);
 
+  const goTo = (key: Tab) => {
+    setTab(key);
+    if (key !== "projects") setOpenSlug(null);
+    window.scrollTo({ top: 0 });
+  };
+
   const openProject = (slug: string) => {
     setOpenSlug(slug);
     setTab("projects");
@@ -79,42 +85,66 @@ export default function StudentHub({ data }: { data: HubData }) {
         <div className="absolute bottom-0 left-1/3 h-[24rem] w-[24rem] rounded-full bg-violet-500/10 blur-3xl" />
       </div>
 
+      {/* Top bar. Phones: logo, current section and log out (sections move to the bottom bar).
+          Tablets: pill nav with short labels. Desktop: full labels. */}
       <header className="sticky top-0 z-30 border-b border-white/5 bg-[#07080c]/80 backdrop-blur-xl">
-        <div className="mx-auto flex max-w-7xl items-center gap-4 px-4 py-3">
+        <div className="mx-auto flex max-w-7xl items-center gap-3 px-4 max-md:py-2.5 md:py-3">
           <Link href="/" className="flex shrink-0 items-center gap-2">
             <Image src="/favicon-48.png" alt="Radix Robotics" width={34} height={34} className="rounded-lg" />
-            <span className="font-bold tracking-tight max-sm:hidden">Radix Student</span>
+            <span className="font-bold tracking-tight max-lg:hidden">Radix Student</span>
           </Link>
-          <nav aria-label="Profile sections" className="flex flex-1 justify-center gap-1 overflow-x-auto">
+          <p className="min-w-0 flex-1 truncate font-bold md:hidden" aria-live="polite">{tabs.find((t) => t.key === tab)?.label}</p>
+          {/* Display only in variant pairs: a plain `flex` would beat `max-md:hidden` (see app/styles/theme.css). */}
+          <nav aria-label="Profile sections" className="flex-1 justify-center gap-1 max-md:hidden md:flex">
             {tabs.map(({ key, label, short, icon: Icon }) => (
               <button
                 key={key}
                 type="button"
-                onClick={() => { setTab(key); if (key !== "projects") setOpenSlug(null); }}
+                onClick={() => goTo(key)}
                 aria-current={tab === key ? "page" : undefined}
-                className={`flex items-center gap-2 whitespace-nowrap rounded-full px-4 py-2 text-sm font-semibold transition ${
+                className={`flex items-center gap-2 whitespace-nowrap rounded-full py-2 text-sm font-semibold transition max-lg:px-3 lg:px-4 ${
                   tab === key ? "bg-white text-zinc-950" : "text-zinc-400 hover:bg-white/5 hover:text-white"
                 }`}
               >
                 <Icon aria-hidden className="h-4 w-4" />
-                <span className="max-md:hidden">{label}</span>
-                <span className="md:hidden">{short}</span>
+                <span className="max-lg:hidden">{label}</span>
+                <span className="lg:hidden">{short}</span>
               </button>
             ))}
-            <Link href="/kits" className="flex items-center gap-2 whitespace-nowrap rounded-full px-4 py-2 text-sm font-semibold text-zinc-400 transition hover:bg-white/5 hover:text-white">
+            <Link href="/kits" className="flex items-center gap-2 whitespace-nowrap rounded-full py-2 text-sm font-semibold text-zinc-400 transition hover:bg-white/5 hover:text-white max-lg:px-3 lg:px-4">
               <Box aria-hidden className="h-4 w-4" />
-              <span className="max-md:hidden">3D Kits</span>
-              <span className="md:hidden">Kits</span>
+              <span className="max-lg:hidden">3D Kits</span>
+              <span className="lg:hidden">Kits</span>
             </Link>
           </nav>
-          <button type="button" onClick={logout} className="flex shrink-0 items-center gap-2 rounded-full border border-white/10 px-3 py-2 text-sm text-zinc-300 hover:bg-white/5">
+          <button type="button" onClick={logout} aria-label="Log out"
+            className="flex shrink-0 items-center gap-2 rounded-full border border-white/10 text-sm text-zinc-300 hover:bg-white/5 max-lg:p-2.5 lg:px-3 lg:py-2">
             <LogOut aria-hidden className="h-4 w-4" />
-            <span className="max-sm:hidden">Log out</span>
+            <span className="max-lg:hidden">Log out</span>
           </button>
         </div>
       </header>
 
-      <main className="relative mx-auto max-w-7xl px-4 py-8">
+      {/* Phones: app-style bottom tab bar, clear of the home indicator. */}
+      <nav aria-label="Profile sections" className="fixed inset-x-0 bottom-0 z-30 border-t border-white/10 bg-[#07080c]/90 backdrop-blur-xl pb-[env(safe-area-inset-bottom)] md:hidden">
+        <div className="grid grid-cols-4">
+          {tabs.map(({ key, short, icon: Icon }) => (
+            <button key={key} type="button" onClick={() => goTo(key)} aria-current={tab === key ? "page" : undefined}
+              className={`flex flex-col items-center gap-1 py-2.5 text-[11px] font-semibold transition ${tab === key ? "text-white" : "text-zinc-500"}`}>
+              <span className={`grid h-8 w-12 place-items-center rounded-full transition ${tab === key ? "bg-white text-zinc-950" : ""}`}>
+                <Icon aria-hidden className="h-[18px] w-[18px]" />
+              </span>
+              {short}
+            </button>
+          ))}
+          <Link href="/kits" className="flex flex-col items-center gap-1 py-2.5 text-[11px] font-semibold text-zinc-500">
+            <span className="grid h-8 w-12 place-items-center rounded-full"><Box aria-hidden className="h-[18px] w-[18px]" /></span>
+            3D Kits
+          </Link>
+        </div>
+      </nav>
+
+      <main className="relative mx-auto max-w-7xl px-4 max-md:pb-28 max-md:pt-6 md:py-8">
         {!data.progressReady && (
           <p role="status" className="mb-6 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-200">
             Progress saving isn&apos;t switched on for your school yet, so ticks and badges won&apos;t be kept after you leave. Everything else works.
@@ -123,7 +153,7 @@ export default function StudentHub({ data }: { data: HubData }) {
 
         {tab === "overview" && (
           <Overview data={data} rows={rows} summary={summary} earned={earned} solvedCount={solved.size}
-            recommended={recommended} byTopic={byTopic} onOpenProject={openProject} onOpenLab={() => setTab("lab")} />
+            recommended={recommended} byTopic={byTopic} onOpenProject={openProject} onOpenLab={() => goTo("lab")} />
         )}
         {tab === "projects" && (
           openSlug ? (
