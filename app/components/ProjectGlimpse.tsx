@@ -8,6 +8,7 @@ import LazyVideo from './LazyVideo';
 const glimpseProjects = [
   {
     id: "agro",
+    slug: "lorawan-agro-hub",
     title: "Smart Agro Hub",
     category: "Beginner",
     tech: "LoRaWAN",
@@ -20,6 +21,7 @@ const glimpseProjects = [
   },
   {
     id: "arm",
+    slug: "vision-robotic-arm",
     title: "6-DOF Vision Arm",
     category: "Intermediate",
     tech: "OpenCV",
@@ -32,6 +34,7 @@ const glimpseProjects = [
   },
   {
     id: "drone",
+    slug: "aerial-survey-drone",
     title: "Aerial Survey Drone",
     category: "Advanced",
     tech: "ArduPilot",
@@ -44,6 +47,7 @@ const glimpseProjects = [
   },
   {
     id: "ros-rover",
+    slug: "ros2-lidar-rover",
     title: "Autonomous LiDAR Rover",
     category: "Master",
     tech: "ROS 2",
@@ -109,7 +113,8 @@ export default function ProjectGlimpse() {
               whileInView={{ opacity: 1, rotate: 0 }}
               viewport={{ once: true, margin: "-100px" }}
               transition={{ duration: 0.6, delay: idx * 0.1, type: "spring" }}
-              href="/projects" 
+              href={`/projects/${p.slug}`}
+              aria-label={`${p.title}: blueprint and build guide`}
               key={p.id} 
               className="block group"
             >

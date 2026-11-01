@@ -69,12 +69,16 @@ export default function Page() {
           .pr-hero-row-center { flex: 1 1 0%; min-height: 0; display: flex; align-items: center; justify-content: center; position: relative; }
           .pr-hero-row-bottom { flex-shrink: 0; padding-bottom: clamp(0.5rem, 1.5vh, 1.5rem); }
 
-          /* Below lg the navbar is a fixed var(--nav-h) px bar (see globals.css). */
+          /* Below lg the navbar is a fixed var(--nav-h) px bar (see globals.css);
+             row-top's own padding then gives the headline clear space under it. */
           @media (max-width: 768px) {
-            .pr-hero-flex { --pr-pad-x: 1rem; padding-top: calc(var(--nav-h) + env(safe-area-inset-top)); }
+            .pr-hero-flex { --pr-pad-x: 1.25rem; padding-top: calc(var(--nav-h) + env(safe-area-inset-top)); }
+            .pr-hero-row-top { padding-top: clamp(1rem, 3vh, 1.75rem); }
+            .pr-hero-row-bottom { padding-bottom: clamp(1rem, 2.5vh, 1.5rem); }
           }
           @media (min-width: 769px) and (max-width: 1023px) {
             .pr-hero-flex { --pr-pad-x: 2rem; padding-top: calc(var(--nav-h) + env(safe-area-inset-top)); }
+            .pr-hero-row-top { padding-top: clamp(1rem, 2.5vh, 1.75rem); }
           }
 
           /* --- PIXEL BACKDROP --- */
@@ -151,20 +155,33 @@ export default function Page() {
           @media (max-width: 1024px) { .pr-editorial-heading { font-size: clamp(1.125rem, 4vh, 1.75rem); } }
 
           /* --- MOBILE OVERRIDES --- */
+          /* Phones size type by width (px-clamped: the root font is fluid on phones),
+             so the headline stays readable and buttons stay tappable on any height. */
           @media (max-width: 768px) {
             .pr-nav-pill, .pr-pixel-backdrop, .pr-social-dock, .pr-floating-icon { display: none !important; }
-            .pr-hero-upper, .pr-hero-bottom { flex-direction: column; gap: clamp(0.5rem, 1.5vh, 1rem); text-align: left; }
+            .pr-hero-upper, .pr-hero-bottom { flex-direction: column; align-items: stretch; gap: clamp(0.5rem, 1.5vh, 1rem); text-align: left; }
+            .pr-hero-bottom > :first-child { max-width: 30rem; }
             .pr-bottom-right { display: none; }
             .pr-btn-group { flex-direction: row; width: 100%; }
             .pr-btn-group button, .pr-btn-group a { flex: 1; justify-content: center; text-align: center; }
+            .pr-btn-cta-orange, .pr-btn-cta-ghost { min-height: 46px; font-size: 14px; padding: 0 1rem; }
+            .pr-hero-desc { font-size: clamp(12px, 3.4vw, 14px); line-height: 1.5; }
             .pr-center-workspace { width: min(100%, 85vw); }
-            .pr-heading-line-1, .pr-heading-line-3 { padding-left: 0; }
-            .pr-editorial-heading { font-size: clamp(1rem, 4vh, 1.625rem); }
+            .pr-editorial-heading { font-size: clamp(22px, 7vw, 40px); line-height: 1.08; }
           }
 
           @media (max-width: 380px) {
-            .pr-editorial-heading { font-size: clamp(0.875rem, 3.5vh, 1.25rem); }
             .pr-center-workspace { width: min(100%, 75vw); }
+          }
+
+          /* Phones in landscape: too short for the desktop composition, so drop the
+             decorative layers that would otherwise run across the headline and CTAs. */
+          @media (orientation: landscape) and (max-height: 540px) {
+            .pr-pixel-backdrop, .pr-social-dock, .pr-floating-icon, .pr-bottom-right { display: none !important; }
+            .pr-hero-row-top { padding-top: 0.75rem; }
+            .pr-editorial-heading { font-size: clamp(18px, 6vh, 26px); line-height: 1.08; }
+            .pr-btn-cta-orange, .pr-btn-cta-ghost { min-height: 40px; font-size: 13px; padding: 0 1.25rem; }
+            .pr-hero-desc { font-size: 12px; }
           }
         `}} />
 
