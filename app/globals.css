@@ -467,6 +467,11 @@
    display utilities are overridden site-wide (see theme.css).
 ================================ */
 
+/* Mobile/tablet bar height in px (not rem): the fluid root font would otherwise
+   shrink it on small phones. Pages offset fixed-nav content with var(--nav-h). */
+:root { --nav-h: 60px; }
+.nav-row { height: var(--nav-h); }
+
 .nav-desktop { display: none !important; }
 .nav-mobile { display: flex !important; }
 .nav-mobile-block { display: block !important; }
@@ -477,6 +482,8 @@
   .nav-mobile, .nav-mobile-block, .nav-mobile-col { display: none !important; }
   /* Equal-width sides keep the link pill centred in the bar. */
   .nav-side { flex: 1 1 0%; }
+  /* Desktop height comes from the nav's own padding. */
+  .nav-row { height: auto; }
 }
 
 /* ================================

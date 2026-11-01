@@ -69,11 +69,12 @@ export default function Page() {
           .pr-hero-row-center { flex: 1 1 0%; min-height: 0; display: flex; align-items: center; justify-content: center; position: relative; }
           .pr-hero-row-bottom { flex-shrink: 0; padding-bottom: clamp(0.5rem, 1.5vh, 1.5rem); }
 
+          /* Below lg the navbar is a fixed var(--nav-h) px bar (see globals.css). */
           @media (max-width: 768px) {
-            .pr-hero-flex { --pr-pad-x: 1rem; padding-top: calc(3.875rem + env(safe-area-inset-top)); }
+            .pr-hero-flex { --pr-pad-x: 1rem; padding-top: calc(var(--nav-h) + env(safe-area-inset-top)); }
           }
-          @media (min-width: 769px) and (max-width: 1024px) {
-            .pr-hero-flex { --pr-pad-x: 2rem; padding-top: calc(4.25rem + env(safe-area-inset-top)); }
+          @media (min-width: 769px) and (max-width: 1023px) {
+            .pr-hero-flex { --pr-pad-x: 2rem; padding-top: calc(var(--nav-h) + env(safe-area-inset-top)); }
           }
 
           /* --- PIXEL BACKDROP --- */

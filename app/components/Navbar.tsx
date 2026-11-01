@@ -42,7 +42,7 @@ function Logo({ priority = false }: { priority?: boolean }) {
         alt=""
         width={96}
         height={44}
-        className="h-8 sm:h-9 w-auto object-contain brightness-0 transition-transform duration-300 group-hover:scale-105"
+        className="max-lg:h-[28px] lg:h-8 w-auto object-contain brightness-0 transition-transform duration-300 group-hover:scale-105"
         priority={priority}
       />
       <Image
@@ -50,7 +50,7 @@ function Logo({ priority = false }: { priority?: boolean }) {
         alt="RADIX Robotics"
         width={112}
         height={28}
-        className="h-5 sm:h-6 w-auto object-contain brightness-0"
+        className="max-lg:h-[17px] lg:h-5 w-auto object-contain brightness-0"
         priority={priority}
       />
     </>
@@ -134,11 +134,11 @@ export default function Navbar({ navLinks = defaultNavLinks, darkHero = false }:
           aria-label="Main"
           className={`transition-[background-color,box-shadow,border-color,padding] duration-300 border-b ${
             transparent
-              ? 'bg-transparent border-transparent py-4 sm:py-5'
-              : `bg-white/85 backdrop-blur-xl backdrop-saturate-150 border-[#e8e0d4] ${scrolled ? 'py-2.5 shadow-[0_8px_30px_-12px_rgba(17,17,17,0.18)]' : 'py-3.5 sm:py-4'}`
+              ? 'bg-transparent border-transparent lg:py-4'
+              : `bg-white/85 backdrop-blur-xl backdrop-saturate-150 border-[#e8e0d4] ${scrolled ? 'lg:py-2.5 shadow-[0_8px_30px_-12px_rgba(17,17,17,0.18)]' : 'lg:py-4'}`
           }`}
         >
-          <div className="mx-auto flex w-full max-w-[1400px] items-center justify-between gap-4 px-4 sm:px-8 lg:px-12">
+          <div className="nav-row mx-auto flex w-full max-w-[1400px] items-center justify-between gap-4 px-4 sm:px-8 lg:px-12">
             {/* Logo */}
             <div className="nav-side flex items-center">
               <Link href="/" aria-label="RADIX Robotics home" className="group flex shrink-0 items-center gap-2 lg:gap-2.5 rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#ff5400] focus-visible:ring-offset-4">
@@ -212,7 +212,7 @@ export default function Navbar({ navLinks = defaultNavLinks, darkHero = false }:
               {/* Mobile toggle */}
               <button
                 type="button"
-                className="nav-mobile h-11 w-11 items-center justify-center border-2 border-[#111] bg-white text-[#111] shadow-[2px_2px_0_#ff5400] transition-colors active:translate-x-px active:translate-y-px active:shadow-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#ff5400]"
+                className="nav-mobile h-[44px] w-[44px] items-center justify-center border-2 border-[#111] bg-white text-[#111] shadow-[2px_2px_0_#ff5400] transition-colors active:translate-x-px active:translate-y-px active:shadow-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#ff5400]"
                 onClick={() => setMenuOpen(true)}
                 aria-label="Open menu"
                 aria-expanded={menuOpen}
@@ -256,7 +256,7 @@ export default function Navbar({ navLinks = defaultNavLinks, darkHero = false }:
             type="button"
             onClick={() => setMenuOpen(false)}
             aria-label="Close menu"
-            className="flex h-11 w-11 items-center justify-center border-2 border-[#111] bg-white text-[#111] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#ff5400]"
+            className="flex h-[44px] w-[44px] shrink-0 items-center justify-center border-2 border-[#111] bg-white text-[#111] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#ff5400]"
           >
             <X size={22} aria-hidden />
           </button>
