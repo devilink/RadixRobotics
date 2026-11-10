@@ -57,17 +57,17 @@ export default function ContactPage() {
                   </div>
                   <div>
                     <p className="text-[10px] font-mono font-bold uppercase tracking-widest text-[#7b828e] mb-1">Email</p>
-                    <p className="text-white font-bold text-sm sm:text-base">contact [at] radixrobotics.com</p>
+                    <p className="text-white font-bold text-sm sm:text-base">radixrobotics[AT]gmail.com</p>
                   </div>
                 </div>
 
-                <a href="https://wa.me/916001979712" target="_blank" rel="noopener noreferrer nofollow" className="flex items-center gap-4 text-[#a1a1aa] hover:text-[#ff5400] transition-colors group">
+                <a href="https://wa.me/918822990854" target="_blank" rel="noopener noreferrer nofollow" className="flex items-center gap-4 text-[#a1a1aa] hover:text-[#ff5400] transition-colors group">
                   <div className="w-12 h-12 border-2 border-[#333] flex items-center justify-center group-hover:border-[#ff5400] group-hover:bg-[#ff5400] group-hover:text-white transition-all">
                     <Phone size={20} />
                   </div>
                   <div>
                     <p className="text-[10px] font-mono font-bold uppercase tracking-widest text-[#7b828e] mb-1">WhatsApp</p>
-                    <p className="text-white font-bold text-sm sm:text-base">+91 60019 79712</p>
+                    <p className="text-white font-bold text-sm sm:text-base">+91 88229 90854</p>
                   </div>
                 </a>
 
@@ -78,7 +78,7 @@ export default function ContactPage() {
                   <div>
                     <p className="text-[10px] font-mono font-bold uppercase tracking-widest text-[#7b828e] mb-1">Location</p>
                     <p className="text-white font-bold text-sm sm:text-base leading-relaxed">
-                      Jalukbari,<br />
+                      Jalukbari,
                       Guwahati, Assam 781013
                     </p>
                   </div>
@@ -100,7 +100,7 @@ export default function ContactPage() {
                 Our resident engineers and program managers are active Monday through Saturday.
               </p>
               <a
-                href="https://wa.me/916001979712?text=Hello%20Radix%20Robotics"
+                href="https://wa.me/918822990854?text=Hello%20Radix%20Robotics"
                 target="_blank"
                 rel="noopener noreferrer nofollow"
                 className="relative z-10 inline-flex items-center gap-3 bg-white text-[#111] px-8 py-4 font-black text-xs uppercase tracking-widest border-2 border-[#111] shadow-[4px_4px_0px_#111] hover:-translate-y-1 hover:shadow-[6px_6px_0px_#111] transition-all"

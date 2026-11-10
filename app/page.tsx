@@ -25,6 +25,7 @@ import PedagogicalImpact from '@/app/components/PedagogicalImpact';
 import AsymmetricLifecycle from '@/app/components/AsymmetricLifecycle';
 import Footer from '@/app/components/Footer';
 import GSAPStackingFolders from '@/app/components/GSAPStackingFolders';
+import SchoolPortals from '@/app/components/SchoolPortals';
 import HeroRobot from '@/app/components/HeroRobot';
 
 export default function Page() {
@@ -341,6 +342,9 @@ export default function Page() {
 
       {/* --- SECTION 3: LAB PACKAGES --- */}
       <GSAPStackingFolders />
+
+      {/* --- SCHOOL PORTALS (LMS & ERP) --- */}
+      <SchoolPortals />
 
       {/* --- PROJECTS GLIMPSE --- */}
       <ProjectGlimpse />
