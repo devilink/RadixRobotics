@@ -63,7 +63,7 @@ export default function TeamPage() {
         { name: "Abhinash Sarmah", role: "AI Engineer", image: "/teams/2.jpeg" },
         { name: "Aleeza Khanam", role: "Business Development", image: "/teams/3.jpeg" },
         { name: "Himanta Bijoy Sarmah", role: "Sales & Marketing", image: "/teams/7.jpeg" },
-        { name: "Aman Ahmed", role: "Electronics Engineer", image: "/CEO.png" },
+        { name: "Aman Ahmed", role: "Electronics Engineer", image: "/Employee.jpeg" },
         { name: "Nistha Rani Barphukon", role: "Robotics Engineer", image: "/teams/9.jpeg" },
         { name: "Tofajul Hoque", role: "Software Engineer", image: "/teams/12.jpeg" },
         { name: "Plaban Jyoti Rajhkhowa", role: "Designer", image: "/teams/13.jpeg" },
