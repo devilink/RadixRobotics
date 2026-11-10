@@ -5,9 +5,9 @@ export default function StructuredData() {
     '@context': 'https://schema.org',
     '@type': 'LocalBusiness',
     name: 'RADIX Robotics',
-    image: 'https://radixrobotics.com/og-image.png',
-    '@id': 'https://radixrobotics.com',
-    url: 'https://radixrobotics.com',
+    image: 'https://www.radixrobotics.in/og-image.png',
+    '@id': 'https://www.radixrobotics.in',
+    url: 'https://www.radixrobotics.in',
     telephone: '+91-6001979712', // From the WhatsApp link
     address: {
       '@type': 'PostalAddress',
@@ -18,7 +18,7 @@ export default function StructuredData() {
     },
     description: 'Turnkey robotics, AI, and drone labs for Indian schools. NEP 2020 compliant composite skill labs.',
     sameAs: [
-      'https://radixrobotics.com'
+      'https://www.radixrobotics.in'
     ],
   };
 

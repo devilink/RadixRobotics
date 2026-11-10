@@ -7,7 +7,7 @@ import type { Metadata } from 'next';
 export const metadata: Metadata = {
   title: "Contact Us",
   description: "Get in touch with Radix Robotics to build a state-of-the-art composite skill lab at your campus.",
-  alternates: { canonical: "https://radixrobotics.com/contact" },
+  alternates: { canonical: "https://www.radixrobotics.in/contact" },
 };
 
 export default function ContactPage() {

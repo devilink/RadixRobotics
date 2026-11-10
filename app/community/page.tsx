@@ -8,7 +8,7 @@ export const metadata: Metadata = {
   title: "Community",
   description:
     "Join the Radix Community — a network of students, makers, engineers and educators building real robotics, electronics and AI projects together.",
-  alternates: { canonical: "https://radixrobotics.com/community" },
+  alternates: { canonical: "https://www.radixrobotics.in/community" },
 };
 
 const PILLARS = [

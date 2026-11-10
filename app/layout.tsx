@@ -22,7 +22,7 @@ const caveat = Caveat({ subsets: ["latin"], display: 'swap', variable: '--font-c
 const instrumentSerif = Instrument_Serif({ subsets: ["latin"], weight: '400', style: ['normal', 'italic'], display: 'swap', variable: '--font-instrument', preload: false });
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://radixrobotics.in"),
+  metadataBase: new URL("https://www.radixrobotics.in"),
   title: {
     default: "RADIX Robotics | Turnkey Composite Skill Labs for Schools",
     template: "%s | RADIX Robotics",
@@ -39,7 +39,7 @@ export const metadata: Metadata = {
     "Atal Tinkering Lab",
     "RADIX Robotics",
   ],
-  authors: [{ name: "RADIX Robotics", url: "https://radixrobotics.in" }],
+  authors: [{ name: "RADIX Robotics", url: "https://www.radixrobotics.in" }],
   creator: "RADIX Robotics",
   publisher: "RADIX Robotics",
   formatDetection: {
@@ -50,7 +50,7 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     locale: "en_IN",
-    url: "https://radixrobotics.in",
+    url: "https://www.radixrobotics.in",
     siteName: "RADIX Robotics",
     title: "RADIX Robotics — Composite Skill Labs for Schools",
     description:
@@ -95,7 +95,7 @@ export const metadata: Metadata = {
     statusBarStyle: "default",
   },
   alternates: {
-    canonical: "https://radixrobotics.in",
+    canonical: "https://www.radixrobotics.in",
   },
 };
 

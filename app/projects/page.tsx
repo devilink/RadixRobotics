@@ -7,7 +7,7 @@ import type { Metadata } from 'next';
 export const metadata: Metadata = {
   title: "Real Builds & Case Studies",
   description: "View our past deployments, state-of-the-art robotics labs, maker spaces, and AI centers built across campuses.",
-  alternates: { canonical: "https://radixrobotics.com/projects" },
+  alternates: { canonical: "https://www.radixrobotics.in/projects" },
 };
 
 export default function ProjectsPage() {

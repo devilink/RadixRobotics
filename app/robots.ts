@@ -6,6 +6,6 @@ export default function robots(): MetadataRoute.Robots {
       userAgent: '*',
       allow: '/',
     },
-    sitemap: 'https://radixrobotics.com/sitemap.xml',
+    sitemap: 'https://www.radixrobotics.in/sitemap.xml',
   };
 }

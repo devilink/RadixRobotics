@@ -26,7 +26,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   return {
     title: `${build.title}: Blueprint & Build Guide`,
     description: `${build.description} Full system blueprint, wiring map, bill of materials and a step-by-step build guide.`,
-    alternates: { canonical: `https://radixrobotics.com/projects/${build.slug}` },
+    alternates: { canonical: `https://www.radixrobotics.in/projects/${build.slug}` },
   };
 }
 

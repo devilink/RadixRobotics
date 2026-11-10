@@ -1,7 +1,7 @@
 import { MetadataRoute } from 'next';
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const baseUrl = 'https://radixrobotics.com';
+  const baseUrl = 'https://www.radixrobotics.in';
 
   return [
     {
